@@ -7,8 +7,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'movos',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
+        'USER': 'movos',
+        'PASSWORD': 'movos',
         # In Docker the DB runs in a separate container. Use the compose service
         # name and the internal Postgres port so the web container can reach it.
         'HOST': 'db',
