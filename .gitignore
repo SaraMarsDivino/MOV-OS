@@ -4,3 +4,9 @@ movos_dump.sql.gz
 backups/
 *.pyc
 __pycache__/
+
+# local backups
+MOVOS/local_settings.py.bak
+.env
+.movos_dump.sql.gz
+nohup.out
