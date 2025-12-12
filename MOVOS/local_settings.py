@@ -9,10 +9,10 @@ DATABASES = {
         'NAME': 'movos',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
-        # Use explicit IPv4 to avoid resolution to IPv6 (::1) which can cause
-        # connection refused when Docker maps host port to container.
-        'HOST': '127.0.0.1',
-        'PORT': '5433',
+        # In Docker the DB runs in a separate container. Use the compose service
+        # name and the internal Postgres port so the web container can reach it.
+        'HOST': 'db',
+        'PORT': '5432',
     }
 }
 
