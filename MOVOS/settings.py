@@ -16,19 +16,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-5o(k+1^on5m8ca--ieap-
 # Hemos desactivado la lógica compleja y hemos puesto los valores directamente.
 DEBUG = False
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '192.168.1.22', # Tu IP local por si acaso
-    'www.rochart-multiservicios.cl', # Tu dominio de producción
-]
+ALLOWED_HOSTS = ['localhost','127.0.0.1','192.168.1.22','rochart-multiservicios.cl','www.rochart-multiservicios.cl','.rochart-multiservicios.cl']
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8000',
-    'http://192.168.1.22:8000', # Tu IP local por si acaso
-    'https://www.rochart-multiservicios.cl', # Tu dominio de producción
-    'https://*.trycloudflare.com',
-]
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000','http://192.168.1.22:8000','https://rochart-multiservicios.cl','https://www.rochart-multiservicios.cl','https://*.trycloudflare.com']
 
 
 INSTALLED_APPS = [
