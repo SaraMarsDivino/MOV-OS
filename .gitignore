@@ -1,28 +1,6 @@
-# Python
+﻿MOVOS/local_settings.py
+movos_dump.sql
+movos_dump.sql.gz
+backups/
+*.pyc
 __pycache__/
-*.py[cod]
-*.pyo
-
-# Django/DB
-db.sqlite3
-*.sqlite3
-
-# Environments
-.env
-.venv/
-venv/
-env/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Tools
-.pytest_cache/
-.coverage
-coverage.xml
-
-# Node/Front
-node_modules/
-staticfiles/
-media/

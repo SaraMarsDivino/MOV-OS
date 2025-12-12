@@ -1,0 +1,48 @@
+/* Estilo compacto para filtros */
+.filtros-container {
+    padding: 10px;
+    background-color: #2f3136;
+    border-radius: 10px;
+}
+
+.filtros-container .form-control, .filtros-container .btn {
+    font-size: 14px;
+    padding: 6px;
+}
+
+.filtros-container label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Estilo para tablas */
+table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* static/css/reports.css - Correcciones para badges de estado */
+/* Aseguramos que el color del texto sea blanco y el texto en negrita para Abierta y Cerrada */
+.badge.badge-success {
+    background-color: #28a745; /* Verde Bootstrap */
+    color: white; /* Asegurar texto blanco */
+    font-weight: bold; /* Hacer el texto más audaz */
+}
+
+.badge.badge-danger {
+    background-color: #d6d67d; /* Rojo Bootstrap */
+    color: rgb(183, 50, 50); /* Asegurar texto blanco */
+    font-weight: bold; /* Hacer el texto más audaz */
+}
+
+/* Opcional: Si el rojo sigue siendo difícil de ver en tu tema oscuro,
+   puedes probar un amarillo/naranja más brillante para 'Cerrada'
+   Descomenta el siguiente bloque si quieres probarlo:
+*/
+/*
+.badge.badge-danger {
+    background-color: #ffc107; 
+    color: #343a40; 
+    font-weight: bold;
+}
+*/
