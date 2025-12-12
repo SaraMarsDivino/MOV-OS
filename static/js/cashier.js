@@ -23,6 +23,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let formaPago = "efectivo";
     let carrito = new Map();
     let totalCarrito = 0;
+    // Simple undo support: store last successful adjustment { productoId, delta }
+    let lastAction = null;
 
     // Leer caja_id expuesto por la plantilla (meta en cashier.html)
     const cajaMeta = document.querySelector('meta[name="current-caja-id"]');
@@ -72,14 +74,34 @@ document.addEventListener("DOMContentLoaded", () => {
     function calcularVuelto() {
         if (formaPago === "efectivo") {
             if (cantidadPagadaInput.value.trim() === "") {
-                vueltoElement.textContent = `-$${formatChileanCurrency(totalCarrito)}`;
+                const val = -Math.abs(totalCarrito || 0);
+                const abs = Math.abs(Math.round(val));
+                vueltoElement.textContent = `-$${formatChileanCurrency(abs)}`;
+                // color: negative
+                vueltoElement.classList.remove('bg-success','bg-secondary');
+                vueltoElement.classList.add('bg-danger');
             } else {
                 const pagado = parseFloat(cantidadPagadaInput.value) || 0;
                 const calculado = pagado - totalCarrito;
-                vueltoElement.textContent = `$${formatChileanCurrency(calculado)}`;
+                const abs = Math.abs(Math.round(calculado));
+                if (calculado < 0) {
+                    vueltoElement.textContent = `-$${formatChileanCurrency(abs)}`;
+                    vueltoElement.classList.remove('bg-success','bg-secondary');
+                    vueltoElement.classList.add('bg-danger');
+                } else if (calculado > 0) {
+                    vueltoElement.textContent = `$${formatChileanCurrency(Math.round(calculado))}`;
+                    vueltoElement.classList.remove('bg-danger','bg-secondary');
+                    vueltoElement.classList.add('bg-success');
+                } else {
+                    vueltoElement.textContent = `$0`;
+                    vueltoElement.classList.remove('bg-danger','bg-success');
+                    vueltoElement.classList.add('bg-secondary');
+                }
             }
         } else {
             vueltoElement.textContent = "$0";
+            vueltoElement.classList.remove('bg-danger','bg-success');
+            vueltoElement.classList.add('bg-secondary');
         }
     }
     cantidadPagadaInput.addEventListener("input", calcularVuelto);
@@ -204,12 +226,12 @@ document.addEventListener("DOMContentLoaded", () => {
             carrito.forEach(({ producto_id, nombre, precio, cantidad }) => {
                 const row = document.createElement("tr");
                 row.innerHTML = `
-                    <td>${cantidad}</td>
-                    <td>${nombre}</td>
-                    <td>$${formatChileanCurrency(cantidad * precio)}</td>
-                    <td>
-                        <button class="btn btn-success btn-sm" data-id="${producto_id}" data-action="increment">+</button>
-                        <button class="btn btn-danger btn-sm" data-id="${producto_id}" data-action="decrement">-</button>
+                    <td class="align-middle" style="width:100px;"><input type="number" min="1" class="form-control form-control-sm cart-qty" data-id="${producto_id}" value="${cantidad}"></td>
+                    <td class="align-middle">${nombre}</td>
+                    <td class="align-middle">$${formatChileanCurrency(cantidad * precio)}</td>
+                    <td class="align-middle">
+                        <button class="btn btn-success btn-sm me-1" data-id="${producto_id}" data-action="inc">+1</button>
+                        <button class="btn btn-danger btn-sm" data-id="${producto_id}" data-action="dec">-1</button>
                     </td>
                 `;
                 cartItemsContainer.appendChild(row);
@@ -223,14 +245,45 @@ document.addEventListener("DOMContentLoaded", () => {
         calcularVuelto();
     }
 
+    // Handle clicks for increment/decrement and quantity inputs
     cartItemsContainer.addEventListener("click", (e) => {
         const targetButton = e.target.closest("button");
         if (!targetButton) return;
         const productoId = parseInt(targetButton.dataset.id);
         const action = targetButton.dataset.action;
-        const delta = action === 'increment' ? 1 : -1;
-        // Sincronizar con el servidor para evitar que ítems "vuelvan" al agregar otros
-        fetch("/cashier/ajustar-cantidad/", {
+        if (action === 'inc') {
+            ajustarCantidadServidor(productoId, 1);
+        } else if (action === 'dec') {
+            ajustarCantidadServidor(productoId, -1);
+        }
+    });
+
+    // Debounced handler for manual qty edits
+    cartItemsContainer.addEventListener('input', (e) => {
+        const input = e.target.closest('.cart-qty');
+        if (!input) return;
+        const productoId = parseInt(input.dataset.id);
+        const newVal = parseInt(input.value) || 0;
+        const current = carrito.get(productoId);
+        const oldVal = current ? parseInt(current.cantidad || 0) : 0;
+        const delta = newVal - oldVal;
+        // If delta is zero, do nothing
+        if (delta === 0) return;
+        // Debounce per input by storing timer on element
+        if (input._debounceTimer) clearTimeout(input._debounceTimer);
+        input._debounceTimer = setTimeout(() => {
+            // If newVal <= 0, remove item
+            const sendDelta = newVal <= 0 ? -oldVal : delta;
+            ajustarCantidadServidor(productoId, sendDelta);
+        }, 450);
+    });
+
+    // Note: multi-delete removed per UI update — no delete-selected handling
+
+    function ajustarCantidadServidor(productoId, delta) {
+        // remember candidate to allow undo if server confirms
+        const candidate = { productoId: productoId, delta: delta };
+        return fetch("/cashier/ajustar-cantidad/", {
             method: "POST",
             credentials: "same-origin",
             headers: {
@@ -251,7 +304,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!res.ok || data.error) {
                 throw new Error(data.error || `HTTP ${res.status}`);
             }
-            // Rehidratar carrito desde servidor
             carrito.clear();
             (data.carrito || []).forEach(item => {
                 carrito.set(item.producto_id, {
@@ -263,13 +315,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     permitir_venta_sin_stock: (typeof item.permitir_venta_sin_stock !== 'undefined') ? item.permitir_venta_sin_stock : true
                 });
             });
+            // record last successful action for simple Ctrl+Z undo
+            try { lastAction = candidate; } catch (e) { lastAction = null; }
             actualizarCarrito();
         })
         .catch(err => {
             console.error('Error al ajustar cantidad:', err);
             showToast(err && err.message ? err.message : 'Error al ajustar cantidad', 'danger');
         });
-    });
+    }
 
     document.querySelectorAll("[data-sale-type]").forEach(btn => {
         btn.addEventListener("click", function() {
@@ -298,11 +352,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (["debito", "credito", "transferencia"].includes(formaPago)) {
                 cantidadPagadaInput.value = totalCarrito;
                 cantidadPagadaInput.readOnly = true;
-                vueltoElement.textContent = "$0";
+                calcularVuelto();
             } else if (formaPago === "efectivo") {
                 cantidadPagadaInput.readOnly = false;
                 if (cantidadPagadaInput.value.trim() === "") {
-                    vueltoElement.textContent = `-$${formatChileanCurrency(totalCarrito)}`;
+                    calcularVuelto();
                 }
             }
             if (["debito", "credito", "transferencia"].includes(formaPago)) {
@@ -383,7 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Limpiar campos de entrada
                 if (searchInput) searchInput.value = "";
                 if (barcodeInput) barcodeInput.value = "";
-                if (cantidadPagadaInput) cantidadPagadaInput.value = "";
+                if (cantidadPagadaInput) { cantidadPagadaInput.value = ""; cantidadPagadaInput.readOnly = false; }
                 if (numeroTransaccionInput) numeroTransaccionInput.value = "";
                 if (bancoInput) bancoInput.value = "";
                 // Restablecer forma de pago y tipo de venta a valores por defecto
@@ -407,10 +461,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 transactionInfoContainer.style.display = "none";
                 bancoInfoContainer.style.display = "none";
-                vueltoElement.textContent = "$0";
+                calcularVuelto();
                 // Borrar resultados de búsqueda y mensaje de carrito vacío
                 if (resultsList) resultsList.innerHTML = "";
-                cartItemsContainer.innerHTML = `<tr><td colspan="4" class="text-center">No hay productos en el carrito.</td></tr>`;
+                cartItemsContainer.innerHTML = `<tr><td colspan="5" class="text-center">No hay productos en el carrito.</td></tr>`;
                 totalPriceElement.textContent = `$0`;
                 const mobileTotal = document.getElementById('total-price-mobile');
                 if (mobileTotal) mobileTotal.textContent = '0.00';
@@ -552,8 +606,43 @@ document.addEventListener("DOMContentLoaded", () => {
     if (carrito.size === 0) {
         cantidadPagadaInput.value = "";
         totalPriceElement.textContent = `$0`;
-        vueltoElement.textContent = `$0`;
+        calcularVuelto();
     }
+
+    // Keyboard shortcuts and undo
+    document.addEventListener('keydown', function(e) {
+        // F2 -> focus barcode
+        if (e.key === 'F2') {
+            e.preventDefault();
+            if (barcodeInput) barcodeInput.focus();
+            return;
+        }
+        // F3 -> focus search input
+        if (e.key === 'F3') {
+            e.preventDefault();
+            if (searchInput) searchInput.focus();
+            return;
+        }
+        // F4 -> confirm purchase
+        if (e.key === 'F4') {
+            e.preventDefault();
+            if (confirmarCompraButton) confirmarCompraButton.click();
+            return;
+        }
+        // Ctrl+Z -> undo last adjustment
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+            e.preventDefault();
+            if (lastAction && typeof lastAction.productoId !== 'undefined' && typeof lastAction.delta !== 'undefined') {
+                // reverse the last delta
+                ajustarCantidadServidor(lastAction.productoId, -lastAction.delta).then(() => {
+                    showToast('Acción deshecha', 'info');
+                    lastAction = null;
+                }).catch(() => { showToast('No se pudo deshacer', 'warning'); });
+            } else {
+                showToast('Nada que deshacer', 'warning');
+            }
+        }
+    });
 });
 
 function mostrarToast(mensaje, tipo = "success") {

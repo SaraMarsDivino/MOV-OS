@@ -800,6 +800,68 @@ def export_ranking_cajeros_csv(request):
         writer.writerow([r[0], r[1], r[2], r[3]])
     return response
 
+
+@login_required
+@user_passes_test(_is_admin, login_url='cashier_dashboard')
+def export_analytics_csv(request):
+    """Exporta un CSV con KPIs principales y top productos para el rango solicitado."""
+    from .analytics import compute_analytics
+    fecha_inicio_str = request.GET.get('fecha_inicio')
+    fecha_fin_str = request.GET.get('fecha_fin')
+    cajero_filter = request.GET.get('cajero','todos')
+    sucursal_filter = request.GET.get('sucursal','todos')
+    try:
+        if fecha_inicio_str:
+            fecha_inicio = timezone.make_aware(datetime.datetime.strptime(fecha_inicio_str, '%Y-%m-%d'))
+        else:
+            fecha_inicio = timezone.now() - datetime.timedelta(days=30)
+    except ValueError:
+        fecha_inicio = timezone.now() - datetime.timedelta(days=30)
+    try:
+        if fecha_fin_str:
+            fecha_fin = timezone.make_aware(datetime.datetime.strptime(fecha_fin_str, '%Y-%m-%d')) + datetime.timedelta(days=1, seconds=-1)
+        else:
+            fecha_fin = timezone.now()
+    except ValueError:
+        fecha_fin = timezone.now()
+
+    analytics = compute_analytics(fecha_inicio, fecha_fin, cajero_filter, sucursal_filter, limit_rentabilidad=100)
+    # Top productos
+    top_products = VentaDetalle.objects.filter(venta__fecha__gte=fecha_inicio, venta__fecha__lte=fecha_fin)
+    if cajero_filter and cajero_filter != 'todos':
+        try:
+            top_products = top_products.filter(venta__empleado_id=int(cajero_filter))
+        except ValueError:
+            pass
+    if sucursal_filter and sucursal_filter != 'todos':
+        try:
+            top_products = top_products.filter(venta__sucursal_id=int(sucursal_filter))
+        except ValueError:
+            pass
+    top_list = list(top_products.values('producto__nombre').annotate(total_cantidad=Sum('cantidad')).order_by('-total_cantidad')[:50])
+
+    import csv
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename=analytics_kpis.csv'
+    response.write('\ufeff')
+    writer = csv.writer(response, delimiter=';', quoting=csv.QUOTE_MINIMAL)
+    # Escribir KPIs principales
+    writer.writerow(['KPI','Valor'])
+    writer.writerow(['Ingreso Total (CLP)', analytics['ingreso_total']])
+    writer.writerow(['Ingreso Neto (sin IVA)', analytics['ingreso_total_sin_iva']])
+    writer.writerow(['IVA Calculado', analytics['iva_total_calc']])
+    writer.writerow(['Ganancia Bruta', analytics['ganancia_bruta']])
+    writer.writerow(['Ganancia Neta', analytics['ganancia_neta']])
+    writer.writerow(['Margen (%)', analytics['margen']])
+    writer.writerow(['Numero Transacciones', analytics['num_transacciones']])
+    writer.writerow(['Ticket Promedio', analytics['ticket_promedio']])
+    writer.writerow([])
+    writer.writerow(['Top Productos','Cantidad'])
+    for p in top_list:
+        writer.writerow([p.get('producto__nombre'), p.get('total_cantidad')])
+    return response
+    return response
+
 @login_required
 @user_passes_test(_is_admin, login_url='cashier_dashboard')
 def export_daily_series_csv(request):

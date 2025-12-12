@@ -139,3 +139,11 @@ LOW_STOCK_THRESHOLD = int(os.environ.get('LOW_STOCK_THRESHOLD', '2'))
 
 # Auto logout delay
 AUTO_LOGOUT_DELAY = 7200  # 2 horas en segundos
+
+# Local overrides (not committed): create MOVOS/local_settings.py to override
+# DATABASES or other settings for local development. This file is imported if
+# present to avoid changing the main settings for production/docker.
+try:
+    from .local_settings import *  # noqa: F401,F403
+except ImportError:
+    pass

@@ -49,6 +49,7 @@
         <table class="table table-striped table-hover product-table">
             <thead class="thead-dark">
                 <tr>
+                    <th style="width: 3%;"><input type="checkbox" id="select-all-products" title="Seleccionar todo"></th>
                     <th style="width: 25%;">
                         <a href="?page=1&search={{ search_query }}&per_page={{ per_page }}&sort_by=nombre&order={% if sort_by == 'nombre' and order == 'asc' %}desc{% else %}asc{% endif %}" class="text-decoration-none">
                             NOMBRE
@@ -94,6 +95,7 @@
                     data-product-precioventa="{{ product.formatted_precio_venta|default:"0" }}"
                     data-product-cantidad="{{ product.cantidad }}"
                     data-product-stock="{{ product.stock }}">
+                    <td class="align-middle text-center"><input type="checkbox" class="form-check-input product-select" data-id="{{ product.id }}" onclick="event.stopPropagation();"></td>
                     <td class="product-name-cell" style="word-wrap: break-word;">{{ product.nombre|default:"N/A" }}</td>
                     <td>{{ product.producto_id }}</td>
                     <td>
@@ -173,6 +175,7 @@
     <a href="{% url 'transfer_stock' %}" class="btn btn-outline-primary mb-3 ms-2">Transferir Stock</a>
     <a href="{% url 'transfer_history' %}" class="btn btn-outline-secondary mb-3 ms-2">Historial Transferencias</a>
     <a href="{% url 'adjust_history' %}" class="btn btn-outline-secondary mb-3 ms-2">Historial Ajustes</a>
+    <button id="bulk-delete-btn" class="btn btn-danger mb-3 ms-3">Eliminar seleccionados</button>
 </div>
 
 <!-- Modal para Detalles del Producto -->
@@ -234,6 +237,49 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Muestro el modal
             productDetailsModal.show();
+        });
+    });
+
+    // Bulk delete handling
+    const selectAll = document.getElementById('select-all-products');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    selectAll && selectAll.addEventListener('change', function() {
+        const checks = document.querySelectorAll('.product-select');
+        checks.forEach(c => { c.checked = selectAll.checked; });
+    });
+    bulkDeleteBtn && bulkDeleteBtn.addEventListener('click', function() {
+        const checks = Array.from(document.querySelectorAll('.product-select:checked'));
+        if (checks.length === 0) return alert('No hay productos seleccionados');
+        if (!confirm(`¿Eliminar ${checks.length} productos seleccionados? Esta acción no se puede deshacer.`)) return;
+        const ids = checks.map(c => parseInt(c.dataset.id)).filter(Boolean);
+        // Send JSON POST to bulk-delete endpoint
+        fetch('{% url "bulk_delete_products" %}', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': (function(){
+                    const v = document.cookie.split(';').map(p=>p.trim()).find(p=>p.startsWith('csrftoken='));
+                    return v ? v.split('=')[1] : '';
+                })()
+            },
+            body: JSON.stringify({ product_ids: ids })
+        }).then(async res => {
+            const json = await res.json().catch(()=>({ success: false }));
+            if (!res.ok || !json.success) {
+                alert('Error al eliminar: ' + (json && json.error ? json.error : res.statusText));
+                return;
+            }
+            // Remove rows from DOM or reload
+            checks.forEach(c => {
+                const tr = c.closest('tr'); if (tr) tr.remove();
+            });
+            alert(`Se eliminaron ${json.deleted || ids.length} productos.`);
+            // Optionally reload to update counts/pagination
+            setTimeout(() => location.reload(), 800);
+        }).catch(err => {
+            console.error('bulk delete error', err);
+            alert('Error al procesar la solicitud.');
         });
     });
 });

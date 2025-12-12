@@ -2,6 +2,8 @@ from decimal import Decimal, ROUND_HALF_UP
 import datetime
 from django.utils import timezone
 from django.db.models import Sum, F, Count
+from django.db.models import DateField
+from django.db.models.functions import Cast
 from django.core.cache import cache
 from cashier.models import Venta, VentaDetalle
 import hashlib
@@ -78,39 +80,28 @@ def compute_analytics(fecha_inicio, fecha_fin, cajero_filter='todos', sucursal_f
     ganancia_neta = ingreso_sin_iva - cost_net
     margen = ((ganancia_neta / ingreso_sin_iva) * Decimal('100')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) if ingreso_sin_iva > 0 else Decimal('0.00')
 
-    # Serie diaria (cacheada)
+    # Serie diaria (cacheada) - usar Cast(DateField) en lugar de SQL raw para mayor compatibilidad
     cache_key_daily = _safe_cache_key("daily_series", fecha_inicio, fecha_fin, cajero_filter, sucursal_filter)
     daily_series = cache.get(cache_key_daily)
     if daily_series is None:
-        daily_series = ventas_qs.extra({'day': "DATE(fecha)"}).values('day').annotate(ingreso=Sum('total')).order_by('day')
-        cache.set(cache_key_daily, list(daily_series), 300)
+        daily_series_qs = ventas_qs.annotate(day=Cast('fecha', DateField())).values('day').annotate(ingreso=Sum('total')).order_by('day')
+        daily_series = list(daily_series_qs)
+        cache.set(cache_key_daily, daily_series, 300)
     daily_chart = []
+    # Para obtener costo por día usamos un único queryset agregado por fecha para evitar loops por detalle
+    # Agrupamos VentaDetalle por fecha de venta y sumamos cantidad*precio_compra
+    detalle_por_dia = VentaDetalle.objects.filter(venta__in=ventas_qs).annotate(day=Cast('venta__fecha', DateField())).values('day').annotate(costo=Sum(F('cantidad') * F('producto__precio_compra')))
+    detalle_map = {d['day']: d['costo'] or 0 for d in detalle_por_dia}
     for row in daily_series:
         day_raw = row.get('day')
-        day_date = None
-        if isinstance(day_raw, datetime.datetime):
-            day_date = day_raw.date()
-        elif isinstance(day_raw, datetime.date):
-            day_date = day_raw
-        elif isinstance(day_raw, str):
-            for fmt in ('%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
-                try:
-                    day_date = datetime.datetime.strptime(day_raw[:19], fmt).date()
-                    break
-                except ValueError:
-                    continue
-        if not day_date:
+        if not day_raw:
             continue
         ingreso_dia = row.get('ingreso') or Decimal('0.00')
-        detalles_dia = VentaDetalle.objects.filter(venta__fecha__date=day_date, venta__in=ventas_qs)
-        costo_dia = Decimal('0.00')
-        for det in detalles_dia:
-            costo_dia += (det.producto.precio_compra or Decimal('0.00')) * det.cantidad
+        costo_dia = Decimal(str(detalle_map.get(day_raw, 0)))
         ingreso_sin_iva_dia = (ingreso_dia / Decimal('1.19')).quantize(Decimal('0.01')) if ingreso_dia else Decimal('0.00')
         costo_sin_iva_dia = (costo_dia / Decimal('1.19')).quantize(Decimal('0.01')) if costo_dia else Decimal('0.00')
         ganancia_neta_dia = ingreso_sin_iva_dia - costo_sin_iva_dia
-        # Formatear y agregar
-        day_str = day_date.strftime('%Y-%m-%d')
+        day_str = day_raw.strftime('%Y-%m-%d') if isinstance(day_raw, datetime.date) else str(day_raw)
         daily_chart.append({'day': day_str, 'ingreso': float(ingreso_dia), 'ganancia_neta': float(ganancia_neta_dia)})
 
     # Comparación por sucursal (cacheada)

@@ -33,6 +33,36 @@
             @media (max-width: 576px) {
                 .payment-method-btn { padding: .75rem .5rem; font-size: .95rem; }
             }
+
+            /* Payment panel sizing improvements */
+            .payment-panel {
+                display: flex;
+                flex-direction: column;
+                gap: .75rem;
+                height: 100%;
+            }
+            .payment-method-btn {
+                padding: .9rem .6rem;
+                font-size: 1rem;
+                font-weight: 600;
+            }
+            #cantidad_pagada {
+                font-size: 1.25rem;
+                height: 3.2rem;
+                padding: .6rem .9rem;
+            }
+            #vuelto {
+                font-size: 1.5rem;
+                padding: .8rem 1.1rem;
+                font-weight: 700;
+                display: inline-block;
+                min-width: 140px;
+                text-align: center;
+            }
+            @media (max-width: 768px) {
+                #cantidad_pagada { height: 3rem; font-size: 1.05rem; }
+                #vuelto { font-size: 1.25rem; min-width: 110px; }
+            }
         </style>
 {% endblock %}
 
@@ -73,10 +103,10 @@
     </div>
 
     <div class="row g-3">
-    <!-- Buscar productos -->
+    <!-- Buscar Productos -->
     <div class="col-12 col-md-4 col-lg-4 mb-4">
             <div class="card p-3 h-100">
-                <h4 class="card-title">Buscar productos</h4>
+                <h4 class="card-title">Buscar Productos</h4>
                 <form id="product-search-form" class="mb-3">
                     <input type="text" id="product-search-input" class="form-control" placeholder="Buscar por nombre o código de barras" aria-label="Buscar producto por nombre o código de barras">
                     <button type="button" id="product-search-button" class="btn btn-primary w-100 mt-2">Buscar</button>
@@ -160,12 +190,12 @@
                 <!-- Cantidad Pagada -->
                 <div class="mb-3">
                     <label class="form-label">Cantidad Pagada</label>
-                    <input type="text" id="cantidad_pagada" class="form-control" placeholder="Ingrese la cantidad pagada" inputmode="numeric" pattern="[0-9]*">
+                    <input type="text" id="cantidad_pagada" class="form-control form-control-lg" placeholder="Ingrese la cantidad pagada" inputmode="numeric" pattern="[0-9]*">
                 </div>
                 <!-- Vuelto -->
                 <div class="mb-3">
                     <label class="form-label">Vuelto</label>
-                    <p id="vuelto" class="badge bg-secondary fs-6">$0.00</p>
+                    <p id="vuelto" class="badge bg-secondary fs-4" style="padding:.6rem 1rem; font-weight:600;">$0.00</p>
                 </div>
                 <button type="button" id="confirmar-compra-aux" class="btn btn-success w-100 mt-auto d-md-none">Confirmar Compra</button>
             </div>

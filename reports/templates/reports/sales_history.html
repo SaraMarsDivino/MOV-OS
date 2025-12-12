@@ -67,10 +67,6 @@
     </table>
     </div>
 
-    <!-- Botón para limpiar historial de ventas -->
-    <div class="mt-3">
-        <button id="limpiarVentasBtn" class="btn btn-danger">Limpiar Historial de Ventas</button>
-    </div>
 
     <!-- Paginación con desplazamiento automático -->
     <nav aria-label="Paginación">
@@ -104,7 +100,7 @@
     {% include 'partials/back_button.html' with href=back_href text='Volver al Dashboard de Reportes' %}
 </div>
 
-<script>
+    <script>
     document.addEventListener("DOMContentLoaded", function() {
         if (window.location.href.includes("page=")) {
             const tableElement = document.getElementById("historial-ventas");
@@ -113,26 +109,5 @@
             }
         }
     });
-
-    document.getElementById('limpiarVentasBtn').addEventListener('click', function() {
-        if (confirm("¿Estás seguro de limpiar el historial de ventas? Esta acción no se puede deshacer.")) {
-            fetch("{% url 'reports:limpiar_historial_ventas' %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}"
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-               if(data.success) {
-                   alert("Historial de ventas limpiado exitosamente.");
-                   location.reload();
-               } else {
-                   alert("Error: " + data.error);
-               }
-            })
-            .catch(error => alert("Error: " + error));
-        }
-    });
-</script>
+    </script>
 {% endblock %}

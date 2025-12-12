@@ -13,6 +13,8 @@ from datetime import datetime, date
 from django.utils.dateparse import parse_date 
 from sucursales.models import Sucursal
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 def product_management(request):
     """
@@ -347,6 +349,36 @@ def delete_all_products(request):
             messages.error(request, f'Error al intentar eliminar productos: {str(e)}')
             return redirect('product_management')
     return render(request, 'products/delete_all_products_confirm.html')
+
+
+def bulk_delete_products(request):
+    """
+    Endpoint para eliminar varios productos a la vez desde la vista de gestión.
+    Espera un POST con JSON: { "product_ids": [1,2,3] }
+    Devuelve JSON con el número de eliminados.
+    """
+    if request.method == 'POST':
+        try:
+            # admitir tanto application/json como form data
+            if request.content_type == 'application/json':
+                payload = json.loads(request.body.decode('utf-8') or '{}')
+                ids = payload.get('product_ids', [])
+            else:
+                ids = request.POST.getlist('product_ids')
+            # Normalizar IDs a enteros
+            ids = [int(x) for x in ids if x]
+            qs = Product.objects.filter(id__in=ids)
+            count = qs.count()
+            qs.delete()
+            try:
+                messages.success(request, f'Se eliminaron {count} productos correctamente.')
+            except Exception:
+                # En entornos de prueba RequestFactory puede no tener MessageMiddleware
+                pass
+            return JsonResponse({'success': True, 'deleted': count})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
 
 def export_products_to_excel(request):
     """

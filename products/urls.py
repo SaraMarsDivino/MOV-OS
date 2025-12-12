@@ -10,6 +10,7 @@ urlpatterns = [
     path('upload/', views.upload_products, name='upload_products'),
     path('template/', views.download_template, name='download_template'),
     path('delete-all/', views.delete_all_products, name='delete_all_products'),
+    path('bulk-delete/', views.bulk_delete_products, name='bulk_delete_products'),
     path('exportar/excel/', views.export_products_to_excel, name='export_products_to_excel'),
     path('bulk-assign/', views.bulk_assign_products, name='bulk_assign_products'),
     path('transfer/', views.transfer_stock, name='transfer_stock'),

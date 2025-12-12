@@ -93,7 +93,6 @@
     <div class="d-flex justify-content-between mt-3">
     {% url 'reports:report_dashboard' as back_href %}
     {% include 'partials/back_button.html' with href=back_href text='Volver al Dashboard de Reportes' %}
-        <button type="button" class="btn btn-danger" onclick="limpiarHistorial()">Limpiar Historial</button>
     </div>
 </div>
 
@@ -156,31 +155,7 @@
             alert(`Error al cerrar la caja: ${err && err.message ? err.message : err}`);
         });
     }
-    function limpiarHistorial() {
-        if (!confirm("¿Estás seguro de que deseas limpiar el historial de cajas? Esto eliminará todos los registros.")) return;
-        fetch("{% url 'reports:limpiar_historial_caja' %}", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": getCSRFToken()
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert("Historial limpiado correctamente.");
-                location.reload();
-            } else {
-                alert(data.error || "Error al limpiar el historial.");
-            }
-        })
-        .catch(err => {
-            console.error("Error en limpiarHistorial:", err);
-            alert("Error al limpiar el historial.");
-        });
-    }
+    // limpiarHistorial removed — destructive action hidden from UI
     // Delegamos eventos al cargar el DOM
     document.addEventListener('DOMContentLoaded', function() {
         // Click en filas cerradas para navegar
