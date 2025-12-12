@@ -22,8 +22,8 @@ services:
       DEBUG: "False"
       SECRET_KEY: ${SECRET_KEY:-change-me}
       # Incluir trycloudflare por defecto para evitar 403 al usar Quick Tunnel
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,.trycloudflare.com}
-      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8000,https://*.trycloudflare.com}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,.trycloudflare.com},www.rochart-multiservicios.cl
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8000,https://*.trycloudflare.com},https://www.rochart-multiservicios.cl
       DB_ENGINE: postgres
       POSTGRES_DB: ${POSTGRES_DB:-movos}
       POSTGRES_USER: ${POSTGRES_USER:-movos}
