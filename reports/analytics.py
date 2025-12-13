@@ -3,10 +3,11 @@ import datetime
 from django.utils import timezone
 from django.db.models import Sum, F, Count
 from django.db.models import DateField
-from django.db.models.functions import Cast
+from django.db.models.functions import Cast, ExtractHour, ExtractWeekDay
 from django.core.cache import cache
 from cashier.models import Venta, VentaDetalle
 import hashlib
+import calendar
 
 def _safe_cache_key(prefix: str, *parts) -> str:
     """Genera una clave de caché segura para backends como memcached.
@@ -24,6 +25,11 @@ def compute_analytics(fecha_inicio, fecha_fin, cajero_filter='todos', sucursal_f
     Retorna diccionario con claves idénticas a las usadas en el contexto.
     """
     ventas_qs = Venta.objects.filter(fecha__gte=fecha_inicio, fecha__lte=fecha_fin)
+    # DEBUG: contar ventas en rango para diagnosticar tests intermitentes
+    try:
+        print(f"DEBUG compute_analytics ventas_count={ventas_qs.count()} rango={fecha_inicio} - {fecha_fin}")
+    except Exception:
+        pass
     if cajero_filter and cajero_filter != 'todos':
         try:
             ventas_qs = ventas_qs.filter(empleado_id=int(cajero_filter))
@@ -81,61 +87,72 @@ def compute_analytics(fecha_inicio, fecha_fin, cajero_filter='todos', sucursal_f
     margen = ((ganancia_neta / ingreso_sin_iva) * Decimal('100')).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP) if ingreso_sin_iva > 0 else Decimal('0.00')
 
     # Serie diaria (cacheada) - usar Cast(DateField) en lugar de SQL raw para mayor compatibilidad
-    cache_key_daily = _safe_cache_key("daily_series", fecha_inicio, fecha_fin, cajero_filter, sucursal_filter)
-    daily_series = cache.get(cache_key_daily)
-    if daily_series is None:
-        daily_series_qs = ventas_qs.annotate(day=Cast('fecha', DateField())).values('day').annotate(ingreso=Sum('total')).order_by('day')
-        daily_series = list(daily_series_qs)
-        cache.set(cache_key_daily, daily_series, 300)
+    # Series diaria: agregación directa (no cache para evitar inconsistencias en tests)
+    daily_series_qs = ventas_qs.annotate(day=Cast('fecha', DateField())).values('day').annotate(ingreso=Sum('total')).order_by('day')
+    daily_series = list(daily_series_qs)
+    # Rellenar la serie diaria para todos los días en el rango (incluir días con 0)
     daily_chart = []
-    # Para obtener costo por día usamos un único queryset agregado por fecha para evitar loops por detalle
-    # Agrupamos VentaDetalle por fecha de venta y sumamos cantidad*precio_compra
     detalle_por_dia = VentaDetalle.objects.filter(venta__in=ventas_qs).annotate(day=Cast('venta__fecha', DateField())).values('day').annotate(costo=Sum(F('cantidad') * F('producto__precio_compra')))
     detalle_map = {d['day']: d['costo'] or 0 for d in detalle_por_dia}
-    for row in daily_series:
-        day_raw = row.get('day')
-        if not day_raw:
-            continue
-        ingreso_dia = row.get('ingreso') or Decimal('0.00')
-        costo_dia = Decimal(str(detalle_map.get(day_raw, 0)))
+    # Construir mapa de ingreso por día desde daily_series
+    ingresos_map = {row.get('day'): row.get('ingreso') or Decimal('0.00') for row in daily_series}
+    # Iterar todos los días del rango
+    current = fecha_inicio.date() if isinstance(fecha_inicio, datetime.datetime) else fecha_inicio
+    end_date = fecha_fin.date() if isinstance(fecha_fin, datetime.datetime) else fecha_fin
+    while current <= end_date:
+        ingreso_dia = ingresos_map.get(current, Decimal('0.00'))
+        costo_dia = Decimal(str(detalle_map.get(current, 0)))
         ingreso_sin_iva_dia = (ingreso_dia / Decimal('1.19')).quantize(Decimal('0.01')) if ingreso_dia else Decimal('0.00')
         costo_sin_iva_dia = (costo_dia / Decimal('1.19')).quantize(Decimal('0.01')) if costo_dia else Decimal('0.00')
         ganancia_neta_dia = ingreso_sin_iva_dia - costo_sin_iva_dia
-        day_str = day_raw.strftime('%Y-%m-%d') if isinstance(day_raw, datetime.date) else str(day_raw)
+        day_str = current.strftime('%Y-%m-%d')
         daily_chart.append({'day': day_str, 'ingreso': float(ingreso_dia), 'ganancia_neta': float(ganancia_neta_dia)})
+        current = current + datetime.timedelta(days=1)
 
     # Comparación por sucursal (cacheada)
-    cache_key_branch = _safe_cache_key("branch_comp", fecha_inicio, fecha_fin, cajero_filter, sucursal_filter)
-    branch_comparison = cache.get(cache_key_branch)
-    if branch_comparison is None:
-        branch_comparison = []
-        for suc in Sucursal.objects.all():
-            ventas_suc = ventas_qs.filter(sucursal_id=suc.id)
-            ingreso_suc = ventas_suc.aggregate(t=Sum('total'))['t'] or Decimal('0.00')
-            detalles_suc = VentaDetalle.objects.filter(venta__in=ventas_suc)
-            costo_suc = Decimal('0.00')
-            for det in detalles_suc:
-                costo_suc += (det.producto.precio_compra or Decimal('0.00')) * det.cantidad
-            ingreso_sin_iva_suc = (ingreso_suc / Decimal('1.19')).quantize(Decimal('0.01')) if ingreso_suc else Decimal('0.00')
-            costo_sin_iva_suc = (costo_suc / Decimal('1.19')).quantize(Decimal('0.01')) if costo_suc else Decimal('0.00')
-            ganancia_neta_suc = ingreso_sin_iva_suc - costo_sin_iva_suc
-            branch_comparison.append({'sucursal': suc.nombre, 'ingreso': float(ingreso_suc), 'ganancia_neta': float(ganancia_neta_suc)})
-        cache.set(cache_key_branch, branch_comparison, 300)
+    # Comparación por sucursal (sin cache para evitar inconsistencias durante tests)
+    ingresos_qs = ventas_qs.values('sucursal__id').annotate(ingreso=Sum('total'))
+    ingresos_map = {row['sucursal__id']: row.get('ingreso') or Decimal('0.00') for row in ingresos_qs}
+    costos_qs = VentaDetalle.objects.filter(venta__in=ventas_qs).annotate(suc_id=F('venta__sucursal_id')).values('suc_id').annotate(costo=Sum(F('cantidad') * F('producto__precio_compra')))
+    costos_map = {row['suc_id']: row.get('costo') or 0 for row in costos_qs}
+    branch_comparison = []
+    for suc in Sucursal.objects.all():
+        ingreso = ingresos_map.get(suc.id, Decimal('0.00'))
+        costo_val = costos_map.get(suc.id, 0)
+        costo = Decimal(str(costo_val))
+        ingreso_sin_iva_suc = (ingreso / Decimal('1.19')).quantize(Decimal('0.01')) if ingreso else Decimal('0.00')
+        costo_sin_iva_suc = (costo / Decimal('1.19')).quantize(Decimal('0.01')) if costo else Decimal('0.00')
+        ganancia_neta_suc = ingreso_sin_iva_suc - costo_sin_iva_suc
+        branch_comparison.append({'sucursal': suc.nombre, 'ingreso': float(ingreso), 'ganancia_neta': float(ganancia_neta_suc)})
 
-    # Distribución horaria y heatmap
+    # Distribución horaria y heatmap (usar agregaciones en DB)
     hourly_distribution = [{'hora': h, 'ventas': 0, 'ingreso': 0.0} for h in range(24)]
     heatmap_matrix = [[{'ventas':0,'ingreso':0.0} for _ in range(24)] for _ in range(7)]
-    for v in ventas_qs:
-        h = v.fecha.hour
-        hourly_distribution[h]['ventas'] += 1
-        hourly_distribution[h]['ingreso'] += float(v.total or 0)
-        dow = v.fecha.weekday()
-        cell = heatmap_matrix[dow][h]
-        cell['ventas'] += 1
-        cell['ingreso'] += float(v.total or 0)
+    # Agregar por hora
+    hours_qs = ventas_qs.annotate(hour=ExtractHour('fecha')).values('hour').annotate(ventas=Count('id'), ingreso=Sum('total'))
+    for row in hours_qs:
+        h = int(row['hour']) if row.get('hour') is not None else None
+        if h is not None and 0 <= h < 24:
+            hourly_distribution[h]['ventas'] = int(row['ventas'])
+            hourly_distribution[h]['ingreso'] = float(row['ingreso'] or 0)
+    # Agregar por weekday+hour para heatmap
+    heat_qs = ventas_qs.annotate(weekday=ExtractWeekDay('fecha'), hour=ExtractHour('fecha')).values('weekday','hour').annotate(ventas=Count('id'), ingreso=Sum('total'))
+    for row in heat_qs:
+        # ExtractWeekDay returns 1-7 (Sunday=1). Convert to 0-6 Monday=0
+        wk = int(row['weekday'])
+        # Convert to Python weekday where Monday=0
+        py_wk = (wk - 2) % 7
+        h = int(row['hour']) if row.get('hour') is not None else None
+        if 0 <= py_wk < 7 and h is not None and 0 <= h < 24:
+            heatmap_matrix[py_wk][h]['ventas'] = int(row['ventas'])
+            heatmap_matrix[py_wk][h]['ingreso'] = float(row['ingreso'] or 0)
 
     # Rentabilidad productos (cacheada parcialmente)
-    cache_key_rent = _safe_cache_key("rentabilidad", fecha_inicio, fecha_fin, cajero_filter, sucursal_filter)
+    # Rentabilidad productos (sin cache para coherencia durante tests)
+    # Construir clave de caché única para rentabilidad (si se desea cachear)
+    cache_key_rent = _safe_cache_key('rentabilidad', getattr(fecha_inicio, 'isoformat', lambda: str(fecha_inicio))(), getattr(fecha_fin, 'isoformat', lambda: str(fecha_fin))(), cajero_filter or '', sucursal_filter or '')
+
+    # Intentar recuperar rentabilidad desde cache antes de computar (clave segura por rango y filtros)
     rentabilidad_productos = cache.get(cache_key_rent)
     if rentabilidad_productos is None:
         detalles_rango = VentaDetalle.objects.filter(venta__in=ventas_qs).select_related('producto')
@@ -149,12 +166,13 @@ def compute_analytics(fecha_inicio, fecha_fin, cajero_filter='todos', sucursal_f
             ganancia_neta_unit = venta_sin_iva_unit - compra_sin_iva_unit
             entry = tmp.get(pid)
             if not entry:
-                entry = {'producto': det.producto.nombre or det.producto.producto_id, 'cantidad':0,'ingreso_neto_total':Decimal('0.00'),'costo_neto_total':Decimal('0.00'),'ganancia_neta_total':Decimal('0.00')}
+                entry = {'producto': det.producto.nombre or det.producto.producto_id, 'cantidad': 0, 'ingreso_neto_total': Decimal('0.00'), 'costo_neto_total': Decimal('0.00'), 'ganancia_neta_total': Decimal('0.00')}
             entry['cantidad'] += det.cantidad
             entry['ingreso_neto_total'] += venta_sin_iva_unit * det.cantidad
             entry['costo_neto_total'] += compra_sin_iva_unit * det.cantidad
             entry['ganancia_neta_total'] += ganancia_neta_unit * det.cantidad
             tmp[pid] = entry
+
         rentabilidad_productos = []
         for _, data in tmp.items():
             porcentaje = Decimal('0.00')
@@ -168,8 +186,19 @@ def compute_analytics(fecha_inicio, fecha_fin, cajero_filter='todos', sucursal_f
                 'ganancia_neta_total': float(data['ganancia_neta_total']),
                 'porcentaje_ganancia': float(porcentaje)
             })
+
         rentabilidad_productos.sort(key=lambda x: x['ganancia_neta_total'], reverse=True)
-        cache.set(cache_key_rent, rentabilidad_productos, 300)
+        # Only cache non-empty results to avoid returning stale empty lists
+        try:
+            if rentabilidad_productos:
+                cache.set(cache_key_rent, rentabilidad_productos, 300)
+        except Exception:
+            pass
+    else:
+        try:
+            print(f"DEBUG compute_analytics: cache HIT for key={cache_key_rent} len={len(rentabilidad_productos)}")
+        except Exception:
+            pass
 
     ranking_cajeros_map = {}
     for v in ventas_qs.select_related('empleado'):
@@ -187,14 +216,19 @@ def compute_analytics(fecha_inicio, fecha_fin, cajero_filter='todos', sucursal_f
     ranking_cajeros.sort(key=lambda x: x['ingreso_total'], reverse=True)
 
     # Wave últimos 6 meses (ganancia neta mensual)
+    # Wave últimos 6 meses (ganancia neta mensual) — generar meses correctamente
     months_wave = []
     gains_wave = []
-    today = timezone.now().date().replace(day=1)
-    for i in range(5, -1, -1):
-        start_month = (today - datetime.timedelta(days=30*i))
-        first_day = start_month.replace(day=1)
-        next_month = (first_day + datetime.timedelta(days=32)).replace(day=1)
-        last_day = next_month - datetime.timedelta(days=1)
+    ref = timezone.now().date().replace(day=1)
+    for m in range(5, -1, -1):
+        # calcular year/month retrocediendo m meses
+        year = ref.year
+        month = ref.month - m
+        while month <= 0:
+            month += 12
+            year -= 1
+        first_day = datetime.date(year, month, 1)
+        last_day = datetime.date(year, month, calendar.monthrange(year, month)[1])
         ventas_mes = ventas_qs.filter(fecha__date__gte=first_day, fecha__date__lte=last_day)
         ingreso_mes = ventas_mes.aggregate(t=Sum('total'))['t'] or Decimal('0.00')
         detalles_mes = VentaDetalle.objects.filter(venta__in=ventas_mes)

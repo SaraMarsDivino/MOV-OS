@@ -45,14 +45,14 @@ def _is_admin(user):
     return user.is_authenticated and (user.is_staff or user.is_superuser)
 
 @ensure_csrf_cookie
-@login_required
 @user_passes_test(_is_admin, login_url='cashier_dashboard')
+@login_required(login_url='login')
 def report_dashboard(request):
     """Pantalla principal para la generación de reportes"""
     return render(request, 'reports/report_dashboard.html')
 
-@login_required
 @user_passes_test(_is_admin, login_url='cashier_dashboard')
+@login_required(login_url='login')
 def sales_dashboard(request):
     """Pantalla principal de Gestión de Ventas con opciones"""
     return render(request, 'reports/sales_dashboard.html')
@@ -103,8 +103,8 @@ def sales_history(request):
     })
 
 @ensure_csrf_cookie
-@login_required
 @user_passes_test(_is_admin, login_url='cashier_dashboard')
+@login_required(login_url='login')
 def cash_history(request):
     """Historial de Caja con filtros por ID, cajero y rango de fechas."""
     id_caja_filtro = request.GET.get('id_caja')
@@ -168,8 +168,8 @@ def cash_history(request):
     }
     return render(request, 'reports/cash_history.html', context)
 
-@login_required
 @user_passes_test(_is_admin, login_url='cashier_dashboard')
+@login_required(login_url='login')
 def sales_report(request, sale_id):
     """
     Reporte detallado de una venta. Verifica que la venta exista y que tenga detalles.
@@ -212,8 +212,8 @@ def sales_report(request, sale_id):
             'detalles': None
         })
 
-@login_required
 @user_passes_test(_is_admin, login_url='cashier_dashboard')
+@login_required(login_url='login')
 def advanced_reports(request):
     """JSON endpoint para recargar secciones vía AJAX sin renderizar HTML completo."""
     # Perfilado ligero para medir tiempos y cantidad de queries (solo primera sección JSON rápida)
@@ -467,6 +467,8 @@ def advanced_reports(request):
         'filtro_top_actual': filtro_top,
         'promedio_ganancia_neta': fmt_money(promedio_ganancia_neta),
     'promedio_ganancia_neta_raw': float(promedio_ganancia_neta),
+    # String with dot as decimal separator for embedding in data- attributes (JS expects dot)
+    'promedio_ganancia_neta_raw_dot': format(promedio_ganancia_neta, '.2f'),
         'promedio_porcentaje_ganancia': format_clp(promedio_porcentaje_ganancia) + '%',
         'cajero_actual': cajero_filter,
         'sucursal_actual': sucursal_filter,

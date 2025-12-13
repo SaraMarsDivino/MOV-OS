@@ -14,6 +14,7 @@ from decimal import Decimal
 from .models import Venta, VentaDetalle, AperturaCierreCaja
 from products.models import Product
 from sucursales.models import Sucursal
+from decimal import Decimal as _Decimal
 
 def format_currency(value):
     try:
@@ -34,6 +35,20 @@ def format_clp(value):
         return formatted
     except Exception:
         return value
+
+
+def _build_detalles_data(venta):
+    detalles = venta.detalles.all()
+    detalles_data = []
+    for d in detalles:
+        subtotal = d.cantidad * d.precio_unitario
+        detalles_data.append({
+            'producto': d.producto,
+            'cantidad': d.cantidad,
+            'precio_unitario': d.precio_unitario,
+            'formatted_subtotal': "$" + format_currency(subtotal)
+        })
+    return detalles_data
 
 # ==== Helper para resolver la caja abierta actual de forma consistente ====
 def _parse_body_json(request):
@@ -132,25 +147,44 @@ def cashier_dashboard(request):
                 }, status=400)
             if not carrito:
                 return JsonResponse({"error": "El carrito está vacío."}, status=400)
-            total = Decimal('0.00')
+
+            # Consolidar product ids y bloquear filas para evitar condiciones de carrera (Postgres). Esto evita N+1.
+            product_ids = []
             for item in carrito:
-                producto = get_object_or_404(Product, id=item.get('producto_id'))
-                cantidad = int(item.get('cantidad', 1))
-                # Validar que el producto pertenezca a la sucursal o sea vendible sin sucursal (permitido)
-                pertenece_o_permitido = (
-                    producto.sucursal_id == caja_abierta.sucursal_id or
-                    (producto.sucursal_id is None and producto.permitir_venta_sin_stock)
-                )
-                if not pertenece_o_permitido:
-                    return JsonResponse({
-                        "error": f"El producto '{producto.nombre}' no pertenece a la sucursal de la caja abierta."
-                    }, status=400)
-                total += Decimal(str(cantidad)) * producto.precio_venta
-            if forma_pago == 'efectivo' and cliente_paga < total:
-                return JsonResponse({
-                    "error": f"Pago insuficiente. El total es ${format_currency(total)}, pero el cliente pagó ${format_currency(cliente_paga)}."
-                }, status=400)
+                try:
+                    product_ids.append(int(item.get('producto_id')))
+                except Exception:
+                    return JsonResponse({"error": "ID de producto inválido en carrito."}, status=400)
+
             with transaction.atomic():
+                products_qs = Product.objects.select_for_update().filter(id__in=product_ids)
+                products_map = {p.id: p for p in products_qs}
+                missing = [str(pid) for pid in set(product_ids) if pid not in products_map]
+                if missing:
+                    return JsonResponse({"error": f"Productos no encontrados: {', '.join(missing)}"}, status=400)
+
+                total = Decimal('0.00')
+                # Validaciones y cálculo de total usando objetos en memoria
+                for item in carrito:
+                    pid = int(item.get('producto_id'))
+                    producto = products_map[pid]
+                    cantidad = int(item.get('cantidad', 1))
+                    pertenece_o_permitido = (
+                        producto.sucursal_id == caja_abierta.sucursal_id or
+                        (producto.sucursal_id is None and producto.permitir_venta_sin_stock)
+                    )
+                    if not pertenece_o_permitido:
+                        return JsonResponse({"error": f"El producto '{producto.nombre}' no pertenece a la sucursal de la caja abierta."}, status=400)
+                    disponible = producto.stock_en(caja_abierta.sucursal) if producto.sucursal_id else (producto.stock or 0)
+                    if not producto.permitir_venta_sin_stock and disponible < cantidad:
+                        return JsonResponse({"error": f"El producto '{producto.nombre}' no tiene suficiente stock. Disponible: {disponible}."}, status=400)
+                    total += Decimal(str(cantidad)) * producto.precio_venta
+
+                if forma_pago == 'efectivo' and cliente_paga < total:
+                    return JsonResponse({
+                        "error": f"Pago insuficiente. El total es ${format_currency(total)}, pero el cliente pagó ${format_currency(cliente_paga)}."
+                    }, status=400)
+
                 venta = Venta.objects.create(
                     empleado=request.user,
                     tipo_venta=tipo_venta,
@@ -160,38 +194,24 @@ def cashier_dashboard(request):
                     vuelto_entregado=Decimal('0.00'),
                     numero_transaccion=numero_transaccion if forma_pago in ["debito", "credito", "transferencia"] else "",
                     banco=banco,
-                    sucursal=caja_abierta.sucursal,   # Se asigna la sucursal de la caja abierta
+                    sucursal=caja_abierta.sucursal,
                     caja=caja_abierta
                 )
+
                 for item in carrito:
-                    producto = get_object_or_404(Product, id=item.get('producto_id'))
+                    pid = int(item.get('producto_id'))
+                    producto = products_map[pid]
                     cantidad = int(item.get('cantidad', 1))
-                    # Verificar stock por sucursal y pertenencia, permitiendo productos sin sucursal si lo permiten
-                    pertenece_o_permitido = (
-                        producto.sucursal_id == caja_abierta.sucursal_id or
-                        (producto.sucursal_id is None and producto.permitir_venta_sin_stock)
-                    )
-                    if not pertenece_o_permitido:
-                        return JsonResponse({"error": f"El producto '{producto.nombre}' no pertenece a esta sucursal."}, status=400)
-                    # Stock disponible: si tiene sucursal, usar stock_en; si no tiene sucursal, usar stock global
-                    disponible = producto.stock_en(caja_abierta.sucursal) if producto.sucursal_id else (producto.stock or 0)
-                    if not producto.permitir_venta_sin_stock and disponible < cantidad:
-                        return JsonResponse({"error": f"El producto '{producto.nombre}' no tiene suficiente stock. Disponible: {disponible}."}, status=400)
-                for item in carrito:
-                    producto = get_object_or_404(Product, id=item.get('producto_id'))
-                    cantidad = int(item.get('cantidad', 1))
-                    # Descontar respetando inventario por sucursal; si el producto no tiene sucursal, descontar stock global
                     if producto.sucursal_id:
                         producto.decrementar_stock_en(caja_abierta.sucursal, cantidad)
                     else:
-                        # Producto sin sucursal: ajustar stock global (si queda negativo, se fuerza a 0)
+                        # Legacy stock field: hemos bloqueado la fila con select_for_update, así que el decremento es seguro
                         try:
                             nuevo_stock = max(0, (producto.stock or 0) - cantidad)
                             if nuevo_stock != (producto.stock or 0):
                                 producto.stock = nuevo_stock
                                 producto.save(update_fields=['stock'])
                         except Exception:
-                            # Si por algún motivo no se puede ajustar, continuar (venta sin stock lo permite)
                             pass
                     VentaDetalle.objects.create(
                         venta=venta,
@@ -313,19 +333,10 @@ def detalle_caja(request, caja_id):
 @login_required
 def print_venta(request, venta_id):
     venta = get_object_or_404(Venta, id=venta_id)
-    detalles = venta.detalles.all()
+    detalles_data = _build_detalles_data(venta)
     total_formatted = "$" + format_currency(venta.total or 0)
     cliente_paga_formatted = "$" + format_currency(venta.cliente_paga or 0)
     vuelto_formatted = "$" + format_currency(venta.vuelto_entregado or 0)
-    detalles_data = []
-    for d in detalles:
-        subtotal = d.cantidad * d.precio_unitario
-        detalles_data.append({
-            'producto': d.producto,
-            'cantidad': d.cantidad,
-            'precio_unitario': d.precio_unitario,
-            'formatted_subtotal': "$" + format_currency(subtotal)
-        })
     ctx = {
         'venta': venta,
         'detalles': detalles_data,
@@ -413,19 +424,10 @@ def buscar_producto(request):
 def reporte_venta(request, venta_id):
     venta = get_object_or_404(Venta, id=venta_id)
     embed_mode = request.GET.get('embed') == '1'
-    detalles = venta.detalles.all()
+    detalles_data = _build_detalles_data(venta)
     total_formatted = "$" + format_currency(venta.total or 0)
     cliente_paga_formatted = "$" + format_currency(venta.cliente_paga or 0)
     vuelto_formatted = "$" + format_currency(venta.vuelto_entregado or 0)
-    detalles_data = []
-    for detalle in detalles:
-        subtotal = detalle.cantidad * detalle.precio_unitario
-        detalles_data.append({
-            'producto': detalle.producto,
-            'cantidad': detalle.cantidad,
-            'precio_unitario': detalle.precio_unitario,
-            'formatted_subtotal': "$" + format_currency(subtotal)
-        })
     context = {
          'venta': venta,
          'detalles': detalles_data,
@@ -442,19 +444,10 @@ def reporte_venta(request, venta_id):
 def reporte_venta_embed(request, venta_id):
     """Versión embebible del detalle de venta para usar dentro del modal del cajero."""
     venta = get_object_or_404(Venta, id=venta_id)
-    detalles = venta.detalles.all()
+    detalles_data = _build_detalles_data(venta)
     total_formatted = "$" + format_currency(venta.total or 0)
     cliente_paga_formatted = "$" + format_currency(venta.cliente_paga or 0)
     vuelto_formatted = "$" + format_currency(venta.vuelto_entregado or 0)
-    detalles_data = []
-    for detalle in detalles:
-        subtotal = detalle.cantidad * detalle.precio_unitario
-        detalles_data.append({
-            'producto': detalle.producto,
-            'cantidad': detalle.cantidad,
-            'precio_unitario': detalle.precio_unitario,
-            'formatted_subtotal': "$" + format_currency(subtotal)
-        })
     context = {
          'venta': venta,
          'detalles': detalles_data,
@@ -585,7 +578,14 @@ def abrir_caja(request):
 
     if request.method == "POST":
         sucursal_id = request.POST.get('sucursal')
-        efectivo_inicial = request.POST.get('efectivo_inicial', '0')
+        efectivo_inicial_raw = request.POST.get('efectivo_inicial', '0')
+        try:
+            efectivo_inicial = Decimal(str(efectivo_inicial_raw))
+            if efectivo_inicial < 0:
+                raise ValueError('efectivo_inicial negativo')
+        except Exception:
+            messages.error(request, "El monto de efectivo inicial no es válido.")
+            return redirect('abrir_caja')
 
         if not sucursal_id:
             messages.error(request, "Seleccione una sucursal.")

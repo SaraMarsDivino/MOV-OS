@@ -192,9 +192,8 @@ def upload_products(request):
             # Acumuladores
             warnings = []
             errors = []
-            to_create = []
-            to_update = []
-            processed_codes = set()
+            # parsed_map mantiene la última fila leída por producto_id (el último valor gana)
+            parsed_map = {}
 
             def safe_decimal(val):
                 if val is None or (isinstance(val, str) and str(val).strip() == ''):
@@ -222,10 +221,19 @@ def upload_products(request):
                         continue
                     producto_id_excel = str(producto_id_excel).strip()
 
-                    if producto_id_excel in processed_codes:
-                        warnings.append(f'Fila {row_idx}: Código duplicado en archivo ({producto_id_excel}). Se usa primera aparición.')
-                        continue
-                    processed_codes.add(producto_id_excel)
+                    if producto_id_excel in parsed_map:
+                        # Ya hubo una fila anterior con este código; reemplazamos con la nueva fila
+                        warnings.append(f'Fila {row_idx}: Código duplicado en archivo ({producto_id_excel}). Se usa la última aparición para actualizar/crear.')
+                    # Guardar/actualizar la última representación encontrada en el archivo
+                    parsed_map[producto_id_excel] = {
+                        'nombre': nombre,
+                        'descripcion': descripcion or None,
+                        'codigo_barras': (codigo_barras_excel or None),
+                        'fecha_ingreso_producto': fecha_ingreso_producto,
+                        'precio_compra': precio_compra,
+                        'precio_venta': precio_venta,
+                        'permitir_venta_sin_stock': True,
+                    }
 
                     nombre = str(get_val('NOMBRE')).strip() if get_val('NOMBRE') is not None else ''
                     descripcion = str(get_val('DESCRIPCION')).strip() if get_val('DESCRIPCION') is not None else ''
@@ -253,27 +261,23 @@ def upload_products(request):
                     precio_compra = safe_decimal(get_val('PRECIO DE COMPRA'))
                     precio_venta = safe_decimal(get_val('PRECIO DE VENTA'))
 
-                    defaults = {
-                        'nombre': nombre,
-                        'descripcion': descripcion or None,
-                        'codigo_alternativo': None,
-                        'codigo_barras': (codigo_barras_excel or None),
-                        'fecha_ingreso_producto': fecha_ingreso_producto,
-                        'precio_compra': precio_compra,
-                        'precio_venta': precio_venta,
-                        'permitir_venta_sin_stock': True,
-                    }
-
-                    if producto_id_excel in existing_map:
-                        # Solo registrar si hay cambios significativos para reducir writes
-                        prod = existing_map[producto_id_excel]
-                        has_change = any(getattr(prod, k) != v for k, v in defaults.items())
-                        if has_change:
-                            to_update.append((prod, defaults))
-                    else:
-                        to_create.append(Product(producto_id=producto_id_excel, **defaults))
+                    # Nota: el almacenamiento real (crear/actualizar) se hará después de procesar todo el archivo,
+                    # usando `parsed_map` para que la última fila con el mismo código sobrescriba las anteriores.
+                    # Aquí solo acumulamos en parsed_map (hecho más arriba).
                 except Exception as e:
                     errors.append(f'Fila {row_idx}: Error inesperado -> {e}')
+
+            # Construir listas finales de creación/actualización a partir de parsed_map
+            to_create = []
+            to_update = []
+            for codigo, defaults in parsed_map.items():
+                if codigo in existing_map:
+                    prod = existing_map[codigo]
+                    has_change = any(getattr(prod, k) != v for k, v in defaults.items())
+                    if has_change:
+                        to_update.append((prod, defaults))
+                else:
+                    to_create.append(Product(producto_id=codigo, **defaults))
 
             created_count = 0
             updated_count = 0

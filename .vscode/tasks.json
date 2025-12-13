@@ -45,6 +45,139 @@
 			"command": "python -m pip install -r requirements.txt ; python manage.py makemigrations ; python manage.py migrate ; python manage.py check ; python manage.py test",
 			"isBackground": false,
 			"group": "build"
+		},
+		{
+			"label": "Run reports tests only",
+			"type": "shell",
+			"command": "python manage.py test reports -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run specific reports test",
+			"type": "shell",
+			"command": "python manage.py test reports.AnalyticsComputationTests.test_rentabilidad_structure -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run reports tests (debug)",
+			"type": "shell",
+			"command": "python manage.py test reports -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run single reports test",
+			"type": "shell",
+			"command": "python manage.py test reports.tests.AnalyticsComputationTests.test_rentabilidad_structure -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run full tests (no pip)",
+			"type": "shell",
+			"command": "python manage.py test -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run full tests verbose3",
+			"type": "shell",
+			"command": "python manage.py test -v 3",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run failing test",
+			"type": "shell",
+			"command": "python manage.py test cashier.tests.CashierFlowTests.test_concurrent_sales_decrement_stock -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run concurrency test debug",
+			"type": "shell",
+			"command": "python manage.py test cashier.tests.CashierFlowTests.test_concurrent_sales_decrement_stock -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run reports tests only",
+			"type": "shell",
+			"command": "python manage.py test reports -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run single reports test debug",
+			"type": "shell",
+			"command": "python manage.py test reports.AnalyticsComputationTests.test_basic_kpis -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run reports test by name",
+			"type": "shell",
+			"command": "python manage.py test reports.tests.AnalyticsComputationTests.test_basic_kpis -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run failing reports basic_kpis test with debug",
+			"type": "shell",
+			"command": "python manage.py test reports.tests.AnalyticsComputationTests.test_basic_kpis -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run tests: tests app",
+			"type": "shell",
+			"command": "python manage.py test tests -v2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run tests: cashier app",
+			"type": "shell",
+			"command": "python manage.py test cashier -v2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run tests: reports app",
+			"type": "shell",
+			"command": "python manage.py test reports -v2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run failing reports promedio test",
+			"type": "shell",
+			"command": "python manage.py test reports.tests.AnalyticsComputationTests.test_promedio_ganancia_neta_view -v 2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run reports tests (debug full)",
+			"type": "shell",
+			"command": "python manage.py test reports -v2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run AnalyticsComputationTests class",
+			"type": "shell",
+			"command": "python manage.py test reports.tests.AnalyticsComputationTests -v2",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Run reports.tests file",
+			"type": "shell",
+			"command": "python manage.py test reports.tests -v2",
+			"isBackground": false,
+			"problemMatcher": []
 		}
 	]
 }

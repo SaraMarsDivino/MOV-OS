@@ -21,7 +21,7 @@
 body {background: var(--bg); color: var(--text-primary); font-family: 'Roboto', system-ui, sans-serif; line-height:1.4;}
 h1,h2,h3,h4,h5,h6 {font-family: 'Cinzel', serif; letter-spacing:.5px;}
 .container-fluid {padding-top:1.2rem; padding-bottom:2rem;}
-.card, .sidebar-card {background: var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); box-shadow: var(--shadow);}
+.card, .sidebar-card {background: var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); box-shadow: var(--shadow); margin-bottom:1rem;}
 .card-header {background: var(--surface-alt); border-bottom:1px solid var(--border); border-top-left-radius:var(--radius-md); border-top-right-radius:var(--radius-md);}
 .card-header h4 {color: var(--accent); font-weight:600;}
 .card-header p.small {color: var(--text-secondary);}
@@ -33,11 +33,29 @@ input.form-control:focus, select.form-select:focus {border-color: var(--accent);
 .btn-primary:hover {filter: brightness(1.1);} 
 .btn-back {background: var(--surface-alt); border:1px solid var(--accent); color: var(--accent); transition:.25s; font-weight:600;} 
 .btn-back:hover {background: var(--accent); color:#14181c;} 
-.display-6 {font-size:1.9rem; font-weight:600; color: var(--accent);}
+.display-6 {font-size:1.9rem; font-weight:600; color: var(--accent);} 
+.small-kpis .col-md-2 {padding:0.6rem;}
+.small-kpis .h5 {color: var(--text-primary);}
+.small-kpis h6 {color: var(--text-secondary); font-weight:600;}
+.small-kpis p {color: var(--text-primary); margin-bottom:0;}
+
+/* KPI chip style for right column */
+.kpi-chip {background: linear-gradient(90deg, rgba(255,179,71,0.06), rgba(255,123,84,0.04)); border:1px solid rgba(255,179,71,0.08); border-radius:8px; padding:0.6rem;}
 .table-dark {--bs-table-bg: var(--surface-alt); --bs-table-striped-bg: #30363d; --bs-table-striped-color: var(--text-primary);}
 .heatmap td {text-align:center; font-size:.75rem; padding:2px;}
 .toggle-indicator label {color: var(--text-secondary); font-size:.85rem; cursor:pointer;}
 .toggle-indicator input:checked + label {color: var(--accent); font-weight:600;}
+
+/* Chart container improvements */
+.card canvas {background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0)); border-radius:6px; min-height:180px;}
+.chart-legend {color: var(--text-secondary);}
+
+/* Top productos form spacing */
+#topFilterForm {display:flex; gap:0.5rem; align-items:center; justify-content:center;}
+#topFilterForm .form-select {min-width:80px;}
+
+/* Table hover for readability */
+table.table tbody tr:hover {background: rgba(255,179,71,0.03);} 
 /* Pagination */
 .pagination .page-link {background: var(--surface-alt); color: var(--text-primary); border:1px solid var(--border);} 
 .pagination .page-item.active .page-link {background: var(--accent); color:#14181c; border-color: var(--accent);} 

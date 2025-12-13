@@ -17,35 +17,49 @@
         <div class="sidebar-card p-3 mb-3">
           <h5>Indicadores</h5>
           <div class="form-check toggle-indicator">
-            <input class="form-check-input" type="checkbox" id="toggleKPI" checked>
+            <input class="form-check-input" type="checkbox" id="toggleKPI">
             <label class="form-check-label" for="toggleKPI">KPIs Generales</label>
           </div>
           <div class="form-check toggle-indicator">
-            <input class="form-check-input" type="checkbox" id="toggleVentas" checked>
+            <input class="form-check-input" type="checkbox" id="toggleVentas">
             <label class="form-check-label" for="toggleVentas">Detalle de Ventas</label>
           </div>
           <div class="form-check toggle-indicator">
-            <input class="form-check-input" type="checkbox" id="toggleTopProd" checked>
+            <input class="form-check-input" type="checkbox" id="toggleTopProd">
             <label class="form-check-label" for="toggleTopProd">Top Productos</label>
           </div>
           <div class="form-check toggle-indicator">
-            <input class="form-check-input" type="checkbox" id="toggleOnda" checked>
+            <input class="form-check-input" type="checkbox" id="toggleOnda">
             <label class="form-check-label" for="toggleOnda">Gráfico de Onda</label>
           </div>
           <div class="form-check toggle-indicator">
-            <input class="form-check-input" type="checkbox" id="toggleRentabilidad" checked>
+            <input class="form-check-input" type="checkbox" id="toggleRentabilidad">
             <label class="form-check-label" for="toggleRentabilidad">Rentabilidad de Productos</label>
           </div>
         </div>
       </aside>
       <!-- Contenido Principal -->
       <main class="col-md-9">
-        <!-- Cabecera: acciones (Exportar / Volver) -->
+        <!-- Cabecera: acciones (Exportar / Volver) en menú desplegable -->
         <div class="d-flex justify-content-end mb-3">
           <div class="d-flex gap-2 flex-wrap">
-            <div class="btn-group" role="group" aria-label="Exportaciones">
-              <a class="btn btn-outline-secondary btn-sm" href="{% url 'reports:export_advanced_pdf' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&cajero={{ cajero_actual }}&sucursal={{ sucursal_actual }}&top={{ filtro_top_actual }}" target="_blank">Exportar PDF</a>
-              <a class="btn btn-outline-secondary btn-sm" href="{% url 'reports:export_advanced_docx' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&cajero={{ cajero_actual }}&sucursal={{ sucursal_actual }}&top={{ filtro_top_actual }}" target="_blank">Exportar Word</a>
+            <div class="dropdown">
+              <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="exportMenu" data-bs-toggle="dropdown" aria-expanded="false">Exportar</button>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="exportMenu">
+                <li>
+                  <a class="dropdown-item" target="_blank" href="{% url 'reports:export_advanced_pdf' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&cajero={{ cajero_actual }}&sucursal={{ sucursal_actual }}&top={{ filtro_top_actual }}">PDF (Avanzado)</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" target="_blank" href="{% url 'reports:export_advanced_docx' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}&cajero={{ cajero_actual }}&sucursal={{ sucursal_actual }}&top={{ filtro_top_actual }}">Word (Docx)</a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <a class="dropdown-item" target="_blank" href="{% url 'reports:export_rentabilidad_csv' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}">CSV Rentabilidad</a>
+                </li>
+                <li>
+                  <a class="dropdown-item" target="_blank" href="{% url 'reports:export_ranking_cajeros_csv' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}">CSV Ranking Cajeros</a>
+                </li>
+              </ul>
             </div>
             <a href="{% url 'reports:report_dashboard' %}" class="btn btn-light btn-sm">Volver a Reportes</a>
           </div>
@@ -101,69 +115,42 @@
             </form>
           </div>
         </div>
-        <!-- Indicadores Avanzados: perspectiva financiera -->
-        <div class="card mb-3" id="indicadores-avanzados">
+        <!-- Indicadores Avanzados: perspectiva financiera (colapsable) -->
+        <div class="card mb-3 collapse" id="indicadores-avanzados">
           <div class="card-header">
             <h4>Indicadores Avanzados</h4>
             <p class="small">Dominando el Flujo de Caja y la Conciliación</p>
           </div>
           <div class="card-body">
-            <div class="row text-center">
-              <!-- Venta con IVA -->
-              <div class="col-6 col-md-3 mb-3">
-                <h5>Venta con IVA</h5>
-                <p class="display-6">{{ ingreso_total|default:"0" }}</p>
-                <p class="small">
-                  Total recaudado (con IVA). Representa la suma de todas las ventas realizadas, incluyendo el impuesto.
-                </p>
+            <div class="row text-center align-items-center small-kpis">
+              <!-- Compact KPIs: reduced size for quick scan -->
+              <div class="col-6 col-md-2 mb-2 text-center">
+                <h6 class="mb-1">Venta (con IVA)</h6>
+                <p class="h5 mb-0">{{ ingreso_total|default:"0" }}</p>
               </div>
-              <!-- Venta sin IVA -->
-              <div class="col-6 col-md-3 mb-3">
-                <h5>Venta sin IVA</h5>
-                <p class="display-6">{{ ingreso_total_sin_iva|default:"0" }}</p>
-                <p class="small">
-                  Total de ventas sin el impuesto. Indica el monto neto de las ventas.
-                </p>
+              <div class="col-6 col-md-2 mb-2 text-center">
+                <h6 class="mb-1">Venta (sin IVA)</h6>
+                <p class="h5 mb-0">{{ ingreso_total_sin_iva|default:"0" }}</p>
               </div>
-              <!-- IVA Recaudado -->
-              <div class="col-6 col-md-3 mb-3">
-                <h5>IVA Recaudado</h5>
-                <p class="display-6">{{ iva_total|default:"0" }}</p>
-                <p class="small">
-                  Importe total del IVA cobrado en las ventas.
-                </p>
+              <div class="col-6 col-md-2 mb-2 text-center">
+                <h6 class="mb-1">IVA Recaudado</h6>
+                <p class="h5 mb-0">{{ iva_total|default:"0" }}</p>
               </div>
-              <!-- Ganancia Bruta -->
-              <div class="col-6 col-md-3 mb-3">
-                <h5>Ganancia Bruta</h5>
-                <p class="display-6">{{ ganancia_bruta|default:"0" }}</p>
-                <p class="small">
-                  Diferencia entre la venta sin IVA y el costo total de productos vendidos.
-                </p>
+              <div class="col-6 col-md-2 mb-2 text-center">
+                <h6 class="mb-1">Ganancia Bruta</h6>
+                <p class="h5 mb-0">{{ ganancia_bruta|default:"0" }}</p>
               </div>
-              <!-- Ganancia Neta -->
-              <div class="col-6 col-md-3 mb-3">
-                <h5>Ganancia Neta</h5>
-                <p class="display-6">{{ ganancia_neta|default:"0" }}</p>
-                <p class="small">
-                  Venta sin IVA menos costo sin IVA (CMV neto).
-                </p>
+              <div class="col-6 col-md-2 mb-2 text-center">
+                <h6 class="mb-1">Ganancia Neta</h6>
+                <p class="h5 mb-0">{{ ganancia_neta|default:"0" }}</p>
               </div>
-              <!-- Costo Total -->
-              <div class="col-6 col-md-3 mb-3">
-                <h5>Costo Total</h5>
-                <p class="display-6">{{ costo_total|default:"0" }}</p>
-                <p class="small">
-                  Total invertido en productos, valor del Costo de Mercancía Vendida (CMV).
-                </p>
+              <div class="col-6 col-md-2 mb-2 text-center">
+                <h6 class="mb-1">Costo Total</h6>
+                <p class="h5 mb-0">{{ costo_total|default:"0" }}</p>
               </div>
-              <!-- Transacciones -->
-              <div class="col-6 col-md-3 mb-3">
-                <h5>Transacciones</h5>
-                <p class="display-6">{{ num_transacciones|default:"0" }}</p>
-                <p class="small">
-                  Número total de ventas realizadas en el período.
-                </p>
+              <div class="col-6 col-md-2 mb-2 text-center">
+                <h6 class="mb-1">Transacciones</h6>
+                <p class="h5 mb-0">{{ num_transacciones|default:"0" }}</p>
               </div>
             </div>
             {# Acciones movidas a la cabecera #}
@@ -256,7 +243,7 @@
             <div class="row text-center">
               <div class="col-md-6 mb-3">
                 <h5>Promedio Ganancia Neta</h5>
-                <p class="display-6" data-promedio-ganancia-neta="{{ promedio_ganancia_neta_raw }}">{{ promedio_ganancia_neta|default:"0" }}</p>
+                <p class="display-6" data-promedio-ganancia-neta="{{ promedio_ganancia_neta_raw_dot }}">{{ promedio_ganancia_neta|default:"0" }}</p>
                 <p class="small">(en CLP)</p>
               </div>
               <div class="col-md-6 mb-3">
@@ -268,7 +255,7 @@
           </div>
         </div>
         <!-- Detalle de Ventas -->
-        <div class="card mb-3" id="detalle-ventas">
+        <div class="card mb-3 collapse" id="detalle-ventas">
           <div class="card-header">
             <h4>Detalle de Ventas</h4>
             <p class="small">Transacciones y promedios</p>
@@ -294,7 +281,7 @@
           </div>
         </div>
         <!-- Top Productos Más Vendidos -->
-        <div class="card mb-3" id="top-productos">
+        <div class="card mb-3 collapse" id="top-productos">
           <div class="card-header">
             <h4>Top Productos Más Vendidos</h4>
             <p class="small">Listado de productos con mayor cantidad vendida</p>
@@ -310,6 +297,13 @@
                   <option value="10" {% if filtro_top_actual == 10 %}selected{% endif %}>10</option>
                   <option value="20" {% if filtro_top_actual == 20 %}selected{% endif %}>20</option>
                   <option value="30" {% if filtro_top_actual == 30 %}selected{% endif %}>30</option>
+                </select>
+              </div>
+              <div class="col-6 col-md-3">
+                <label for="topBy" class="form-label small mb-0">Ordenar Por</label>
+                <select name="top_by" id="topBy" class="form-select">
+                  <option value="cantidad" {% if filtro_top_by == 'cantidad' %}selected{% endif %}>Cantidad</option>
+                  <option value="ingreso" {% if filtro_top_by == 'ingreso' %}selected{% endif %}>Ingreso</option>
                 </select>
               </div>
               <div class="col-auto">
@@ -346,7 +340,7 @@
           </div>
         </div>
         <!-- Gráfico de Onda: Ganancias vs Tiempo -->
-        <div class="card mb-3" id="grafico-onda">
+        <div class="card mb-3 collapse" id="grafico-onda">
           <div class="card-header">
             <h4>Gráfico de Onda</h4>
             <p class="small">Comparativa de Ganancias (en pesos) vs Tiempo</p>
@@ -407,11 +401,10 @@
           </div>
         </div>
         <!-- Rentabilidad de Productos -->
-        <div class="card mb-3" id="rentabilidad-productos">
+        <div class="card mb-3 collapse" id="rentabilidad-productos">
           <div class="card-header">
             <h4>Rentabilidad de Productos (Top 50)</h4>
             <p class="small">Producto más rentable = mayor ganancia neta (venta sin IVA - costo sin IVA) multiplicada por cantidad. Identifica tus verdaderos motores de margen.</p>
-            <a class="btn btn-sm btn-primary mt-2" href="{% url 'reports:export_rentabilidad_csv' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" target="_blank">Exportar CSV Rentabilidad</a>
           </div>
           <div class="card-body table-responsive">
             <table class="table table-dark table-sm align-middle">
@@ -425,7 +418,7 @@
                   <th>%</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="rentabilidadBody">
                 {% for r in rentabilidad_productos %}
                 <tr>
                   <td>{{ r.producto }}</td>
@@ -445,7 +438,6 @@
           <div class="card-header">
             <h4>Ranking de Cajeros</h4>
             <p class="small">Evalúa desempeño por usuario: total vendido y ticket promedio (promedio CLP por transacción). Útil para coaching y reconocimiento.</p>
-            <a class="btn btn-sm btn-primary mt-2" href="{% url 'reports:export_ranking_cajeros_csv' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" target="_blank">Exportar CSV Ranking</a>
           </div>
           <div class="card-body table-responsive">
             <table class="table table-dark table-sm align-middle">
@@ -504,22 +496,37 @@
       // Enviar formulario
       document.querySelector('#global-filters form').requestSubmit();
     }
-    // Toggle de secciones mediante checkboxes
-    document.getElementById('toggleKPI').addEventListener('change', function() {
-      document.getElementById('indicadores-avanzados').style.display = this.checked ? 'block' : 'none';
-    });
-    document.getElementById('toggleVentas').addEventListener('change', function() {
-      document.getElementById('detalle-ventas').style.display = this.checked ? 'block' : 'none';
-    });
-    document.getElementById('toggleTopProd').addEventListener('change', function() {
-      document.getElementById('top-productos').style.display = this.checked ? 'block' : 'none';
-    });
-    document.getElementById('toggleOnda').addEventListener('change', function() {
-      document.getElementById('grafico-onda').style.display = this.checked ? 'block' : 'none';
-    });
-    document.getElementById('toggleRentabilidad').addEventListener('change', function() {
-      document.getElementById('indicadores-rentabilidad').style.display = this.checked ? 'block' : 'none';
-    });
+    // Toggle de secciones mediante checkboxes (usa Bootstrap Collapse) + persistencia en localStorage
+    (function(){
+      const STORAGE_KEY = 'advReportIndicators';
+      const collapseMap = {
+        'toggleKPI': 'indicadores-avanzados',
+        'toggleVentas': 'detalle-ventas',
+        'toggleTopProd': 'top-productos',
+        'toggleOnda': 'grafico-onda',
+        'toggleRentabilidad': 'rentabilidad-productos'
+      };
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(_e){ saved = {}; }
+      Object.keys(collapseMap).forEach(toggleId => {
+        const btn = document.getElementById(toggleId);
+        const targetId = collapseMap[toggleId];
+        const targetEl = document.getElementById(targetId);
+        if(!btn || !targetEl || !window.bootstrap) return;
+        const bsCollapse = new bootstrap.Collapse(targetEl, {toggle:false});
+        // Restore saved state (default: false => collapsed)
+        const shouldShow = saved[toggleId] === true;
+        btn.checked = !!shouldShow;
+        if(shouldShow) bsCollapse.show(); else bsCollapse.hide();
+        btn.addEventListener('change', function(){
+          if(this.checked) bsCollapse.show(); else bsCollapse.hide();
+          try {
+            saved[toggleId] = !!this.checked;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+          } catch(_e){}
+        });
+      });
+    })();
     
     
     // Gráfico de Onda: Ganancias vs Tiempo
@@ -539,16 +546,20 @@
           label: 'Ganancias (CLP)',
           data: waveGains,
           borderColor: 'rgba(255,99,132,1)',
-          backgroundColor: 'rgba(255,99,132,0.3)',
+          backgroundColor: 'rgba(255,99,132,0.18)',
           fill: true,
-          tension: 0.4
+          tension: 0.3,
+          pointRadius: 2
         }]
       },
       options: {
-        plugins: { legend: { position: 'top' } },
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'top', labels: { color: '#c2c8d0' } } },
         scales: {
-          y: { beginAtZero: true, ticks: { color: '#FFF' } },
-          x: { ticks: { color: '#FFF' } }
+          y: { beginAtZero: true, ticks: { color: '#c2c8d0' }, grid: { color: 'rgba(194,200,208,0.06)' } },
+          x: { ticks: { color: '#c2c8d0' }, grid: { color: 'transparent' } }
         }
       }
     });
@@ -598,9 +609,15 @@
       if(!dailyChartRef){
         dailyChartRef = new Chart(document.getElementById('chartDaily'), {
           type:'line', data:{labels, datasets:[
-            {label:'Ingreso', data: ingreso, borderColor:'#F4C10F', backgroundColor:'rgba(244,193,15,0.1)', tension:.2},
-            {label:'Ganancia Neta', data: ganancia, borderColor:'#2ecc71', backgroundColor:'rgba(46,204,113,0.1)', tension:.2}
-          ]}, options:{responsive:true}
+            {label:'Ingreso', data: ingreso, borderColor:'#F4C10F', backgroundColor:'rgba(244,193,15,0.12)', tension:.2, pointRadius:2},
+            {label:'Ganancia Neta', data: ganancia, borderColor:'#2ecc71', backgroundColor:'rgba(46,204,113,0.1)', tension:.2, pointRadius:2}
+          ]}, options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            interaction:{mode:'index', intersect:false},
+            plugins:{legend:{labels:{color:'#c2c8d0'}}},
+            scales:{ x:{ticks:{color:'#c2c8d0'}, grid:{color:'transparent'}}, y:{ticks:{color:'#c2c8d0'}, grid:{color:'rgba(194,200,208,0.06)'}, beginAtZero:true }
+          }
         });
       } else {
         dailyChartRef.data.labels = labels;
@@ -619,7 +636,12 @@
           type:'bar', data:{labels, datasets:[
             {label:'Ingreso', data: ingreso, backgroundColor:'rgba(244,193,15,0.6)'},
             {label:'Ganancia Neta', data: ganancia, backgroundColor:'rgba(46,204,113,0.6)'}
-          ]}, options:{responsive:true}
+          ]}, options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{legend:{labels:{color:'#c2c8d0'}}},
+            scales:{ x:{ticks:{color:'#c2c8d0'}, grid:{color:'transparent'}}, y:{ticks:{color:'#c2c8d0'}, grid:{color:'rgba(194,200,208,0.06)'}, beginAtZero:true }
+          }
         });
       } else {
         branchChartRef.data.labels = labels;
@@ -638,7 +660,12 @@
           type:'bar', data:{labels, datasets:[
             {label:'Ventas', data: ventas, backgroundColor:'rgba(52,152,219,0.6)'},
             {label:'Ingreso', data: ingreso, backgroundColor:'rgba(244,193,15,0.4)'}
-          ]}, options:{responsive:true}
+          ]}, options:{
+            responsive:true,
+            maintainAspectRatio:false,
+            plugins:{legend:{labels:{color:'#c2c8d0'}}},
+            scales:{ x:{ticks:{color:'#c2c8d0'}, grid:{color:'transparent'}}, y:{ticks:{color:'#c2c8d0'}, grid:{color:'rgba(194,200,208,0.06)'}, beginAtZero:true }
+          }
         });
       } else {
         hourlyChartRef.data.labels = labels;
@@ -815,6 +842,8 @@
             sucursal: document.getElementById('sucursal').value || 'todos',
             top: topSelect.value || '10'
           });
+          const topByEl = document.getElementById('topBy');
+          if(topByEl && topByEl.value) params.append('top_by', topByEl.value);
           fetch(`/reports/advanced/data/?${params.toString()}`, {headers:{'X-Requested-With':'XMLHttpRequest'}})
             .then(r=> r.ok ? r.json(): Promise.reject(r.status))
             .then(data => {

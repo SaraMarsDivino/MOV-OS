@@ -208,6 +208,43 @@ footer {
     justify-content: center;
 }
 
+/* Login page tweaks: más grande, más contrastado y más amistoso */
+.login-card {
+    background: linear-gradient(180deg, rgba(42,48,56,0.95), rgba(36,40,46,0.95));
+    border-radius: 8px;
+    padding: 28px 32px;
+    width: 420px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.6), 0 0 18px rgba(0,160,220,0.06);
+}
+.login-brand {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--starcraft-accent); /* usar color de acento para resaltar MOV-OS */
+    font-size: 56px;
+    line-height: 1;
+    margin: 0;
+    letter-spacing: 4px;
+    text-shadow: 0 2px 14px rgba(0,208,255,0.16), 0 0 6px rgba(0,0,0,0.6);
+    font-weight: 900;
+}
+.login-subtitle {
+    color: #bfc9d3;
+    font-size: 13px;
+    margin-top: 6px;
+}
+
+.login-card .form-control {
+    background-color: #f7fafc; /* inputs más claros y legibles */
+    color: #111827;
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+.login-card .btn-primary {
+    background-color: var(--starcraft-accent);
+    border-color: rgba(0,208,255,0.15);
+    color: var(--starcraft-bg-dark);
+    font-weight: 700;
+}
+
 /* Ancho máximo para mejorar lectura en vistas no-POS */
 .content-max {
     width: 100%;
@@ -215,3 +252,74 @@ footer {
     margin-left: auto;
     margin-right: auto;
 }
+
+/* --------------------- OVERRIDES: Ajustes globales de color y espaciado --------------------- */
+:root {
+    --starcraft-border: #3a4450;
+    --starcraft-text: #E6EEF6; /* texto más claro para mejor contraste */
+    --starcraft-accent: #00B8E6; /* acento ligeramente ajustado */
+}
+
+body {
+    font-size: 16px; /* tamaño base más cómodo */
+}
+
+/* Contenedores y tarjetas: más suave y espacioso */
+.container {
+    padding: 28px 24px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--starcraft-border) !important;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.45) !important;
+}
+.card {
+    border-radius: 8px !important;
+    padding: 22px 24px !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45) !important;
+}
+
+/* Titulares: acento y legibilidad */
+h1, h2, h3 {
+    color: var(--starcraft-accent) !important;
+    text-shadow: 0 0 6px rgba(0,0,0,0.45) !important;
+}
+
+/* Formularios y inputs más grandes y legibles */
+.form-control {
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+    color: #0f1724 !important;
+}
+
+/* Botones más cómodos */
+button, .btn {
+    padding: 12px 18px !important;
+    border-radius: 8px !important;
+}
+.btn-primary {
+    padding: 12px 20px !important;
+}
+
+/* Tablas y espacios */
+.product-table th, .product-table td, .table td, .table th {
+    padding: 12px 14px !important;
+}
+
+/* Login específico: más espacio y contraste */
+.login-card {
+    width: 480px !important;
+    padding: 36px !important;
+    border-radius: 12px !important;
+}
+.login-brand { font-size: 48px !important; letter-spacing: 3px !important; }
+.login-subtitle { font-size: 14px !important; color: #c7d6e2 !important; }
+
+/* Footer ligeramente menos intrusivo */
+footer { padding: 16px 0 !important; font-size: 13px !important; }
+
+/* Pequeños ajustes responsivos */
+@media (max-width: 600px) {
+    .login-card { width: calc(100% - 32px) !important; padding: 20px !important; }
+    .container { padding: 16px !important; }
+}
+
+/* Fin Overrides */
