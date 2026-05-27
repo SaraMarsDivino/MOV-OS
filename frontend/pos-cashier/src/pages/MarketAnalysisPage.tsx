@@ -196,7 +196,7 @@ export default function MarketAnalysisPage() {
               <h2 className="m-0 text-lg font-black text-slate-900">Análisis de Mercado</h2>
               <p className="mt-0.5 text-sm text-slate-600">Inteligencia de negocio por período y sucursal.</p>
             </div>
-            <a href="/reports/" className="inline-flex shrink-0 items-center justify-center rounded-xl border-2 border-black bg-white px-3 py-2 text-sm font-black text-slate-900 shadow hover:bg-slate-100">
+            <a href="/reports/dashboard/" className="inline-flex shrink-0 items-center justify-center rounded-xl border-2 border-black bg-white px-3 py-2 text-sm font-black text-slate-900 shadow hover:bg-slate-100">
               ← Volver
             </a>
           </div>
