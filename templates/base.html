@@ -76,7 +76,7 @@
                             <li class="nav-item"><a class="nav-link" href="{% url 'sucursales:sucursal_list' %}">Sucursales</a></li>
                         {% endif %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'cashier_dashboard' %}">Cajero</a></li>
-                        {% if request.user.is_staff or request.user.is_superuser or request.user.can_add_products or request.user.can_edit_products or request.user.sucursales_autorizadas.exists %}
+                        {% if request.user.is_staff or request.user.is_superuser or request.user.can_add_products or request.user.can_edit_products %}
                             <li class="nav-item"><a class="nav-link" href="{% url 'product_management' %}">Productos</a></li>
                         {% endif %}
                         {% if request.user.is_staff or request.user.is_superuser %}

@@ -9,3 +9,4 @@ export { default as OpenCashPage } from './OpenCashPage';
 export { default as MarketAnalysisPage } from './MarketAnalysisPage';
 export { default as SucursalCreatePage } from './SucursalCreatePage';
 export { default as SucursalEditPage } from './SucursalEditPage';
+export { default as TransferStockPage } from './TransferStockPage';

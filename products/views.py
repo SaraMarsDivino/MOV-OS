@@ -32,29 +32,12 @@ def _is_staff(user):
 
 
 def _can_manage_products(user):
-    """Users who can manage products: staff/superuser or users with product flags."""
+    """Users who can manage products: staff/superuser or explicit product permission flags."""
     if not getattr(user, 'is_authenticated', False):
         return False
     if user.is_staff or user.is_superuser:
         return True
-    # users with explicit product flags
-    if bool(getattr(user, 'can_add_products', False)) or bool(getattr(user, 'can_edit_products', False)):
-        return True
-    # users assigned to at least one sucursal may be allowed to create/manage products
-    # also allow users who are Vendedores with assigned sucursales
-    try:
-        vend = Vendedor.objects.filter(user=user).first()
-        if vend and vend.sucursales_autorizadas.exists():
-            return True
-    except Exception:
-        pass
-    try:
-        if hasattr(user, 'sucursales_autorizadas') and user.sucursales_autorizadas.exists():
-            return True
-    except Exception:
-        # in case of weird user object without m2m manager in some contexts
-        pass
-    return False
+    return bool(getattr(user, 'can_add_products', False)) or bool(getattr(user, 'can_edit_products', False))
 
 
 def _wants_json(request) -> bool:
@@ -853,14 +836,30 @@ def bulk_assign_products(request):
     }
     return render(request, 'products/bulk_assign_products.html', context)
 
+@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@login_required
 def transfer_stock(request):
     """Transferir cantidad de un producto desde una sucursal origen a una sucursal destino."""
+    if react_ui_enabled():
+        products_qs = Product.objects.filter(activo=True).order_by('nombre').values('id', 'nombre', 'producto_id')
+        sucursales_qs = Sucursal.objects.all().order_by('nombre').values('id', 'nombre')
+        ctx = {
+            'react_context': {
+                'products': list(products_qs),
+                'sucursales': list(sucursales_qs),
+            }
+        }
+        vite_url = vite_dev_server_url_if_up()
+        if vite_url:
+            ctx['vite_dev_server_url'] = vite_url
+        return render(request, 'products/react_transfer_stock.html', ctx)
+
+    # Legacy form-based path (only reached when React UI is disabled)
     productos = Product.objects.all().order_by('nombre')
     sucursales = Sucursal.objects.all().order_by('nombre')
-    # Pre-selección desde query params
     pre_producto = request.GET.get('producto')
     pre_origen = request.GET.get('sucursal_origen')
-    context = { 'productos': productos, 'sucursales': sucursales, 'pre_producto': pre_producto, 'pre_origen': pre_origen }
+    context = {'productos': productos, 'sucursales': sucursales, 'pre_producto': pre_producto, 'pre_origen': pre_origen}
     if request.method == 'POST':
         try:
             producto_id = int(request.POST.get('producto_id'))
@@ -879,31 +878,91 @@ def transfer_stock(request):
         producto = get_object_or_404(Product, id=producto_id)
         suc_origen = get_object_or_404(Sucursal, id=origen_id)
         suc_destino = get_object_or_404(Sucursal, id=destino_id)
-        # Validar stock disponible en origen
         disp = producto.stock_en(suc_origen)
         allow_without_stock = producto.permitir_venta_sin_stock_en(suc_origen)
         if disp < cantidad and not allow_without_stock:
             messages.error(request, f'Stock insuficiente en sucursal origen. Disponible: {disp}.')
             return render(request, 'products/transfer_stock.html', context)
-        # Descontar en origen
         ss_origen, _ = StockSucursal.objects.get_or_create(producto=producto, sucursal=suc_origen, defaults={'cantidad': 0})
         ss_origen.cantidad = max(0, (ss_origen.cantidad or 0) - cantidad)
         ss_origen.save()
-        # Aumentar en destino
         ss_destino, _ = StockSucursal.objects.get_or_create(producto=producto, sucursal=suc_destino, defaults={'cantidad': 0})
         ss_destino.cantidad = (ss_destino.cantidad or 0) + cantidad
         ss_destino.save()
-        # Registrar historial
         TransferenciaStock.objects.create(
-            producto=producto,
-            origen=suc_origen,
-            destino=suc_destino,
-            cantidad=cantidad,
-            usuario=request.user if request.user.is_authenticated else None
+            producto=producto, origen=suc_origen, destino=suc_destino,
+            cantidad=cantidad, usuario=request.user if request.user.is_authenticated else None
         )
         messages.success(request, f'Transferencia realizada: {cantidad} unidades de "{producto.nombre}" de {suc_origen.nombre} a {suc_destino.nombre}.')
         return redirect('transfer_stock')
     return render(request, 'products/transfer_stock.html', context)
+
+
+@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@login_required
+@require_http_methods(["POST"])
+def api_do_transfer(request):
+    """JSON endpoint to perform a stock transfer."""
+    try:
+        body = json.loads(request.body)
+    except Exception:
+        return JsonResponse({'error': 'JSON inválido.'}, status=400)
+    try:
+        producto_id = int(body.get('producto_id'))
+        origen_id = int(body.get('origen_id'))
+        destino_id = int(body.get('destino_id'))
+        cantidad = int(body.get('cantidad'))
+    except (TypeError, ValueError):
+        return JsonResponse({'error': 'Datos inválidos.'}, status=400)
+    if origen_id == destino_id:
+        return JsonResponse({'error': 'El origen y destino no pueden ser la misma sucursal.'}, status=400)
+    if cantidad <= 0:
+        return JsonResponse({'error': 'La cantidad debe ser mayor a cero.'}, status=400)
+    producto = get_object_or_404(Product, id=producto_id)
+    suc_origen = get_object_or_404(Sucursal, id=origen_id)
+    suc_destino = get_object_or_404(Sucursal, id=destino_id)
+    disp = producto.stock_en(suc_origen)
+    allow_without_stock = producto.permitir_venta_sin_stock_en(suc_origen)
+    if disp < cantidad and not allow_without_stock:
+        return JsonResponse({'error': f'Stock insuficiente. Disponible: {disp}.'}, status=400)
+    ss_origen, _ = StockSucursal.objects.get_or_create(producto=producto, sucursal=suc_origen, defaults={'cantidad': 0})
+    ss_origen.cantidad = max(0, (ss_origen.cantidad or 0) - cantidad)
+    ss_origen.save()
+    ss_destino, _ = StockSucursal.objects.get_or_create(producto=producto, sucursal=suc_destino, defaults={'cantidad': 0})
+    ss_destino.cantidad = (ss_destino.cantidad or 0) + cantidad
+    ss_destino.save()
+    TransferenciaStock.objects.create(
+        producto=producto, origen=suc_origen, destino=suc_destino,
+        cantidad=cantidad, usuario=request.user if request.user.is_authenticated else None
+    )
+    return JsonResponse({
+        'ok': True,
+        'message': f'{cantidad} unidades de "{producto.nombre}" transferidas de {suc_origen.nombre} a {suc_destino.nombre}.',
+        'nuevo_stock_origen': ss_origen.cantidad,
+        'nuevo_stock_destino': ss_destino.cantidad,
+    })
+
+
+@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@login_required
+@require_http_methods(["GET"])
+def api_transfer_history_json(request):
+    """Return recent stock transfers as JSON."""
+    try:
+        limit = min(int(request.GET.get('limit', 10)), 50)
+    except (ValueError, TypeError):
+        limit = 10
+    qs = TransferenciaStock.objects.select_related('producto', 'origen', 'destino', 'usuario').order_by('-fecha')[:limit]
+    items = [{
+        'id': t.id,
+        'fecha': t.fecha.isoformat(),
+        'producto': t.producto.nombre,
+        'origen': t.origen.nombre,
+        'destino': t.destino.nombre,
+        'cantidad': t.cantidad,
+        'usuario': t.usuario.username if t.usuario else None,
+    } for t in qs]
+    return JsonResponse({'items': items})
 
 
 @user_passes_test(_is_staff, login_url='cashier_dashboard')
@@ -935,7 +994,7 @@ def allow_without_stock_report(request):
         'q_text': q_text,
     })
 
-@user_passes_test(_is_staff, login_url='cashier_dashboard')
+@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
 @login_required
 def stock_availability(request):
     """Devuelve la cantidad disponible de un producto en una sucursal."""
@@ -952,6 +1011,8 @@ def stock_availability(request):
     return JsonResponse({'producto_id': producto.id, 'sucursal_id': sucursal.id, 'cantidad': cantidad})
 
 
+@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@login_required
 def transfer_history(request):
     """Historial simple de transferencias con filtros básicos."""
     productos = Product.objects.all().order_by('nombre')
@@ -987,6 +1048,8 @@ def transfer_history(request):
         'sucursal_sel': suc,
     })
 
+@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@login_required
 def ajustar_stock(request):
     """Endpoint POST para ajustar stock por sucursal (incremento o decremento)."""
     if request.method != 'POST':

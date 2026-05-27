@@ -1,34 +1,34 @@
 {
   "_utils-!~{003}~.js": {
-    "file": "assets/utils-BAprniuS.css",
+    "file": "assets/utils-Dhye58CA.css",
     "src": "_utils-!~{003}~.js"
   },
-  "_utils-CxjK61tp.js": {
-    "file": "assets/utils-CxjK61tp.js",
+  "_utils-DRrkCu8l.js": {
+    "file": "assets/utils-DRrkCu8l.js",
     "name": "utils",
     "css": [
-      "assets/utils-BAprniuS.css"
+      "assets/utils-Dhye58CA.css"
     ]
   },
   "src/main.tsx": {
-    "file": "assets/pos-cashier-BqkmRfDb.js",
+    "file": "assets/pos-cashier-CN2P2Hj8.js",
     "name": "pos-cashier",
     "src": "src/main.tsx",
     "isEntry": true,
     "imports": [
-      "_utils-CxjK61tp.js"
+      "_utils-DRrkCu8l.js"
     ],
     "css": [
       "assets/pos-cashier-C4mIQr5i.css"
     ]
   },
   "src/movos-pages.tsx": {
-    "file": "assets/movos-pages-CyoR6Wvr.js",
+    "file": "assets/movos-pages-CtaFl_YI.js",
     "name": "movos-pages",
     "src": "src/movos-pages.tsx",
     "isEntry": true,
     "imports": [
-      "_utils-CxjK61tp.js"
+      "_utils-DRrkCu8l.js"
     ]
   }
 }
