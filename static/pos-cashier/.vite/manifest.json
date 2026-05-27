@@ -1,0 +1,34 @@
+{
+  "_utils-!~{003}~.js": {
+    "file": "assets/utils-BAprniuS.css",
+    "src": "_utils-!~{003}~.js"
+  },
+  "_utils-CxjK61tp.js": {
+    "file": "assets/utils-CxjK61tp.js",
+    "name": "utils",
+    "css": [
+      "assets/utils-BAprniuS.css"
+    ]
+  },
+  "src/main.tsx": {
+    "file": "assets/pos-cashier-BqkmRfDb.js",
+    "name": "pos-cashier",
+    "src": "src/main.tsx",
+    "isEntry": true,
+    "imports": [
+      "_utils-CxjK61tp.js"
+    ],
+    "css": [
+      "assets/pos-cashier-C4mIQr5i.css"
+    ]
+  },
+  "src/movos-pages.tsx": {
+    "file": "assets/movos-pages-CyoR6Wvr.js",
+    "name": "movos-pages",
+    "src": "src/movos-pages.tsx",
+    "isEntry": true,
+    "imports": [
+      "_utils-CxjK61tp.js"
+    ]
+  }
+}

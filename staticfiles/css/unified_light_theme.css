@@ -1,0 +1,191 @@
+/* Unified light theme for MOVOS (Bootstrap-based)
+   - Uses Bootstrap CSS variables (no hard-coded palette)
+   - Intended to override legacy dark theme in static/css/styles.css
+   - Excluded from Market Analysis view via template block override
+*/
+
+:root{
+  --movos-bg: var(--bs-gray-200);
+  --movos-surface: var(--bs-gray-300);
+  --movos-surface-2: var(--bs-gray-200);
+  --movos-divider: var(--bs-gray-400);
+  --movos-text: var(--bs-gray-900);
+  --movos-muted: var(--bs-gray-700);
+  --movos-border-strong: var(--bs-black);
+  --movos-shadow: var(--bs-box-shadow-lg);
+}
+
+/* Make the overall UI more compact (closer to the React cashier sizing) */
+html{
+  font-size: 14px; /* Bootstrap is rem-based, so this scales everything down */
+}
+
+body{
+  line-height: 1.35;
+}
+
+body{
+  background: var(--movos-bg) !important;
+  color: var(--movos-text) !important;
+}
+
+/* Reduce excessive whitespace from base layout */
+main.container-fluid.my-4{
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+/* Normalize typography: remove the StarCraft/Cinzel uppercase styling */
+h1,h2,h3,h4,h5,h6,
+.card h1,.card h2,.card h3,.card h4,.card h5,.card h6,
+.page-card h1,.page-card h2,.page-card h3,.page-card h4,.page-card h5,.page-card h6{
+  color: var(--movos-text) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-family: inherit !important;
+}
+
+/* Wrapper used by base.html */
+.page-card{
+  background: var(--movos-surface) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+  box-shadow: var(--movos-shadow) !important;
+  border-radius: 1rem !important;
+}
+
+/* The base template uses `p-4`; make it less roomy */
+.page-card.p-4{
+  padding: 1rem !important;
+}
+
+/* General cards */
+.card,
+.panel,
+.pos-card{
+  background: var(--movos-surface) !important;
+  color: var(--movos-text) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+  box-shadow: var(--movos-shadow) !important;
+}
+
+/* Common list surfaces */
+.list-group-item{
+  background: var(--movos-surface) !important;
+  color: var(--movos-text) !important;
+  border-color: var(--movos-divider) !important;
+}
+
+/* Bootstrap utility text colors may be used across templates */
+.text-muted{
+  color: var(--movos-muted) !important;
+}
+
+.text-light{
+  color: var(--movos-text) !important;
+}
+
+/* Dividers and section separators */
+hr{
+  border-top: 2px solid var(--movos-divider) !important;
+  opacity: 1 !important;
+}
+
+.border,
+.border-top,
+.border-bottom,
+.border-start,
+.border-end{
+  border-color: var(--movos-divider) !important;
+}
+
+/* Tables: consistent gray header, thicker separators */
+.table{
+  color: var(--movos-text) !important;
+  font-size: 0.95rem;
+}
+.table thead th{
+  background: var(--movos-surface-2) !important;
+  color: var(--movos-text) !important;
+  border-bottom: 2px solid var(--movos-divider) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+.table td,
+.table th{
+  border-bottom-color: var(--movos-divider) !important;
+  padding: 0.55rem 0.75rem;
+}
+
+/* Align table hover with the gray palette */
+.table-hover tbody tr:hover{
+  background: var(--movos-surface-2) !important;
+}
+
+/* Inputs keep white for readability */
+.form-control,
+.form-select,
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+textarea,
+select{
+  background: var(--bs-white) !important;
+  color: var(--movos-text) !important;
+  border: 1px solid var(--movos-divider) !important;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.95rem;
+}
+.form-control::placeholder{ color: var(--movos-muted) !important; }
+
+/* Buttons: keep Bootstrap semantics but ensure readable */
+.btn{
+  border-radius: 0.75rem !important;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.95rem;
+}
+.btn-primary{
+  border-color: transparent !important;
+}
+.btn-outline-secondary,
+.btn-outline-primary,
+.btn-outline-warning{
+  border-width: 2px !important;
+}
+
+/* Ensure legacy dark theme "force white" rules don't win */
+.container .card,
+.card .card-body,
+.card p,
+.card .text-center,
+.card h3{
+  color: var(--movos-text) !important;
+}
+
+/* Nav tabs used in many reports/views */
+.nav-tabs{
+  border-bottom: 2px solid var(--movos-divider) !important;
+}
+.nav-tabs .nav-link{
+  color: var(--movos-text) !important;
+}
+.nav-tabs .nav-link.active{
+  color: var(--movos-text) !important;
+  background: var(--movos-surface) !important;
+  border-color: var(--movos-divider) var(--movos-divider) var(--movos-surface) !important;
+  font-weight: 700;
+}
+
+/* Dropdown menus: keep readable */
+.dropdown-menu{
+  background: var(--bs-white) !important;
+  border: 1px solid var(--movos-divider) !important;
+  box-shadow: var(--bs-box-shadow) !important;
+}
+.dropdown-item{
+  color: var(--movos-text) !important;
+}
+.dropdown-item:hover{
+  background: var(--movos-surface-2) !important;
+}

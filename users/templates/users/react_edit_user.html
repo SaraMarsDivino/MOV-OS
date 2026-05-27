@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load vite_tags %}
+
+{% block title %}Editar Usuario | MOVOS{% endblock %}
+
+{% block app_styles %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+  html, body { height: 100%; }
+  body { background: #e2e8f0; }
+  footer { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+{{ react_context|json_script:"movos-react-ctx" }}
+<script>
+  (function () {
+    var el = document.getElementById('movos-react-ctx');
+    try { window.__MOVOS_REACT_CONTEXT__ = el ? JSON.parse(el.textContent) : {}; } catch(e) { window.__MOVOS_REACT_CONTEXT__ = {}; }
+  })();
+</script>
+<div id="root"><div class="p-3">Cargando Editor de Usuario…</div></div>
+{% endblock %}
+
+{% block scripts %}
+  {% if vite_dev_server_url %}
+    <script type="module">
+      import RefreshRuntime from "{{ vite_dev_server_url }}/@react-refresh";
+      RefreshRuntime.injectIntoGlobalHook(window);
+      window.$RefreshReg$ = () => {};
+      window.$RefreshSig$ = () => (type) => type;
+      window.__vite_plugin_react_preamble_installed__ = true;
+    </script>
+    <script type="module" src="{{ vite_dev_server_url }}/@vite/client"></script>
+    <script type="module">window.__MOVOS_REACT_PAGE__ = 'users-management-edit';</script>
+    <script type="module" src="{{ vite_dev_server_url }}/src/movos-pages.tsx"></script>
+  {% else %}
+    {% vite_build_assets 'src/movos-pages.tsx' as assets %}
+    {% if assets %}
+      {% for href in assets.css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
+      <script type="module">window.__MOVOS_REACT_PAGE__ = 'users-management-edit';</script>
+      <script type="module" src="{{ assets.js }}"></script>
+    {% else %}
+      <script>
+        document.getElementById('root').innerHTML = '<div style="padding:16px">React build no configurado.</div>';
+      </script>
+    {% endif %}
+  {% endif %}
+{% endblock %}

@@ -1,0 +1,197 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}MOVOS{% endblock %}</title>
+    <link rel="icon" href="/static/img/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="/static/img/isotipo.svg" type="image/svg+xml">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    {% block app_styles %}
+        <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+        <link rel="stylesheet" href="/static/css/pos_design_system.css">
+    {% endblock %}
+    {# Per-view/per-app theme hook (intentionally empty by default) #}
+    {% block site_theme_styles %}{% endblock %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    {% block extra_styles %}{% endblock %}
+    <style>
+    /* Base: avoid forcing global text color. Keep focused rule only for the login card
+       to ensure readability on the login page without impacting dark-themed views. */
+    .login-card .login-subtitle{ color: var(--bs-black, #000) !important; }
+    .login-card input.form-control{ color: var(--bs-black, #000) !important; -webkit-text-fill-color: var(--bs-black, #000) !important; }
+    .login-card input.form-control::placeholder{ color: var(--bs-black, #000) !important; opacity: 1 !important; }
+    </style>
+</head>
+<body>
+    <!-- Toast container for Django messages -->
+    <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1100;"></div>
+    {% if messages %}
+        <div id="django-messages" data-messages='[
+            {% for message in messages %}{"level":"{{ message.tags|default:"info" }}","text":"{{ message|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}
+        ]' hidden></div>
+    {% endif %}
+
+    {% if request.user.is_authenticated %}
+        {% if request.user.is_superuser %}
+                <!-- Navbar para admin -->
+                <nav class="navbar navbar-expand-lg movos-navbar">
+                    <a class="navbar-brand d-flex align-items-center" href="{% url 'admin_dashboard' %}">
+                    <span class="navbar-brand-text">MOV-OS</span>
+                    </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link" href="{% url 'sucursales:sucursal_list' %}">Sucursales</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'cashier_dashboard' %}">Cajero</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'product_management' %}">Productos</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'user_management' %}">Usuarios</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'reports:report_dashboard' %}">Reportes</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link logout-red" href="{% url 'logout' %}"
+                               style="margin-left:8px;" onclick="return confirm('¿Está seguro de cerrar sesión?');">Cerrar Sesión</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        {% else %}
+            <!-- Navbar para usuarios no admin (ejemplo: cajeros) -->
+            <nav class="navbar navbar-expand-lg movos-navbar">
+                <a class="navbar-brand d-flex align-items-center" href="{% url 'cashier_dashboard' %}">MOVOS</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarNavUser" aria-controls="#navbarNavUser" aria-expanded="false"
+                        aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNavUser">
+                    <ul class="navbar-nav ms-auto">
+                        {% comment %} Show links only if the user has access to the area {% endcomment %}
+                        {% if request.user.is_staff or request.user.is_superuser %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'sucursales:sucursal_list' %}">Sucursales</a></li>
+                        {% endif %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'cashier_dashboard' %}">Cajero</a></li>
+                        {% if request.user.is_staff or request.user.is_superuser or request.user.can_add_products or request.user.can_edit_products or request.user.sucursales_autorizadas.exists %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'product_management' %}">Productos</a></li>
+                        {% endif %}
+                        {% if request.user.is_staff or request.user.is_superuser %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'user_management' %}">Usuarios</a></li>
+                        {% endif %}
+                        {% if request.user.is_staff or request.user.is_superuser or request.user.can_view_analytics %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'reports:report_dashboard' %}">Reportes</a></li>
+                        {% endif %}
+                        <li class="nav-item"><a class="nav-link logout-red" href="{% url 'logout' %}" style="margin-left:8px;" onclick="return confirm('¿Está seguro de cerrar sesión?');">Cerrar Sesión</a></li>
+                    </ul>
+                </div>
+            </nav>
+        {% endif %}
+    {% endif %}
+
+    <main class="container-fluid my-4">
+         {% block page_wrapper_start %}
+             <div class="content-max">
+                 <div class="card page-card p-4">
+         {% endblock %}
+
+         {% block content %}{% endblock %}
+
+         {% block page_wrapper_end %}
+                 </div>
+             </div>
+         {% endblock %}
+    </main>
+
+    <footer class="bg-dark text-light text-center py-3">
+         <div class="container">
+              <p class="mb-0">&copy; 2024 MOVOS. Todos los derechos reservados.</p>
+         </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Render Django messages as Bootstrap toasts using data attribute to avoid template tags in JS
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = document.getElementById('toast-container');
+            const holder = document.getElementById('django-messages');
+            if (!holder) return;
+            let msgs = [];
+            try { msgs = JSON.parse(holder.getAttribute('data-messages') || '[]'); } catch (e) { msgs = []; }
+            const mapLevel = (lvl) => {
+                if (!lvl) return 'secondary';
+                if (lvl.includes('error')) return 'danger';
+                if (lvl.includes('warning')) return 'warning';
+                if (lvl.includes('success')) return 'success';
+                if (lvl.includes('info')) return 'info';
+                return 'secondary';
+            };
+            msgs.forEach(m => {
+                const t = document.createElement('div');
+                t.className = `toast align-items-center text-white bg-${mapLevel(m.level)} border-0`;
+                t.setAttribute('role', 'alert');
+                t.innerHTML = '<div class="d-flex">\\
+                    <div class="toast-body"></div>\\
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>\\
+                </div>';
+                t.querySelector('.toast-body').textContent = m.text;
+                container.appendChild(t);
+                new bootstrap.Toast(t, { delay: 4000 }).show();
+            });
+        });
+    </script>
+    <script>
+    // Runtime contrast fix: add per-element rules and inline styles to override bundled CSS (React/Vite/staticfiles).
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            const elems = Array.from(document.querySelectorAll('input, textarea, select, .form-control, .form-select'));
+            if (!elems.length) return;
+            const style = document.createElement('style');
+            style.id = 'runtime-contrast-fix';
+            const rules = [];
+            let idx = 0;
+            elems.forEach(el => {
+                // Skip hidden inputs
+                if (el.type === 'hidden') return;
+                const cid = 'contrast-js-' + (idx++);
+                el.setAttribute('data-contrast-id', cid);
+                // force visible text color
+                try {
+                    el.style.setProperty('color', '#212529', 'important');
+                    el.style.setProperty('caret-color', '#212529', 'important');
+                } catch(_) {}
+                // placeholder rule for this element
+                const tag = el.tagName.toLowerCase();
+                if (tag === 'input' || tag === 'textarea' || el.classList.contains('form-control')) {
+                    rules.push(`input[data-contrast-id="${cid}"]::placeholder, textarea[data-contrast-id="${cid}"]::placeholder, .form-control[data-contrast-id="${cid}"]::placeholder { color: #0b0b0b !important; opacity: 1 !important; }`);
+                    rules.push(`input[data-contrast-id="${cid}"]::-webkit-input-placeholder, textarea[data-contrast-id="${cid}"]::-webkit-input-placeholder { color: #0b0b0b !important; }`);
+                    rules.push(`input[data-contrast-id="${cid}"]::-moz-placeholder, textarea[data-contrast-id="${cid}"]::-moz-placeholder { color: #0b0b0b !important; }`);
+                    rules.push(`input[data-contrast-id="${cid}"]:-ms-input-placeholder, textarea[data-contrast-id="${cid}"]:-ms-input-placeholder { color: #0b0b0b !important; }`);
+                }
+                // select and option rules
+                if (tag === 'select' || el.classList.contains('form-select')) {
+                    rules.push(`select[data-contrast-id="${cid}"] option, .form-select[data-contrast-id="${cid}"] option { color: #0b0b0b !important; background: #ffffff !important; }`);
+                    // also force currently selected option color inline
+                    try { Array.from(el.querySelectorAll('option')).forEach(o => o.style.setProperty('color', '#0b0b0b', 'important')); } catch(_) {}
+                }
+            });
+            style.appendChild(document.createTextNode(rules.join('\n')));
+            document.head.appendChild(style);
+        } catch (e) { console.error('runtime-contrast-fix', e); }
+    });
+    </script>
+    {% block scripts %}{% endblock %}
+    <style id="contrast-final">
+    /* Final override: ensure placeholders and selects are dark even after JS/CSS injection */
+    input::placeholder, textarea::placeholder, .form-control::placeholder, .form-select::placeholder { color: #0b0b0b !important; opacity: 1 !important; }
+    input:-ms-input-placeholder, textarea:-ms-input-placeholder, .form-control:-ms-input-placeholder { color: #0b0b0b !important; }
+    input::-webkit-input-placeholder, textarea::-webkit-input-placeholder, .form-control::-webkit-input-placeholder { color: #0b0b0b !important; }
+    select, .form-select { color: #0b0b0b !important; }
+    select option, .form-select option { color: #0b0b0b !important; background: #fff !important; }
+    .btn-back { background: #e6e9ec !important; color: #0b0b0b !important; border: 2px solid #0b0b0b !important; }
+    </style>
+</body>
+</html>

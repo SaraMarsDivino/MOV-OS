@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_users.css">
+{% endblock %}
+
+{% block content %}
+<div class="container content-max mt-4">
+    <h2>Gestión de Usuarios</h2>
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre de Usuario</th>
+                <th>Email</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    {% if user.is_active %}
+                        <span class="badge bg-success">Activo</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Deshabilitado</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'edit_user' user.id %}" class="btn btn-warning btn-sm">Editar</a>
+                    {% if user.is_active %}
+                        <form method="post" action="{% url 'api_set_user_active' user.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="active" value="0" />
+                            <button type="submit" class="btn btn-delete btn-sm" onclick="return confirm('¿Está seguro que desea deshabilitar este usuario?');">Deshabilitar</button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{% url 'api_set_user_active' user.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="active" value="1" />
+                            <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('¿Está seguro que desea habilitar este usuario?');">Habilitar</button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No hay usuarios registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url 'create_user' %}" class="btn btn-primary">Crear Usuario</a>
+{% if request.user.is_superuser %}
+    {% url 'admin_dashboard' as back_href %}
+    {% include 'partials/back_button.html' with href=back_href text='Volver al Dashboard' %}
+{% endif %}
+
+</div>
+
+{% endblock %}

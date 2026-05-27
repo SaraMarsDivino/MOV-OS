@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+{% load tz %}
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte Caja #{{ caja.id }}</title>
+  <style>
+    /* Modern A4 print friendly layout */
+    @page { size: A4; margin: 20mm; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #111; font-size: 12pt; margin: 0; }
+    .wrap { max-width: 800px; margin: 0 auto; padding: 16px 20px; }
+    header { text-align: center; margin-bottom: 12px; }
+    header h1 { margin: 0; font-size: 18pt; letter-spacing: 0.5px; }
+    header p.sub { margin: 4px 0 0; color: #666; font-size: 10pt; }
+    .meta { display: flex; justify-content: space-between; margin: 12px 0; color: #222; }
+    .meta .left, .meta .right { width: 48%; }
+    .section { margin-top: 8px; }
+    .section table { width: 100%; border-collapse: collapse; }
+    .section th { text-align: left; font-weight: 700; padding-bottom: 6px; }
+    .kv { display: table-row; }
+    .kv .k { display: table-cell; padding: 6px 0; width: 65%; color: #333; }
+    .kv .v { display: table-cell; padding: 6px 0; text-align: right; color: #111; }
+    .totals { margin-top: 10px; border-top: 1px solid #ddd; padding-top: 8px; }
+    .totals .kv .k { font-weight: 700; }
+    .descuadre { color: #c62828; font-weight: 700; }
+    .sobrante { color: #2e7d32; font-weight: 700; }
+    .cuadrada { color: #455a64; font-weight: 700; }
+    footer { text-align: center; margin-top: 18px; color: #666; font-size: 10pt; }
+    @media print { button, a { display: none; } }
+  </style>
+  <script>
+    window.addEventListener('load', function(){
+      window.print();
+      setTimeout(() => { try { window.close(); } catch(e){} }, 500);
+    });
+  </script>
+</head>
+<body>
+  <div class="wrap" style="max-width:360px; font-family: monospace;">
+    <header>
+      <h1 style="font-size:16pt; margin:0;">{{ caja.sucursal.nombre|default:'Rochart' }}</h1>
+      <p class="sub" style="margin:4px 0 8px;">Comprobante Cierre de Caja</p>
+      <p style="font-size:9pt; margin:2px 0;">Apertura: {{ caja.apertura|localtime|date:"d/m/Y H:i" }}</p>
+      <p style="font-size:9pt; margin:2px 0;">Cierre: {% if caja.cierre %}{{ caja.cierre|localtime|date:"d/m/Y H:i" }}{% else %}-{% endif %}</p>
+    </header>
+
+    <section class="section">
+      <strong>Resumen de Caja</strong>
+      <table style="width:100%; font-size:10pt; margin-top:6px; table-layout:fixed;">
+        <colgroup>
+          <col style="width:56%">
+          <col style="width:22%">
+          <col style="width:22%">
+        </colgroup>
+        <thead>
+          <tr>
+            <th style="text-align:left; padding-right:8px;">Item</th>
+            <th style="text-align:right; padding-left:8px;">Teórico</th>
+            <th style="text-align:right; padding-left:8px;">Real</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="kv"><td class="k">Total Efectivo</td><td class="v">{{ formatted_efectivo_final }}</td><td class="v">{{ formatted_efectivo_final_display }}</td></tr>
+          <tr class="kv"><td class="k">Apertura</td><td class="v">{{ formatted_efectivo_inicial }}</td><td class="v">{{ formatted_efectivo_inicial }}</td></tr>
+          <tr class="kv"><td class="k">Ret. Efectivo</td><td class="v">0</td><td class="v">0</td></tr>
+          <tr class="kv"><td class="k">Vueltos</td><td class="v">(-) {{ formatted_vuelto_entregado }}</td><td class="v">(-) {{ formatted_vuelto_entregado }}</td></tr>
+          <tr class="kv"><td class="k">T.Crédito</td><td class="v">{{ formatted_total_credito }}</td><td class="v">{{ formatted_total_credito }}</td></tr>
+          <tr class="kv"><td class="k">T.Débito</td><td class="v">{{ formatted_total_debito }}</td><td class="v">{{ formatted_total_debito }}</td></tr>
+          <tr class="kv"><td class="k">Transferencia</td><td class="v">{{ formatted_total_transferencia }}</td><td class="v">{{ formatted_total_transferencia }}</td></tr>
+          <tr class="kv"><td class="k">Devoluciones (Total)</td><td class="v">(-) {{ formatted_devoluciones_total }}</td><td class="v">(-) {{ formatted_devoluciones_total }}</td></tr>
+          <tr class="kv"><td class="k">Devoluciones Efectivo</td><td class="v">(-) {{ formatted_devoluciones_efectivo }}</td><td class="v">(-) {{ formatted_devoluciones_efectivo }}</td></tr>
+          <tr class="kv"><td class="k">Devoluciones Débito</td><td class="v">(-) {{ formatted_devoluciones_debito }}</td><td class="v">(-) {{ formatted_devoluciones_debito }}</td></tr>
+          <tr class="kv"><td class="k">Devoluciones Crédito</td><td class="v">(-) {{ formatted_devoluciones_credito }}</td><td class="v">(-) {{ formatted_devoluciones_credito }}</td></tr>
+          <tr class="kv"><td class="k">Devoluciones Transferencia</td><td class="v">(-) {{ formatted_devoluciones_transferencia }}</td><td class="v">(-) {{ formatted_devoluciones_transferencia }}</td></tr>
+          <tr class="kv" style="border-top:1px dashed #333;"><td class="k" style="font-weight:700;">Total</td><td class="v" style="font-weight:700;">{{ formatted_total_ventas }}</td><td class="v" style="font-weight:700;">{{ formatted_total_ventas }}</td></tr>
+        </tbody>
+      </table>
+
+      <div class="totals" style="margin-top:8px; font-size:10pt;">
+        <div style="display:flex; justify-content:space-between;"><div>Efectivo Real en Caja</div><div>{{ formatted_efectivo_final_display }}</div></div>
+        {% if formatted_efectivo_contado %}
+        <div style="display:flex; justify-content:space-between;"><div>Contado</div><div>{{ formatted_efectivo_contado }}</div></div>
+        {% endif %}
+        {% if formatted_descuadre_signed and descuadre_label %}
+        <div style="display:flex; justify-content:space-between; margin-top:6px;">
+          {% if descuadre_label == 'Efectivo Sobrante' %}
+            <div class="sobrante">{{ descuadre_label }}</div>
+            <div class="sobrante">{{ formatted_descuadre_signed }}</div>
+          {% elif descuadre_label == 'Faltante' %}
+            <div class="descuadre">{{ descuadre_label }}</div>
+            <div class="descuadre">{{ formatted_descuadre_signed }}</div>
+          {% else %}
+            <div class="cuadrada">{{ descuadre_label }}</div>
+            <div class="cuadrada">{{ formatted_descuadre_signed }}</div>
+          {% endif %}
+        </div>
+        {% elif formatted_descuadre_signed %}
+        <div style="display:flex; justify-content:space-between; margin-top:6px;" class="cuadrada">
+          <div>Diferencia</div>
+          <div>{{ formatted_descuadre_signed }}</div>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+
+    <footer style="text-align:center; margin-top:12px; font-size:9pt;">RetailBase POS — Cuadratura de Caja</footer>
+  </div>
+</body>
+</html>

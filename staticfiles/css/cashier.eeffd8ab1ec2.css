@@ -1,0 +1,155 @@
+/* Ajustes generales */
+.cashier-container {
+    text-align: center;
+    color: #e0e0e0;
+}
+    
+/* Tarjetas */
+.card {
+    background-color: #2f3136;
+    color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Estilo de botones */
+.btn-group .btn {
+    background-color: #282a40;
+    color: #ffffff;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-group .btn:hover {
+    background-color: #1f223f;
+    transform: scale(1.05);
+}
+
+.btn-group .btn.active {
+    background-color: #7289da;
+    color: #ffffff;
+}
+
+/* Tablas */
+.table-dark {
+    background-color: #2f3136;
+    color: #ffffff;
+}
+
+.table-dark th {
+    background-color: #36393f;
+}
+
+.table-dark td {
+    background-color: #2f3136;
+    color: #b9bbbe;
+}
+
+/* Inputs */
+.form-control {
+    background-color: #ffffff; /* Fondo blanco para los campos de texto */
+    border: 1px solid #40444b;
+    color: #000000; /* Texto en color negro */
+    border-radius: 8px;
+}
+
+.form-control:focus {
+    border-color: #5865f2;
+}
+
+/* Botón de volver */
+.btn-secondary {
+    background-color: #5865f2;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #4752c4;
+}
+
+/* Botón de cerrar caja */
+.btn-danger {
+    background-color: #d9534f;
+}
+
+.btn-danger:hover {
+    background-color: #c9302c;
+}
+
+/* Botón confirmar compra */
+.btn-success {
+    background-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.vibrate {
+    animation: vibrar 0.25s ease;
+}
+
+@keyframes vibrar {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    50% { transform: translateX(2px); }
+    75% { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
+}
+
+.payment-method-btn {
+    height: 60px;             /* Altura fija, ajústala según convenga */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;      /* Permite que el texto se ajuste en varias líneas si es necesario */
+    text-align: center;
+}
+
+/* Light theme overrides scoped to cashier container */
+.cashier-container.cashier-light {
+    background-color: #f4f7fb; /* pale background inside cashier area */
+    color: #0f1724; /* dark text */
+}
+.cashier-container.cashier-light .card {
+    background-color: #ffffff;
+    color: #0f1724;
+    border: 1px solid #e6eef7;
+    box-shadow: 0 6px 24px rgba(16,24,40,0.06);
+}
+.cashier-container.cashier-light .card-title {
+    color: #0b1220;
+}
+.cashier-container.cashier-light .table-dark,
+.cashier-container.cashier-light .table-dark td,
+.cashier-container.cashier-light .table-dark th {
+    background-color: transparent;
+    color: #0f1724;
+}
+.cashier-container.cashier-light .table-responsive table thead { color: #0b1220; }
+.cashier-container.cashier-light .form-control {
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #0b1220;
+}
+.cashier-container.cashier-light .form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 0.15rem rgba(37,99,235,0.15);
+}
+.cashier-container.cashier-light .btn-group .btn {
+    background-color: #eef2ff;
+    color: #0b1220;
+}
+.cashier-container.cashier-light .btn-group .btn.active {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+.cashier-container.cashier-light .btn-success { background-color: #16a34a; }
+.cashier-container.cashier-light .btn-danger { background-color: #dc2626; }
+.cashier-container.cashier-light .badge { background-color: #eef2ff; color: #0b1220; }
+
+/* Ensure the payment panel stands out in light mode */
+.cashier-container.cashier-light .payment-method-btn {
+    background-color: #eef2ff;
+    color: #0b1220;
+    border: 1px solid #c7d2fe;
+}

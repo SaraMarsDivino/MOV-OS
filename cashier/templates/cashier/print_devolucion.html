@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+{% load tz %}
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Boleta Devolución #{{ devolucion.id }}</title>
+  <style>
+    @page { size: 80mm auto; margin: 0; }
+    body { width: 76mm; margin: 0 auto; font-family: "Courier New", Courier, monospace; font-size: 12px; color: #000; }
+    .wrap { padding: 6px 6px 12px; }
+    .center { text-align: center; }
+    .bold { font-weight: 700; }
+    .small { font-size: 11px; }
+    .line { border-top: 1px dashed #000; margin: 6px 0; }
+    .kv { display: flex; justify-content: space-between; gap: 8px; }
+    .items { margin: 6px 0; }
+    .item { display: flex; flex-direction: column; margin-bottom: 4px; }
+    .item .top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .item .name { flex: 1 1 auto; min-width: 0; white-space: pre-wrap; word-break: break-word; }
+    .item .top .small { flex: 0 0 auto; white-space: nowrap; }
+    .totals .kv span { white-space: nowrap; }
+    .footer { margin-top: 10px; text-align: center; }
+    .cut { margin-top: 10px; border-top: 1px dotted #000; }
+    @media screen { body { background: #fff; } }
+  </style>
+  <script>
+    window.addEventListener('load', function(){
+      window.print();
+      setTimeout(() => { try { window.close(); } catch(e){} }, 500);
+    });
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="center bold">Rochart Multiservicios digitales</div>
+    {% if sucursal %}<div class="center small">Sucursal: {{ sucursal.nombre }}</div>{% endif %}
+    <div class="center small">Devolución #{{ devolucion.id }}</div>
+    <div class="center small">Venta #{{ devolucion.venta_original.id }}</div>
+    {% if devolucion.caja %}<div class="center small">Caja #{{ devolucion.caja.id }}</div>{% endif %}
+    <div class="center small">{{ devolucion.fecha|localtime|date:"d/m/Y H:i" }}</div>
+    <div class="line"></div>
+
+    <div class="small">Cajero: {{ devolucion.empleado.username }}</div>
+    <div class="small">Método: {{ devolucion.get_metodo_pago_display }}</div>
+    {% if devolucion.metodo_pago == "debito" or devolucion.metodo_pago == "credito" or devolucion.metodo_pago == "transferencia" %}
+      <div class="small">Tx: {{ devolucion.numero_transaccion|default:"-" }}</div>
+    {% endif %}
+    {% if devolucion.metodo_pago == "transferencia" %}
+      <div class="small">Banco: {{ devolucion.banco|default:"-" }}</div>
+    {% endif %}
+
+    <div class="line"></div>
+
+    <div class="items">
+      {% for d in detalles %}
+        <div class="item">
+          <div class="top">
+            <span class="name">{{ d.producto.nombre }}</span>
+            <span class="small">{{ d.formatted_subtotal }}</span>
+          </div>
+          <div class="small">{{ d.cantidad }} x ${{ d.precio_unitario|clp }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="line"></div>
+    <div class="totals">
+      <div class="kv"><span>Total devuelto</span><span>{{ formatted_total }}</span></div>
+    </div>
+
+    <div class="line"></div>
+    <div class="footer small">Devolución registrada</div>
+    <div class="cut"></div>
+  </div>
+</body>
+</html>

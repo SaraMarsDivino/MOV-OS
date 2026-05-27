@@ -1,0 +1,672 @@
+/* Global Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Colores de la paleta de StarCraft 1 */
+:root {
+    --starcraft-bg-dark: #12161A;
+    --starcraft-bg-medium: #1F222B;
+    --starcraft-bg-light: #2A3038;
+    --starcraft-border: #444E5A;
+    --starcraft-text: #BCC5D0;
+    --starcraft-accent: #00D0FF; /* Azul cian brillante para acentos */
+    --starcraft-button: #2B4E7A; /* Azul grisáceo para botones */
+    --starcraft-button-hover: #4F709E;
+    --starcraft-glow: #0099FF; /* Efecto de brillo */
+    --starcraft-success: #35B400; /* Verde brillante para éxito */
+    --starcraft-danger: #D80000; /* Rojo intenso para peligro */
+}
+
+body {
+    :root {
+        --bg-dark: #0B0F14;            /* very dark background */
+        --bg-medium: #11151A;          /* panels */
+        --bg-light: #192027;           /* cards */
+        --border: #274055;             /* deep desaturated blue */
+        --text: #EAF3FA;               /* pale off-white */
+        --accent-cyan: #40C4FF;        /* cyan from logo */
+        --accent-blue: #0066A3;        /* deep blue */
+        --accent-orange: #FF9A4D;      /* orange polygon */
+        --accent-pink: #FF4D6E;        /* magenta/pink accent */
+        --glow: rgba(64,196,255,0.12);
+        --success: #35B400;
+        --danger: #D80000;
+    }
+    background-color: var(--starcraft-bg-medium);
+    border: 2px solid var(--starcraft-border);
+    border-radius: 0; /* Formas angulares */
+    box-shadow: 0 0 15px var(--starcraft-bg-dark);
+    body {
+        font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        background-color: var(--bg-dark);
+        color: var(--text);
+}
+
+/* Títulos y texto */
+/* MOV-OS — Yeraa / Polygonal visual theme
+   - Dark, textured-friendly UI
+   - Headings use 'Cinzel', body uses 'Roboto'
+   - Accent palette: cyan, deep blue, orange, magenta
+   - No large white backgrounds; subdued light variants
+*/
+
+/* Reset */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+
+:root{
+    --bg-dark:#07090b;        /* main app background */
+    --bg-panel:#0f1519;       /* card/panel background */
+    --bg-surface:#151b20;     /* lighter surfaces */
+    --border:rgba(255,255,255,0.04);
+    --text:#eaf3fa;
+    --muted:rgba(234,243,250,0.55);
+    --accent-cyan:#40C4FF;
+    --accent-blue:#0066A3;
+    --accent-orange:#FF9A4D;
+    --accent-pink:#FF4D6E;
+    --glow:0 8px 36px rgba(64,196,255,0.06);
+    --success:#35B400;
+    --danger:#D64545;
+}
+
+/* Typography */
+body{
+    font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+    background:var(--bg-dark);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    line-height:1.45;
+}
+h1,h2,h3,h4,h5{
+    font-family: 'Cinzel', Georgia, serif;
+    color:var(--accent-cyan);
+    text-transform:uppercase;
+    letter-spacing:1.6px;
+    margin-bottom:0.5rem;
+}
+h1{font-size:2.25rem}
+h2{font-size:1.6rem}
+h3{font-size:1.2rem}
+
+/* Layout containers: prefer full-width fluid layouts so columned views use horizontal space */
+.container {max-width:1200px;margin:0 auto;padding:20px}
+.container-fluid{width:100%;padding-left:20px;padding-right:20px}
+.content-max{max-width:100%;margin:0 auto;width:100%}
+
+/* Utility for truly full-width content (tables, reports) */
+.full-width { width: 100% !important; max-width: 100% !important; padding-left: 8px; padding-right: 8px }
+
+/* Cards / panels */
+.card{
+    background:linear-gradient(180deg,var(--bg-panel),var(--bg-surface));
+    border:1px solid var(--border);
+    border-radius:10px;
+    box-shadow:var(--glow);
+    padding:18px;
+}
+
+/* Navbar brand image */
+.navbar-brand{display:flex;align-items:center;gap:.5rem;font-weight:700}
+.site-logo{height:36px;width:auto;display:inline-block}
+.site-logo-lg{height:46px;width:auto;display:inline-block}
+.login-brand-img{height:84px;width:auto;display:block;margin:0 auto 12px}
+
+/* Navbar brand text (admin wants text-only) */
+.navbar-brand-text{
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+    font-size: 1.75rem;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+    line-height: 1;
+}
+
+/* Buttons */
+.btn{
+    border-radius:8px;padding:.6rem .9rem;border:none;
+    background-color:#2b2f33;color:#e9eef2;font-weight:700;cursor:pointer;box-shadow:none;border:1px solid rgba(255,255,255,0.03);
+}
+.btn:hover{filter:brightness(1.03)}
+.btn-primary{
+    background-color:#005a8a;color:#ffffff;border:none;
+}
+.btn-outline-primary{border:1px solid rgba(255,255,255,0.06);background-color:#0b84c1;color:#ffffff}
+.btn-outline-primary:hover{background-color:#0a6fa0}
+.btn-outline-warning{background-color:#ff9f1c;color:#081222;border:1px solid rgba(0,0,0,0.06)}
+.btn-outline-warning:hover{background-color:#ffb84d}
+.btn-outline-secondary{background-color:#4b5563;color:#ffffff;border:1px solid rgba(255,255,255,0.03)}
+.btn-outline-secondary:hover{background-color:#606777}
+.btn-info{background-color:#2f6f8b;color:#ffffff;border:none}
+.btn-info:hover{background-color:#24566b}
+.btn-success{background-color:#0f9d58;color:#ffffff;border:none}
+.btn-success:hover{background-color:#0c8a4a}
+
+/* Stronger success variant for primary actions like "Crear Nueva Sucursal" */
+.btn-create, .btn-success.create-strong { background-color: #0b8f4a !important; color: #ffffff !important; border: none !important; }
+
+/* Specific styling for the Excel upload button in product management */
+.btn-excel {
+    background-color: #0b6b3a !important; /* dark green */
+    color: #ffffff !important;
+    border: 1px solid rgba(0,0,0,0.12) !important;
+    box-shadow: 0 4px 10px rgba(11,107,58,0.12) !important;
+    transition: background-color 160ms ease, transform 120ms ease;
+}
+.btn-excel:hover, .btn-excel:focus {
+    background-color: #12924f !important; /* lighter green on hover */
+    transform: translateY(-1px) !important;
+    color: #ffffff !important;
+}
+.btn-excel i { color: rgba(255,255,255,0.95); }
+
+/* Admin panel: force section info text white for contrast */
+.container .card, .card .card-body, .card p, .card .text-center, .card h3 {
+    color: #ffffff !important;
+}
+
+/* Footer fixed to bottom and page padding so it doesn't overlap content */
+:root {
+    --footer-height: 110px; /* kept for reference but footer is static now */
+}
+/* Keep footer visually separated but not fixed to bottom so it won't cover UI controls */
+footer {
+    position: static;
+    left: 0;
+    bottom: auto;
+    width: 100%;
+    z-index: 1000;
+    height: auto;
+}
+/* Sticky footer: keep footer at viewport bottom on short pages */
+html, body { height: 100%; }
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0 !important;
+}
+main { flex: 1 0 auto; }
+footer { margin-top: auto; }
+
+@media print { footer { position: static } body { padding-bottom: 0 } }
+.btn-success{background:var(--success);color:#05210a}
+.btn-danger{background:var(--danger);color:#fff}
+.btn:focus{outline:none;box-shadow:0 6px 18px rgba(64,196,255,0.08)}
+
+/* Forms */
+.form-control{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:.6rem .8rem;border-radius:8px}
+.form-control:focus{border-color:var(--accent-cyan);box-shadow:0 6px 24px rgba(64,196,255,0.06);outline:none}
+label{color:var(--muted);font-weight:600}
+
+/* Tables */
+.table{width:100%;border-collapse:separate;border-spacing:0}
+.table th, .table td{padding:12px 18px;border-bottom:1px solid rgba(0,0,0,0.06)}
+.table thead th{background:#151819;color:#ffffff;text-transform:uppercase;font-weight:900;border-right:3px solid rgba(255,255,255,0.06)}
+.table thead th .col-header { background: transparent; color: #ffffff }
+.table tbody tr:hover{background:#e9ecef}
+
+/* Use light gray rows with clearer column separators */
+.table tbody tr:nth-child(odd) td{background:#f5f6f7;color:#0b1220}
+.table tbody tr:nth-child(even) td{background:#efeff0;color:#0b1220}
+
+/* Stronger vertical column dividers for readability */
+.table td, .table th { vertical-align: middle }
+.table th, .table td { border-right: 2px solid rgba(200,200,200,0.18) }
+.table th:last-child, .table td:last-child { border-right: none }
+
+/* Ensure responsive containers get visible bottom spacing */
+.table-responsive{overflow-x:auto;width:100%;padding-bottom:12px}
+
+/* Make table containers horizontally scrollable when needed but prefer using available width */
+.table-responsive{overflow-x:auto;width:100%}
+
+/* Specific product table tweaks */
+.product-table input[type=checkbox]{width:18px;height:18px}
+
+/* Login card */
+.login-card{width:480px;margin:0 auto;padding:32px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));box-shadow:0 10px 40px rgba(0,0,0,0.6)}
+.login-brand{text-align:center;font-family:'Cinzel',serif;color:var(--accent-cyan);font-size:42px;margin:0}
+.login-subtitle{text-align:center;color:var(--muted);margin-top:6px}
+
+/* Footer */
+footer{background:linear-gradient(90deg,var(--bg-panel),var(--bg-surface));color:var(--muted);padding:18px 0 12px;text-align:center;border-top:1px solid rgba(255,255,255,0.02);box-shadow:0 -2px 10px rgba(0,0,0,0.35)}
+
+/* Utility accents */
+.badge{background:rgba(255,255,255,0.03);color:var(--text);padding:.3rem .5rem;border-radius:6px}
+a{color:var(--accent-cyan);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Responsive */
+@media(max-width:768px){.login-card{width:calc(100% - 32px)}.site-logo{height:28px}}
+
+/* Small decorative polygon accent for headings */
+.heading-accent{display:inline-block;padding:4px 10px;border-radius:6px;background:linear-gradient(90deg,var(--accent-orange),var(--accent-pink));color:#fff;font-weight:700}
+
+/* Ensure printable views stay legible */
+@media print{body{color:#000;background:#fff} .card, .navbar, footer{box-shadow:none}}
+}
+.card {
+    border-radius: 8px !important;
+    padding: 22px 24px !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45) !important;
+}
+
+/* Titulares: acento y legibilidad */
+h1, h2, h3 {
+    color: var(--starcraft-accent) !important;
+    text-shadow: 0 0 6px rgba(0,0,0,0.45) !important;
+}
+
+/* Force high-contrast white headings inside cards and panels (e.g., cashier, product sections) */
+.card h3, .card h2, .card .card-title, .card .card-header, .heading-accent, .page-card h2, .page-card h3 {
+    color: #ffffff !important;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.6) !important;
+}
+.card .card-title a, .card .card-header a { color: #ffffff !important; }
+
+/* Specific: ensure the small section headings in cashier/product boxes are white */
+.product-management-header h2, .product-management-header h4, .cashier-section-title, .cashier .card-title {
+    color: #ffffff !important;
+}
+
+/* Ensure inputs, labels and placeholders inside cards (cashier/payment panels) are readable */
+.card .form-label, .card label, .card .form-text {
+    color: #ffffff !important;
+}
+.card .form-control, .card input, .card textarea, .card select {
+    color: #ffffff !important;
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+}
+.card .form-control::placeholder, .card input::placeholder, .card textarea::placeholder {
+    color: rgba(255,255,255,0.55) !important;
+}
+/* Buttons inside cards keep contrast */
+.card .btn { color: #ffffff !important; }
+
+/* Add spacing between card body text and action buttons so buttons
+   are visually separated from descriptive text (e.g. dashboard cards) */
+.card .card-body .btn,
+.card .card-footer .btn,
+.card .btn {
+    margin-top: 16px !important;
+}
+
+/* Specific stronger styling for cashier payment area */
+.cashier .card { background: linear-gradient(180deg,#23262a,#191c1f) !important; }
+.cashier .form-control { box-shadow: none !important; }
+
+/* Cashier: make section boxes clearly contrast with page background */
+.cashier .card,
+.cashier .section-box,
+.cashier .cashier-panel,
+.cashier .card.page-card,
+.cashier .panel {
+    background: linear-gradient(180deg,#2b3035 0%, #212529 100%) !important;
+    border: 1px solid rgba(255,255,255,0.06) !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.55) !important;
+    border-radius: 12px !important;
+}
+
+.cashier .card .card-body,
+.cashier .section-box .card-body {
+    background: transparent !important;
+    padding: 20px !important;
+}
+
+/* Make inner panels slightly lighter to separate controls (inputs/buttons) */
+.cashier .inner-panel {
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.03) !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+}
+
+/* Ensure buttons inside cashier stand out */
+.cashier .btn { box-shadow: 0 6px 14px rgba(0,0,0,0.35); }
+
+/* Slightly increase heading size in cashier cards for visibility */
+.cashier .card-title, .cashier h2, .cashier h3 { font-size: 20px !important; }
+
+/* Formularios y inputs más grandes y legibles */
+.form-control {
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+    color: var(--text) !important;
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
+}
+.login-card .form-control {
+    color: var(--text) !important;
+}
+.login-card .form-control::placeholder {
+    color: rgba(234,243,250,0.45) !important;
+}
+
+/* High-contrast labels inside the login card */
+.login-card label,
+.login-card .form-label {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6) !important;
+    font-size: 0.95rem !important;
+    margin-bottom: 6px !important;
+}
+
+/* Make the input borders slightly brighter in the login card for clearer separation */
+.login-card .form-control {
+    border: 1px solid rgba(255,255,255,0.07) !important;
+}
+
+/* Botones más cómodos */
+button, .btn {
+    padding: 12px 18px !important;
+    border-radius: 8px !important;
+}
+.btn-primary {
+    padding: 12px 20px !important;
+}
+
+/* Tablas y espacios */
+.product-table th, .product-table td, .table td, .table th {
+    padding: 12px 14px !important;
+}
+
+/* Login específico: más espacio y contraste */
+.login-card {
+    width: 480px !important;
+    padding: 36px !important;
+    border-radius: 12px !important;
+}
+.login-brand { font-size: 48px !important; letter-spacing: 3px !important; color: #40C4FF !important; text-shadow: 0 2px 8px rgba(0,0,0,0.6) !important; }
+.login-subtitle { font-size: 14px !important; color: #c7d6e2 !important; }
+
+/* Footer ligeramente menos intrusivo */
+footer { padding: 16px 0 !important; font-size: 13px !important; }
+
+/* Pequeños ajustes responsivos */
+@media (max-width: 600px) {
+    .login-card { width: calc(100% - 32px) !important; padding: 20px !important; }
+    .container { padding: 16px !important; }
+}
+
+/* Mejor visibilidad y tamaño de checkboxes en tablas (ej. gestión de productos) */
+.product-table input[type="checkbox"], .form-check-input {
+    width: 18px !important;
+    height: 18px !important;
+    accent-color: var(--starcraft-accent); /* usa color acento en navegadores compatibles */
+    border: 2px solid var(--starcraft-border) !important;
+    background-color: #ffffff !important;
+    margin: 0 !important;
+}
+
+/* Asegurar que los checkboxes sean claramente visibles en filas claras/oscuro */
+.product-table td .product-select:checked {
+    background-color: var(--starcraft-accent) !important;
+}
+
+/* Fin Overrides */
+
+/* Product management header tweaks for better contrast */
+.product-management-header h2 {
+    color: var(--starcraft-accent) !important;
+    margin-bottom: 0.25rem;
+
+/* FORCE: Inputs and texts must be dark on white backgrounds */
+/* This ensures any modal or white card shows readable black text */
+#productDetailsModal .modal-content,
+#productDetailsModal .modal-body,
+#productDetailsModal .modal-content *,
+.modal-content.white-safe,
+.modal-content.white-safe *,
+.card.bg-white .form-control,
+.card.page-card .form-control,
+.card .modal-content .form-control,
+.bg-white .form-control,
+.cashier-container .card .form-control {
+    background: #ffffff !important;
+    color: #0b1220 !important;
+    border-color: #d1d5db !important;
+}
+
+/* Ensure any text nodes inside the product detail modal are dark */
+#productDetailsModal .modal-content, #productDetailsModal .modal-body {
+    background: #ffffff !important;
+    color: #0b1220 !important;
+}
+
+/* Dropdowns and selects: strong dark text on light backgrounds */
+.form-select, select, .dropdown-toggle {
+    background-color: #ffffff !important;
+    color: #0b1220 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+.form-select:focus, select:focus, .dropdown-toggle:focus { box-shadow: 0 0 0 0.15rem rgba(37,99,235,0.12) !important; }
+.dropdown-menu { background: #ffffff !important; color: #0b1220 !important; }
+.dropdown-menu .dropdown-item { color: #0b1220 !important; }
+.dropdown-menu .dropdown-item:hover { background: #eef2f6 !important; color: #0b1220 !important; }
+
+/* Ensure option text in native selects is visible where possible */
+select option { color: #0b1220 !important; background: #ffffff !important; }
+
+/* Spinner color for visibility */
+.spinner-border, .spinner-grow { color: var(--accent-cyan) !important; }
+
+/* Tables: ensure cart/table grids have clear 1px grey borders */
+.table.full-grid td, .table.full-grid th, .cart-table td, .cart-table th {
+    border: 1px solid #e5e7eb !important;
+}
+
+/* Defensive: override any lingering rule that forces white text inside white backgrounds */
+.card, .modal-content, .card .card-body { color: inherit !important; }
+
+/* Strong final overrides for product details modal to guarantee readability */
+#productDetailsModal, #productDetailsModal .modal-content, #productDetailsModal .modal-body {
+    background: #ffffff !important;
+    color: #0b1220 !important;
+}
+#productDetailsModal .modal-content p,
+#productDetailsModal .modal-content span,
+#productDetailsModal .modal-content strong,
+#productDetailsModal .modal-content b,
+#productDetailsModal .modal-content li {
+    color: #0b1220 !important;
+}
+#productDetailsModal ::selection { background: var(--accent-cyan); color: #ffffff; }
+
+/* Ensure native selects inside cashier and product pages show dark text on white */
+.table.table-dark tbody tr:nth-child(odd) td,
+.table.table-dark tbody tr:nth-child(odd) th {
+    background: #2f3136 !important;
+    color: #ffffff !important;
+}
+.table.table-dark tbody tr:nth-child(even) td,
+.table.table-dark tbody tr:nth-child(even) th {
+    background: #f7f7f9 !important;
+    color: #0b1220 !important;
+}
+
+/* Cart/table: ensure action buttons keep correct contrast */
+.cart-table td .btn, .table.table-dark td .btn { color: #ffffff !important; }
+
+
+/* ---- Accessibility and layout fixes requested ---- */
+/* Make the horizontal navbar logo a bit wider for better visibility */
+.site-logo-lg { width: 120px !important; height: auto !important; }
+
+/* Ensure selects, dropdown toggles and spinner controls remain readable
+   when their backgrounds are light (fix white-on-white issues) */
+.form-select, select, .dropdown-toggle, .form-control.spinner-input {
+    background-color: #ffffff !important;
+    color: #0b1220 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+/* Make dropdown menus readable on dark themes */
+.dropdown-menu { background: #ffffff !important; color: #0b1220 !important; }
+.dropdown-menu .dropdown-item { color: #0b1220 !important; }
+
+/* Cashier-specific table improvements: alternate subtle greys and clearer dividers */
+.cashier-container .table tbody tr:nth-child(odd) td { background: #f7f7f9 !important; color: #0b1220 !important; }
+.cashier-container .table tbody tr:nth-child(even) td { background: #efefef !important; color: #0b1220 !important; }
+.cashier-container .table tbody tr.dark td { background: #2f3136 !important; color: #ffffff !important; }
+
+/* Reduce font size slightly in cashier view to fit more rows */
+.cashier-container { font-size: 0.95rem !important; }
+.cashier-container .table td, .cashier-container .table th { font-size: 0.92rem !important; }
+
+/* Stronger grid/divider lines for product and reports tables */
+.product-table td, .product-table th, .reports-table td, .reports-table th, .table.full-grid td, .table.full-grid th {
+    border: 1px solid #e5e7eb !important;
+}
+.product-table, .reports-table, .table.full-grid { border-collapse: collapse; }
+
+/* Product details modal: ensure readable text and white background so content is legible */
+#productDetailsModal .modal-content, #productDetailsModal .modal-body, #productDetailsModal p, #productDetailsModal span {
+    background: #ffffff !important;
+    color: #0b1220 !important;
+}
+
+/* Ensure modal header buttons remain visible on light modals */
+#productDetailsModal .btn-close { filter: invert(0) !important; }
+
+/* Spinner visuals: use accent color so they are noticeable */
+.spinner-border, .spinner-grow { color: var(--accent-cyan) !important; }
+
+/* Slightly tighten padding in cashier tables to fit more content */
+.cashier-container .table th, .cashier-container .table td { padding: 8px 10px !important; }
+}
+.product-management-header h4 {
+    color: #EAF3FA !important; /* texto claro y altamente contrastado */
+    font-weight: 700 !important;
+    font-size: 1.125rem !important;
+    text-shadow: 0 0 6px rgba(0,0,0,0.45) !important;
+}
+
+/* Increase horizontal breathing room inside product lists */
+
+/* --- UI scale normalization: treat user's 80% browser zoom as 100% on desktop --- */
+/*  Many users prefer to browse at 80% zoom; making UI scale 1.25 on desktop
+    makes 100% in browser match the user's preferred sizing without changing
+    responsive breakpoints. Applied only for desktop screens to avoid mobile issues. */
+:root { --ui-scale: 1.25; }
+@media (min-width: 768px) {
+    html {
+        zoom: var(--ui-scale);
+    }
+}
+
+/* If any pages show minor overflow after scaling, we can tune specific
+   containers (e.g., .container, .container-fluid) to use calc(100% / var(--ui-scale)). */
+
+/* --- Login input contrast fixes: force typed text, caret and placeholder to be high-contrast --- */
+.login-card input.form-control,
+.login-card .form-control,
+.login-card input[type="text"],
+.login-card input[type="password"],
+.login-card input,
+.login-card textarea {
+    color: #ffffff !important;
+    caret-color: #ffffff !important;
+    background: rgba(255,255,255,0.02) !important;
+    -webkit-text-fill-color: #ffffff !important; /* Safari */
+}
+.login-card input::placeholder,
+.login-card textarea::placeholder,
+.login-card .form-control::placeholder {
+    color: rgba(255,255,255,0.72) !important;
+    opacity: 1 !important;
+}
+.login-card .form-control:focus,
+.login-card input:focus,
+.login-card textarea:focus {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 8px 30px rgba(64,196,255,0.06) !important;
+}
+
+/* ensure password fields also show bullets with good contrast on some older browsers */
+.login-card input[type="password"] {
+    -webkit-text-security: disc;
+}
+
+/* end login input contrast fixes */
+.product-table th, .product-table td {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+}
+
+/* Logo / Brand image sizing */
+.site-logo {
+    height: 32px;
+    width: auto;
+    vertical-align: middle;
+}
+
+.login-brand-img {
+    height: 84px;
+    width: auto;
+    display: block;
+    margin: 0 auto 12px;
+}
+
+.navbar-brand img { vertical-align: middle; }
+
+/* Unified light navbar requested: gray surface + black borders */
+.movos-navbar{
+    background: var(--bs-white) !important;
+    border-top: 2px solid var(--bs-black) !important;
+    border-bottom: 2px solid var(--bs-black) !important;
+}
+.movos-navbar .navbar-brand,
+.movos-navbar .navbar-brand-text,
+.movos-navbar .nav-link{
+    color: var(--bs-gray-900) !important;
+}
+.movos-navbar .nav-link:hover,
+.movos-navbar .nav-link:focus{
+    color: var(--bs-black) !important;
+}
+.movos-navbar .navbar-toggler{
+    border: 1px solid var(--bs-black) !important;
+}
+
+/* Rounded corners for lists/tables so header corners are not sharp */
+.table,
+.table-responsive,
+.list-group,
+.dropdown-menu{
+    border-radius: 0.75rem !important;
+}
+.table-responsive{
+    overflow: hidden !important;
+}
+.table{
+    overflow: hidden;
+}
+.table-responsive > .table,
+.table-responsive > table{
+    border-radius: 0.75rem !important;
+    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.table thead th:first-child{
+    border-top-left-radius: 0.75rem !important;
+}
+.table thead th:last-child{
+    border-top-right-radius: 0.75rem !important;
+}
+.list-group-item:first-child{
+    border-top-left-radius: 0.75rem !important;
+    border-top-right-radius: 0.75rem !important;
+}
+.list-group-item:last-child{
+    border-bottom-left-radius: 0.75rem !important;
+    border-bottom-right-radius: 0.75rem !important;
+}

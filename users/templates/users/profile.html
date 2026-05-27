@@ -1,0 +1,12 @@
+<!-- users/profile.html -->
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_users.css">
+{% endblock %}
+
+{% block content %}
+<h2>Perfil de {{ user.username }}</h2>
+<p>Email: {{ user.email }}</p>
+<!-- Otros detalles de perfil -->
+{% endblock %}

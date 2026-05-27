@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#FF9A4D"/>
+      <stop offset="1" stop-color="#1d6fa8"/>
+    </linearGradient>
+  </defs>
+  <!-- Transparent background so it doesn't blend into dark navbars; add light stroke for visibility -->
+  <rect width="256" height="256" rx="40" fill="none" />
+  <circle cx="128" cy="96" r="56" fill="url(#g)" stroke="#ffffff" stroke-width="10" />
+  <g fill="#fff" font-family="Cinzel,serif" font-weight="700" text-anchor="middle">
+    <text x="128" y="110" font-size="56">MOV</text>
+    <text x="128" y="150" font-size="20">OS</text>
+  </g>
+</svg>

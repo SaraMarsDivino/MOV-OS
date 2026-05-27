@@ -1,0 +1,122 @@
+:root{
+  --movos-bg: var(--bs-gray-200);
+  --movos-surface: var(--bs-gray-300);
+  --movos-surface-2: var(--bs-gray-200);
+  --movos-divider: var(--bs-gray-400);
+  --movos-text: var(--bs-gray-900);
+  --movos-muted: var(--bs-gray-700);
+  --movos-border-strong: var(--bs-black);
+  --movos-shadow: var(--bs-box-shadow-lg);
+}
+
+html{ font-size: 13.5px; }
+body{
+  background: var(--movos-bg) !important;
+  color: var(--movos-text) !important;
+  line-height: 1.35;
+}
+
+h1{ font-size: 1.35rem; margin-bottom: 0.75rem; color: var(--movos-text) !important; }
+h2{ font-size: 1.20rem; margin-bottom: 0.65rem; color: var(--movos-text) !important; }
+h3{ font-size: 1.10rem; margin-bottom: 0.55rem; color: var(--movos-text) !important; }
+h4{ font-size: 1.00rem; margin-bottom: 0.5rem; color: var(--movos-text) !important; }
+h5{ font-size: 0.95rem; margin-bottom: 0.45rem; color: var(--movos-text) !important; }
+h6{ font-size: 0.90rem; margin-bottom: 0.4rem; color: var(--movos-text) !important; }
+
+.container, .container-fluid{ --bs-gutter-x: 1.25rem; }
+main.container-fluid.my-4{ margin-top: 1rem !important; margin-bottom: 1rem !important; }
+
+.container.content-max{
+  color: var(--movos-text) !important;
+}
+.container.content-max h1,
+.container.content-max h2,
+.container.content-max h3,
+.container.content-max h4,
+.container.content-max h5,
+.container.content-max h6{
+  color: var(--movos-text) !important;
+}
+
+.page-card{
+  background: var(--movos-surface) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+  box-shadow: var(--movos-shadow) !important;
+  border-radius: 1rem !important;
+}
+.page-card.p-4{ padding: 1rem !important; }
+
+.card{ background: var(--movos-surface) !important; border: 2px solid var(--movos-border-strong) !important; box-shadow: var(--movos-shadow) !important; border-radius: 1rem !important; }
+
+hr{ border-top: 2px solid var(--movos-divider) !important; opacity: 1 !important; }
+
+.table{ color: var(--movos-text) !important; font-size: 0.95rem; }
+.table thead th{ background: var(--movos-surface-2) !important; border-bottom: 2px solid var(--movos-divider) !important; text-transform: none !important; letter-spacing: 0 !important; }
+.table td,
+.table th{ border-bottom-color: var(--movos-divider) !important; padding: 0.55rem 0.75rem; }
+.table-hover tbody tr:hover{ background: var(--movos-surface-2) !important; }
+
+.text-muted{ color: var(--movos-muted) !important; }
+.text-light{ color: var(--movos-text) !important; }
+
+.form-control,
+.form-select{
+  background: var(--bs-white) !important;
+  color: var(--movos-text) !important;
+  border: 1px solid var(--movos-divider) !important;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.95rem;
+}
+
+.btn{ border-radius: 0.75rem !important; padding: 0.45rem 0.75rem; font-size: 0.95rem; }
+
+.form-label{
+  color: var(--movos-text) !important;
+  font-weight: 500;
+}
+
+.form-text{
+  color: var(--movos-muted) !important;
+}
+
+/* AGGRESSIVE CONTRAST FIX for sucursal_products page */
+main h3,
+main h5,
+main p,
+main label,
+main .form-label,
+main .form-text,
+main th,
+main td,
+main button,
+main a,
+.container.content-max h3,
+.container.content-max h5,
+.container.content-max label,
+.container.content-max .form-label,
+.container.content-max .form-text,
+.container.content-max th,
+.container.content-max td,
+.container.content-max p,
+.container.content-max a,
+.row.align-items-end label,
+.col-sm-6 .form-label,
+.col-sm-3 .form-label,
+.col-sm-3 label,
+.col-sm-6 label,
+.page-card h3,
+.page-card h5,
+.page-card label,
+.page-card .form-label,
+.page-card .form-text,
+.nav ul li,
+.pagination a,
+.pagination span{
+  color: #212529 !important;
+  opacity: 1 !important;
+}
+
+table.table thead th{
+  color: #212529 !important;
+  background-color: var(--movos-surface-2) !important;
+}

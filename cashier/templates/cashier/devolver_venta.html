@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h3 class="m-0" style="font-weight:900;">Devolución</h3>
+          <div class="text-muted mt-1">Venta #{{ venta.id }} · {{ venta.fecha|date:"d/m/Y H:i" }}</div>
+        </div>
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:sales_report' venta.id %}">Ver reporte venta</a>
+        </div>
+      </div>
+
+      <hr />
+
+      <form method="post" class="mt-3" id="refund_form">
+        {% csrf_token %}
+        {% if next_url %}
+          <input type="hidden" name="next" value="{{ next_url }}" />
+        {% endif %}
+
+        <div class="row g-3">
+          <div class="col-12 col-lg-4">
+            <label class="form-label">Método de devolución</label>
+            <select name="metodo_pago" id="metodo_pago" class="form-select">
+              <option value="efectivo">Efectivo</option>
+              <option value="debito">Tarjeta de Débito</option>
+              <option value="credito">Tarjeta de Crédito</option>
+              <option value="transferencia">Transferencia</option>
+              <option value="nota_credito">Nota de crédito (saldo)</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-lg-4" id="transaccion_wrap" style="display:none;">
+            <label class="form-label">Nº transacción (devolución)</label>
+            <input name="numero_transaccion" class="form-control" placeholder="Ej: 123456" />
+          </div>
+
+          <div class="col-12 col-lg-4" id="banco_wrap" style="display:none;">
+            <label class="form-label">Banco</label>
+            <input name="banco" class="form-control" placeholder="Ej: Banco Estado" />
+          </div>
+        </div>
+
+        <div class="table-responsive mt-4">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th class="text-end">Comprado</th>
+                <th class="text-end">Devuelto</th>
+                <th class="text-end">Disponible</th>
+                <th style="min-width:160px;">Cantidad a devolver</th>
+                <th style="min-width:160px;">Destino</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in lineas %}
+                <tr>
+                  <td>
+                    <div style="font-weight:700;">{{ row.detalle.producto.nombre }}</div>
+                    <div class="text-muted" style="font-size:12px;">Precio: ${{ row.detalle.precio_unitario|clp }}</div>
+                  </td>
+                  <td class="text-end">{{ row.detalle.cantidad }}</td>
+                  <td class="text-end">{{ row.ya_devuelto }}</td>
+                  <td class="text-end">{{ row.max_returnable }}</td>
+                  <td>
+                    <input
+                      type="number"
+                      name="qty_{{ row.detalle.id }}"
+                      min="0"
+                      max="{{ row.max_returnable }}"
+                      value="0"
+                      class="form-control"
+                      {% if row.max_returnable == 0 %}disabled{% endif %}
+                    />
+                    {% if row.max_returnable == 0 %}
+                      <div class="text-muted" style="font-size:12px; opacity:0.9;">Ya devuelto</div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <select name="destino_{{ row.detalle.id }}" class="form-select" {% if row.max_returnable == 0 %}disabled{% endif %}>
+                      <option value="stock">Vuelve a stock</option>
+                      <option value="merma">Merma</option>
+                    </select>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 justify-content-end mt-3">
+          {% if next_url %}
+            <a class="btn btn-outline-secondary" href="{{ next_url }}">Volver</a>
+          {% else %}
+            <a class="btn btn-outline-secondary" href="{% url 'reports:sales_history' %}">Volver al historial</a>
+          {% endif %}
+          <button type="submit" class="btn btn-primary">Registrar devolución</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const metodo = document.getElementById('metodo_pago');
+    const txWrap = document.getElementById('transaccion_wrap');
+    const bankWrap = document.getElementById('banco_wrap');
+
+    function refresh() {
+      const v = metodo.value;
+      const showTx = (v === 'debito' || v === 'credito' || v === 'transferencia');
+      const showBank = (v === 'transferencia');
+      txWrap.style.display = showTx ? '' : 'none';
+      bankWrap.style.display = showBank ? '' : 'none';
+    }
+
+    metodo.addEventListener('change', refresh);
+    refresh();
+  })();
+
+  (function() {
+    const form = document.getElementById('refund_form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+      const ok = window.confirm('¿Está seguro de registrar esta devolución?');
+      if (!ok) e.preventDefault();
+    });
+  })();
+</script>
+{% endblock %}

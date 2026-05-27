@@ -1,0 +1,217 @@
+/* Global Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Colores de la paleta de StarCraft 1 */
+:root {
+    --starcraft-bg-dark: #12161A;
+    --starcraft-bg-medium: #1F222B;
+    --starcraft-bg-light: #2A3038;
+    --starcraft-border: #444E5A;
+    --starcraft-text: #BCC5D0;
+    --starcraft-accent: #00D0FF; /* Azul cian brillante para acentos */
+    --starcraft-button: #2B4E7A; /* Azul grisáceo para botones */
+    --starcraft-button-hover: #4F709E;
+    --starcraft-glow: #0099FF; /* Efecto de brillo */
+    --starcraft-success: #35B400; /* Verde brillante para éxito */
+    --starcraft-danger: #D80000; /* Rojo intenso para peligro */
+}
+
+body {
+    font-family: 'Consolas', 'Courier New', monospace; /* Fuente de estilo de terminal */
+    background-color: var(--starcraft-bg-dark);
+    color: var(--starcraft-text);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Contenedor Principal - Base de la interfaz */
+.container {
+    flex: 1;
+    max-width: 1400px;
+    padding: 20px;
+    background-color: var(--starcraft-bg-medium);
+    border: 2px solid var(--starcraft-border);
+    border-radius: 0; /* Formas angulares */
+    box-shadow: 0 0 15px var(--starcraft-bg-dark);
+}
+
+/* Títulos y texto */
+h2, h3 {
+    text-shadow: 0 0 5px var(--starcraft-glow);
+}
+
+/* Botones con estilo de StarCraft */
+button, .btn {
+    background-color: var(--starcraft-button);
+    color: var(--starcraft-text);
+    border: 1px solid var(--starcraft-border);
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+button:hover, .btn:hover {
+    background-color: var(--starcraft-button-hover);
+    color: white;
+    box-shadow: 0 0 8px var(--starcraft-glow);
+    transform: none; /* Evita la animación de escala que no encaja con la estética */
+}
+
+.btn-primary {
+    background-color: var(--starcraft-accent);
+    color: var(--starcraft-bg-dark);
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background-color: var(--starcraft-button-hover);
+    color: var(--starcraft-accent);
+}
+
+.btn-success {
+    background-color: var(--starcraft-success);
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: darken(var(--starcraft-success), 10%);
+}
+
+.btn-danger {
+    background-color: var(--starcraft-danger);
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: darken(var(--starcraft-danger), 10%);
+}
+
+/* Tarjetas - Paneles de la interfaz */
+.card {
+    background-color: var(--starcraft-bg-light);
+    border: 2px solid var(--starcraft-border);
+    border-radius: 0;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    text-align: left;
+    transition: none; /* Elimina animaciones de card */
+}
+
+.card:hover {
+    transform: none;
+    box-shadow: 0 0 15px var(--starcraft-glow);
+}
+
+.card h3 {
+    font-size: 20px;
+    color: var(--starcraft-accent);
+    text-shadow: 0 0 5px var(--starcraft-glow);
+}
+
+.card p {
+    color: var(--starcraft-text);
+}
+
+/* Tablas con un aspecto más tecnológico */
+.table-dark {
+    background-color: var(--starcraft-bg-light);
+    color: var(--starcraft-text);
+    border: 1px solid var(--starcraft-border);
+}
+
+.table-dark thead {
+    background-color: var(--starcraft-bg-medium);
+    border-bottom: 2px solid var(--starcraft-border);
+}
+
+.table-dark th {
+    color: var(--starcraft-accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px var(--starcraft-glow);
+}
+
+.table-dark td {
+    border-top: 1px solid var(--starcraft-border);
+}
+
+.table-dark tbody tr:hover {
+    background-color: var(--starcraft-bg-medium);
+    box-shadow: inset 0 0 5px var(--starcraft-glow);
+}
+
+/* Formularios - Inputs con estilo futurista */
+.form-control {
+    background-color: white; /* Ahora es blanco */
+    color: black; /* El texto es negro para contrastar */
+    border: 1px solid var(--starcraft-border);
+    padding: 8px 12px;
+    border-radius: 0;
+    transition: all 0.2s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--starcraft-accent);
+    box-shadow: 0 0 8px var(--starcraft-glow);
+}
+
+/* Footer - Panel inferior de control */
+footer {
+    background-color: var(--starcraft-bg-medium);
+    color: var(--starcraft-text);
+    text-align: center;
+    padding: 15px 0;
+    font-size: 14px;
+    margin-top: auto;
+    width: 100%;
+    border-top: 2px solid var(--starcraft-border);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Estilos para el modal */
+.modal-content {
+    background-color: var(--starcraft-bg-medium);
+    border: 2px solid var(--starcraft-border);
+    border-radius: 0;
+    color: var(--starcraft-text);
+}
+
+.modal-header {
+    background-color: var(--starcraft-bg-dark);
+    border-bottom: 2px solid var(--starcraft-border);
+    color: var(--starcraft-accent);
+    text-shadow: 0 0 5px var(--starcraft-glow);
+}
+
+.modal-footer {
+    background-color: var(--starcraft-bg-dark);
+    border-top: 2px solid var(--starcraft-border);
+}
+
+/* Otros estilos específicos que se mantienen */
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+    justify-content: center;
+}
+
+/* Ancho máximo para mejorar lectura en vistas no-POS */
+.content-max {
+    width: 100%;
+    max-width: 1280px; /* Ajustable según preferencia */
+    margin-left: auto;
+    margin-right: auto;
+}

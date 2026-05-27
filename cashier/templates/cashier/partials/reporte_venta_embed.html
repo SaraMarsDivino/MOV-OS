@@ -1,0 +1,154 @@
+<style>
+  .sale-report-embed { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: #0f172a; }
+  .sale-report-embed h4, .sale-report-embed h5 { margin: 0 0 8px; }
+  .sale-report-embed p { margin: 2px 0; }
+  .sale-report-embed .meta { font-size: 14px; color: #334155; }
+  .sale-report-embed .table-wrap { margin-top: 10px; overflow-x: auto; }
+  .sale-report-embed table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .sale-report-embed th, .sale-report-embed td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
+  .sale-report-embed thead th { background: #f1f5f9; }
+
+  /* Default: no special print-only layout */
+  .sale-report-embed .print-only { display: none; }
+
+  @media print {
+    /* Ticket-style fallback when printing the iframe directly */
+    @page { size: 80mm auto; margin: 0; }
+    body { margin: 0; }
+    .sale-report-embed { width: 76mm; margin: 0 auto; padding: 6px 6px 12px; font-family: "Courier New", Courier, monospace; font-size: 12px; color: #000; }
+    .sale-report-embed .meta { font-size: 11px; color: #000; }
+    .sale-report-embed h4, .sale-report-embed h5 { font-size: 13px; margin-bottom: 6px; }
+    .sale-report-embed .table-wrap { display: none !important; }
+    .sale-report-embed .print-only { display: block !important; }
+    .sale-report-embed .line { border-top: 1px dashed #000; margin: 6px 0; }
+    .sale-report-embed .kv { display: flex; justify-content: space-between; gap: 8px; }
+    .sale-report-embed .kv > span { white-space: nowrap; }
+    .sale-report-embed .item { margin: 6px 0; }
+    .sale-report-embed .item .top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .sale-report-embed .item .name { flex: 1 1 auto; min-width: 0; white-space: pre-wrap; word-break: break-word; }
+    .sale-report-embed .item .top .small { flex: 0 0 auto; white-space: nowrap; }
+    .sale-report-embed .small { font-size: 11px; }
+  }
+</style>
+
+<div class="sale-report-embed">
+  <h4 class="mb-2">Detalle de Venta #{{ venta.id }}</h4>
+  <div class="meta">
+    <p><strong>ID de venta:</strong> {{ venta.id }}</p>
+    <p><strong>Fecha:</strong> {{ venta.fecha|date:"d M Y, H:i" }}</p>
+    <p><strong>Empleado:</strong> {{ venta.empleado.username }}</p>
+  {# Caja vinculada oculta en embed del cajero #}
+  {% if sucursal %}
+    <p><strong>Sucursal:</strong> {{ sucursal.nombre }}</p>
+  {% endif %}
+  <p><strong>Tipo de Venta:</strong> {{ venta.get_tipo_venta_display }}</p>
+  <p><strong>Forma de Pago:</strong> {{ forma_pago_label|default:venta.get_forma_pago_display }}</p>
+  {% if show_payment_breakdown and payment_breakdown %}
+    <div style="margin-top:6px;">
+      <p style="margin: 4px 0;"><strong>Detalle de pago:</strong></p>
+      <div class="table-wrap" style="margin-top:6px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Método</th>
+              <th style="text-align:right;">Monto</th>
+              <th>Tx</th>
+              <th>Banco</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in payment_breakdown %}
+              <tr>
+                <td>
+                  {{ p.metodo_display }}
+                  {% if p.nota_credito_codigo %}<div class="small">({{ p.nota_credito_codigo }})</div>{% endif %}
+                </td>
+                <td style="text-align:right;">{{ p.formatted_monto }}</td>
+                <td>{{ p.numero_transaccion|default:"-" }}</td>
+                <td>{{ p.banco|default:"-" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+  {% if venta.forma_pago == "debito" or venta.forma_pago == "credito" or venta.forma_pago == "transferencia" %}
+    {% if venta.numero_transaccion %}
+      <p><strong>Nº de transacción:</strong> {{ venta.numero_transaccion }}</p>
+    {% endif %}
+    {% if venta.forma_pago == "transferencia" and venta.banco %}
+      <p><strong>Banco:</strong> {{ venta.banco }}</p>
+    {% endif %}
+  {% endif %}
+  {% if formatted_nota_credito %}
+    {% if not show_payment_breakdown %}
+      <p><strong>Nota de crédito aplicada:</strong> {{ formatted_nota_credito }}{% if venta.nota_credito_usada %} ({{ venta.nota_credito_usada.codigo }}){% endif %}</p>
+    {% endif %}
+    <p><strong>Total a pagar:</strong> {{ formatted_total_a_pagar }}</p>
+  {% endif %}
+  
+  <p><strong>Total:</strong> {{ formatted_total }}</p>
+  {% if venta.forma_pago == "efectivo" %}
+    <p><strong>Cliente Pagó:</strong> {{ formatted_cliente_paga }}</p>
+    <p><strong>Vuelto Entregado:</strong> {{ formatted_vuelto_entregado }}</p>
+  {% endif %}
+
+  </div>
+
+  <h5 class="mt-3">Productos Vendidos:</h5>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad</th>
+          <th>Precio Unitario</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in detalles %}
+        <tr>
+          <td>{{ item.producto.nombre }}</td>
+          <td>{{ item.cantidad }}</td>
+          <td>${{ item.precio_unitario|clp }}</td>
+          <td>{{ item.formatted_subtotal }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="print-only">
+    <div class="line"></div>
+    {% for d in detalles %}
+      <div class="item">
+        <div class="top">
+          <span class="name">{{ d.producto.nombre }}</span>
+          <span class="small">{{ d.formatted_subtotal }}</span>
+        </div>
+        <div class="small">{{ d.cantidad }} x ${{ d.precio_unitario|clp }}</div>
+      </div>
+    {% endfor %}
+    <div class="line"></div>
+    <div class="kv"><span>Total</span><span>{{ formatted_total }}</span></div>
+    {% if formatted_nota_credito %}
+      <div class="kv"><span>A pagar</span><span>{{ formatted_total_a_pagar }}</span></div>
+    {% endif %}
+    {% if show_payment_breakdown and payment_breakdown %}
+      <div class="line"></div>
+      {% for p in payment_breakdown %}
+        <div class="kv"><span>{{ p.metodo_display }}</span><span>{{ p.formatted_monto }}</span></div>
+        {% if p.numero_transaccion %}<div class="small">Tx: {{ p.numero_transaccion }}</div>{% endif %}
+        {% if p.banco %}<div class="small">Banco: {{ p.banco }}</div>{% endif %}
+        {% if p.nota_credito_codigo %}<div class="small">NC: {{ p.nota_credito_codigo }}</div>{% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if venta.forma_pago == "efectivo" %}
+      <div class="kv"><span>Pagado</span><span>{{ formatted_cliente_paga }}</span></div>
+      <div class="kv"><span>Vuelto</span><span>{{ formatted_vuelto_entregado }}</span></div>
+    {% endif %}
+    <div class="line"></div>
+  </div>
+</div>

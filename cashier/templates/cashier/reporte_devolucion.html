@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_cashier_pages.css">
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+  body { background: var(--bs-gray-200); color:#111827; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block content %}
+<div class="py-4">
+  <div class="container react-shell-wide react-compact react-forms">
+
+    <div class="react-card mb-3">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h3 class="m-0" style="font-weight:900;">Comprobante de devolución</h3>
+          <div class="text-muted mt-1" style="opacity:0.92;">Devolución #{{ devolucion.id }} · Venta #{{ devolucion.venta_original.id }}</div>
+        </div>
+        <div class="d-flex gap-2">
+          <a class="btn btn-sm" href="{% url 'print_devolucion' devolucion.id %}" target="_blank">Imprimir</a>
+          <a class="btn btn-sm" href="{% url 'cashier_dashboard' %}">Volver al Cajero</a>
+          <a class="btn btn-sm" href="{{ back_history_href }}">Ir al historial</a>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-2">
+        <div class="col-12 col-lg-4">
+          <div class="text-muted" style="font-size:12px; opacity:0.9;">Fecha</div>
+          <div style="font-weight:900;">{{ devolucion.fecha|date:"d/m/Y H:i" }}</div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="text-muted" style="font-size:12px; opacity:0.9;">Método</div>
+          <div style="font-weight:900;">{{ devolucion.get_metodo_pago_display }}</div>
+        </div>
+        <div class="col-12 col-lg-4">
+          <div class="text-muted" style="font-size:12px; opacity:0.9;">Total devuelto</div>
+          <div style="font-weight:900; font-size:20px;">{{ formatted_total }}</div>
+        </div>
+      </div>
+
+      {% if devolucion.nota_credito %}
+        <div class="alert alert-success mt-3 mb-0">
+          <div style="font-weight:900;">Nota de crédito emitida</div>
+          <div class="mt-1">Código: <span style="font-weight:900; font-size:18px; letter-spacing:1px;">{{ devolucion.nota_credito.codigo }}</span></div>
+          <div class="mt-1 text-muted" style="opacity:0.92;">Saldo: ${{ devolucion.nota_credito.saldo|clp }}</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="react-table-shell">
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th class="text-end">Cantidad</th>
+              <th class="text-end">Precio</th>
+              <th class="text-end">Subtotal</th>
+              <th class="text-start">Destino</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in detalles %}
+              <tr>
+                <td>{{ d.producto.nombre }}</td>
+                <td class="text-end">{{ d.cantidad }}</td>
+                <td class="text-end">${{ d.precio_unitario|clp }}</td>
+                <td class="text-end">${{ d.subtotal|clp }}</td>
+                <td class="text-start">{{ d.get_destino_display }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

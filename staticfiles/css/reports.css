@@ -1,0 +1,55 @@
+/* Estilo compacto para filtros */
+.filtros-container {
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
+}
+
+.filtros-container .form-control, .filtros-container .btn {
+    font-size: 14px;
+    padding: 6px;
+}
+
+.filtros-container label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Estilo para tablas */
+table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* static/css/reports.css - Correcciones para badges de estado */
+/* Aseguramos que el color del texto sea blanco y el texto en negrita para Abierta y Cerrada */
+.badge.badge-success {
+    background-color: #28a745; /* Verde Bootstrap */
+    color: white; /* Asegurar texto blanco */
+    font-weight: bold; /* Hacer el texto más audaz */
+}
+
+.badge.badge-danger {
+    background-color: #dc3545; /* Rojo Bootstrap */
+    color: #ffffff; /* Texto blanco */
+    font-weight: bold; /* Hacer el texto más audaz */
+}
+
+/* Opcional: Si el rojo sigue siendo difícil de ver en tu tema oscuro,
+   puedes probar un amarillo/naranja más brillante para 'Cerrada'
+   Descomenta el siguiente bloque si quieres probarlo:
+*/
+/*
+.badge.badge-danger {
+    background-color: #ffc107; 
+    color: #343a40; 
+    font-weight: bold;
+}
+*/
+
+/* Improve table grid visibility in reports */
+.reports-table, .reports-table th, .reports-table td { border-collapse: collapse; }
+.reports-table th, .reports-table td { border: 1px solid #e5e7eb !important; padding: 8px 10px; }
+.reports-table tbody tr:nth-child(odd) td { background: #ffffff; color: #0b1220; }
+.reports-table tbody tr:nth-child(even) td { background: #f8f9fa; color: #0b1220; }
+

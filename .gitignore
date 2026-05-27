@@ -1,0 +1,42 @@
+﻿MOVOS/local_settings.py
+movos_dump.sql
+movos_dump.sql.gz
+backups/
+*.pyc
+__pycache__/
+**/__pycache__/
+
+# Dev scratch scripts (local only)
+scripts/tmp_*.py
+scripts/test_chat_proto.py
+scripts/generate_favicon.py
+
+# Local image artifacts
+static/img/*tmp*
+static/img/Gemini_Generated_Image*
+
+# Local databases
+db.sqlite3
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-shm
+*.sqlite3-wal
+
+# Local virtualenv
+.venv/
+
+# Frontend local dependencies/build artifacts
+frontend/pos-cashier/node_modules/
+frontend/pos-cashier/dist/
+frontend/pos-cashier/.vite/
+
+# Vite production build output is committed so the server can serve it
+# without needing Node.js installed. Run `npm run build` locally before commit.
+
+# local backups
+MOVOS/local_settings.py.bak
+.env
+.movos_dump.sql.gz
+nohup.out
+.aider*
+.claude/

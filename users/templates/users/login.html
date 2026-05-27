@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_users.css">
+{% endblock %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block extra_styles %}
+<style>
+    /* Login: force readable black text (subtitle + inputs + placeholders) */
+    .login-card .login-subtitle{ color: var(--bs-black, #000) !important; }
+    .login-card input.form-control{ color: var(--bs-black, #000) !important; -webkit-text-fill-color: var(--bs-black, #000) !important; }
+    .login-card input.form-control::placeholder{ color: var(--bs-black, #000) !important; opacity: 1 !important; }
+
+    /* Login background: gray tones so it isn't flat white */
+    body{
+        background:
+            radial-gradient(900px 450px at 50% 10%, var(--bs-gray-100, #f8f9fa), transparent 70%),
+            linear-gradient(135deg, var(--bs-gray-300, #dee2e6), var(--bs-gray-200, #e9ecef) 45%, var(--bs-gray-100, #f8f9fa))
+            !important;
+    }
+    main.container-fluid.my-4{ background: transparent !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+{% block page_wrapper_start %}{% endblock %}
+<div class="d-flex justify-content-center align-items-center" style="min-height:60vh;">
+    <div class="card p-4 shadow login-card">
+        <div class="text-center mb-3">
+            <img src="{% static 'img/logo.svg' %}" alt="MOV-OS" class="login-brand-img">
+            <h1 class="login-brand">MOV-OS</h1>
+            <p class="login-subtitle">Sistema Punto de Venta — Ingrese sus credenciales</p>
+        </div>
+        {% if messages %}
+          {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuario</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="Ingrese su usuario" required autofocus>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Ingrese su contraseña" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+        </form>
+    </div>
+</div>
+{% block page_wrapper_end %}{% endblock %}
+{% endblock %}

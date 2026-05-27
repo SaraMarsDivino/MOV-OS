@@ -1,0 +1,37 @@
+<!-- users/templates/users/create_user.html -->
+
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_users.css">
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block content %}
+<div class="container react-shell react-forms py-4">
+    <div class="react-card mb-3">
+        <h2 class="mb-0">Crear Nuevo Usuario</h2>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="react-card">
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                <button type="submit" class="btn">Crear Usuario</button>
+                {% url 'user_management' as back_href %}
+                {% include 'partials/back_button.html' with href=back_href text='Volver a Usuarios' %}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

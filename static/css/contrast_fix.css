@@ -1,0 +1,104 @@
+/* Global contrast fix for all pages - overrides any caching issues */
+/* This file MUST be loaded AFTER all other stylesheets to take effect */
+
+/* Force dark text on all main content */
+main h1,
+main h2,
+main h3,
+main h4,
+main h5,
+main h6,
+main p,
+main label,
+main .form-label,
+main .form-text,
+main th,
+main td,
+main a,
+main span,
+main div,
+main button:not([class*="btn-dark"]):not([class*="btn-danger"]):not([class*="btn-primary"]),
+.container h1,
+.container h2,
+.container h3,
+.container h4,
+.container h5,
+.container h6,
+.container p,
+.container label,
+.container .form-label,
+.container .form-text,
+.container th,
+.container td,
+.container a,
+.container span,
+.container div {
+  color: #212529 !important;
+  opacity: 1 !important;
+}
+
+/* Dark text in forms */
+.form-label {
+  color: #212529 !important;
+  font-weight: 500 !important;
+}
+
+.form-text {
+  color: #495057 !important;
+}
+
+.form-control,
+.form-select {
+  color: #212529 !important;
+}
+
+/* Dark text in tables */
+table.table thead th,
+table.table-striped thead th {
+  color: #212529 !important;
+}
+
+table.table tbody td,
+table.table-striped tbody td {
+  color: #212529 !important;
+}
+
+/* Dark text in pagination */
+.pagination a,
+.pagination span,
+.page-link {
+  color: #212529 !important;
+}
+
+/* Dark text in navigation */
+nav .page-link,
+nav a,
+nav span,
+.navbar a,
+.nav-link,
+.breadcrumb .active {
+  color: #212529 !important;
+}
+
+/* Dark text in lists */
+.list-group-item {
+  color: #212529 !important;
+}
+
+/* Dark text in modals */
+.modal-header,
+.modal-body,
+.modal-footer {
+  color: #212529 !important;
+}
+
+.modal-body label,
+.modal-body .form-label {
+  color: #212529 !important;
+}
+
+/* Dark text in cards */
+.card-title,
+.card-text {
+  color: #212529 !important;
+}

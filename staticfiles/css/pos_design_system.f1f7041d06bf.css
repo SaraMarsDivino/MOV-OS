@@ -1,0 +1,214 @@
+:root{
+  /* Dark Palette (avoid pure white surfaces) */
+  --pos-bg: #0B2F45; /* navy-blue, less dark so cards stand out */
+  --pos-surface: #112B36; /* card surface slightly lighter */
+  --pos-surface-2: #1B2126; /* alternate surface */
+  --pos-primary: #4D7CFE;
+  --pos-success: #00D09C;
+  --pos-danger: #FF6B6B;
+  --pos-text: #EAF3FA; /* light text for dark surfaces */
+  --pos-muted: #9AA6AD;
+
+  /* Geometry */
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+
+  /* Depth */
+  --shadow-soft: 0 6px 24px rgba(2,6,23,0.6);
+  --shadow-hover: 0 10px 40px rgba(2,6,23,0.75);
+
+  /* Typography */
+  --base-font-family: 'Inter', 'Poppins', 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  --base-font-size: 16px;
+}
+
+/* Global layout for POS pages (dark) */
+.pos-container{
+  background: linear-gradient(180deg,var(--pos-bg), #08242f);
+  min-height: 100vh;
+  font-family: var(--base-font-family);
+  font-size: var(--base-font-size);
+  color: var(--pos-text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  padding: 20px;
+}
+
+/* Ensure overall page body uses the navy background so sections/cards pop */
+body{ background: linear-gradient(180deg,var(--pos-bg), #08242f); }
+
+/* Card surface (dark) */
+.pos-card, .card, .panel {
+  background: linear-gradient(180deg,var(--pos-surface), var(--pos-surface-2)) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-soft) !important;
+  border: 1px solid rgba(255,255,255,0.02) !important;
+  color: var(--pos-text) !important;
+}
+.pos-card:hover{ box-shadow: var(--shadow-hover); transform: translateY(-3px); transition: all .18s ease; }
+
+/* Product card (grid) - dark style */
+.card-product{
+  display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  border-radius: var(--radius-md); overflow:hidden; background:linear-gradient(180deg,var(--pos-surface),var(--pos-surface-2));
+  box-shadow: var(--shadow-soft); cursor:pointer; transition: transform .14s ease, box-shadow .14s ease;
+}
+.card-product img{ width:100%; height:160px; object-fit:cover; display:block; background:#0F1417; }
+.card-product .product-body{ padding:12px 14px; display:flex; flex-direction:column; gap:6px; }
+.card-product .product-title{ font-weight:700; font-size:0.95rem; color:var(--pos-text); }
+.card-product .product-price{ color:var(--pos-primary); font-weight:700; }
+.card-product:hover{ transform: scale(1.02); box-shadow: var(--shadow-hover); }
+
+/* Buttons (pill) */
+.btn-pill{ border-radius: 999px; padding: 12px 26px; font-weight:600; display:inline-flex; align-items:center; gap:8px; }
+.btn-primary{ background: var(--pos-primary); color: #fff; border: none; box-shadow: 0 6px 18px rgba(77,124,254,0.12); }
+.btn-primary:hover{ box-shadow: 0 10px 30px rgba(77,124,254,0.16); transform: translateY(-2px); }
+.btn-success{ background: var(--pos-success); color: #05221a; border: none; }
+.btn-danger{ background: var(--pos-danger); color: #fff; border: none; }
+.btn-outline-primary{ background: transparent; color: var(--pos-primary); border: 1px solid rgba(77,124,254,0.12); }
+
+/* Inputs / Search - dark friendly */
+.form-control.pos-input, input.pos-input, textarea.pos-input, select.pos-input{
+  background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.03); padding: 12px 20px; color: var(--pos-text); box-shadow: none; transition: box-shadow .12s ease, transform .08s ease;
+}
+.form-control.pos-input::placeholder, input.pos-input::placeholder { color: rgba(234,243,250,0.5); }
+.form-control.pos-input:focus, input.pos-input:focus, select.pos-input:focus{ outline: none; box-shadow: 0 6px 24px rgba(77,124,254,0.12); border-radius: var(--radius-md); border-color: rgba(77,124,254,0.16); }
+
+/* Native select visual helper (force readable) */
+select.pos-input, .form-select, select{ 
+  appearance: auto; 
+  color: #0b0b0b !important; 
+  background: #ffffff !important; 
+  border: 1px solid rgba(0,0,0,0.12) !important;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+select.pos-input option, .form-select option, select option{ 
+  color: #0b0b0b !important; 
+  background: #ffffff !important; 
+}
+
+/* Bootstrap/native dropdown menus (ensure light menus and readable items) */
+.dropdown-menu, .bootstrap-select .dropdown-menu, .selectpicker .dropdown-menu{
+  background: #ffffff !important;
+  color: #0b0b0b !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+  box-shadow: 0 6px 22px rgba(2,6,23,0.35) !important;
+}
+.dropdown-item, .bootstrap-select .dropdown-menu .dropdown-item{
+  color: #0b0b0b !important;
+  background: transparent !important;
+}
+.dropdown-item:hover, .bootstrap-select .dropdown-menu .dropdown-item:hover{
+  background: rgba(0,0,0,0.06) !important;
+}
+
+/* Ensure opened native select overlay items remain readable on Windows/Chromium */
+select::-ms-expand{ display: auto; }
+
+/* High z-index for dropdown overlays when needed */
+.dropdown-menu{ z-index: 3000 !important; }
+
+/* Ticket / Cart table - dark receipt-like */
+.ticket-table{ width:100%; border-collapse:separate; border-spacing:0; background:transparent; }
+.ticket-table thead th{ text-align:left; font-weight:700; color:var(--pos-text); padding:12px 16px; border-bottom:1px solid rgba(255,255,255,0.06); }
+.ticket-table tbody tr{ background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.03); }
+.ticket-table tbody td{ padding:15px 16px; color:var(--pos-text); vertical-align:middle; }
+.ticket-table tbody tr.alt{ background: rgba(255,255,255,0.05); }
+
+/* Global rule: tables should avoid pure white rows */
+table, .table, .data-table, .ticket-table, .product-table{ background: transparent !important; }
+table tbody tr, .table tbody tr, .data-table tbody tr, .product-table tbody tr{ background: rgba(255,255,255,0.02) !important; }
+table tbody tr:nth-child(even), .table tbody tr:nth-child(even), .data-table tbody tr:nth-child(even), .product-table tbody tr:nth-child(even){ background: rgba(255,255,255,0.05) !important; }
+table thead th, .table thead th{ background: linear-gradient(180deg,var(--pos-surface),var(--pos-surface-2)) !important; color: var(--pos-text) !important; }
+
+/* Make action buttons large for touch */
+.btn-action{ padding:15px 28px; border-radius:12px; font-weight:700; }
+
+/* Modal tuning - dark */
+.modal-content{ border-radius: var(--radius-lg) !important; box-shadow: var(--shadow-soft) !important; background: linear-gradient(180deg,var(--pos-surface),var(--pos-surface-2)) !important; color:var(--pos-text) !important; }
+.modal-content .modal-header{ border-bottom: none; padding:18px 20px; }
+.modal-content .modal-body{ padding:18px 20px; color:var(--pos-text); }
+.modal-content .modal-footer{ border-top: none; padding:14px 20px; }
+
+/* Layout helpers for POS */
+.pos-grid{ display:grid; gap:18px; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); }
+.pos-row{ display:flex; gap: 16px; align-items:flex-start; }
+
+/* Utility classes */
+.text-muted-2{ color: var(--pos-muted) !important; }
+.small{ font-size:0.9rem; }
+.center{ text-align:center; }
+
+/* .pos-container example */
+.pos-container-demo{ background:var(--pos-bg); padding:24px; border-radius:var(--radius-lg); }
+
+/* Responsive tweaks */
+@media (max-width: 768px){ .card-product img{ height:140px; } .btn-pill{ padding:12px 18px; } }
+
+/* Accessibility: focus-visible outlines */
+:focus{ outline: none; }
+:focus-visible{ outline: 3px solid rgba(77,124,254,0.18); border-radius:8px; }
+
+/* Logout button contrast */
+.btn-logout{ background:#E74C3C !important; color:#fff !important; border: none !important; padding:10px 16px; border-radius:10px; }
+.btn-logout:hover{ background:#c0392b !important; }
+
+/* Cerrar Caja / Volver al Dashboard buttons */
+.btn-cerrar-caja{ background:#C0392B !important; color:#fff !important; border-radius:10px; padding:12px 20px; }
+.btn-cerrar-caja:hover{ background:#A93226 !important; }
+.btn-volver-dashboard{ background:#2E86AB !important; color:#fff !important; border-radius:10px; padding:12px 20px; }
+.btn-volver-dashboard:hover{ background:#23719a !important; }
+
+/* Checkbox: custom visible checkmark (works on modern browsers) */
+input[type="checkbox"].form-check-input, input[type="checkbox"]{
+  -webkit-appearance: none; appearance: none; width:1.25rem; height:1.25rem; border-radius:6px; display:inline-block; vertical-align:middle; margin:0; border:2px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.02); position:relative; transition: all .12s ease; }
+input[type="checkbox"]:hover{ filter:brightness(1.06); }
+input[type="checkbox"]:checked{ background: var(--pos-primary); border-color: var(--pos-primary); }
+input[type="checkbox"]:checked::after{ content: ""; position:absolute; left:6px; top:2px; width:6px; height:10px; border: solid #fff; border-width:0 2px 2px 0; transform: rotate(45deg); }
+
+/* Ensure product-management inline checkbox keeps white background */
+.product-select{ background:#fff !important; border:1px solid rgba(0,0,0,0.12) !important; }
+
+/* Ensure dropdowns and selects overlay above table shadows */
+.dropdown-menu, .dropdown, .bootstrap-select{ z-index:3050 !important; }
+
+/* Delete button: visible contrast */
+.btn-delete{ background:#2D2F33 !important; color:#fff !important; border: 1px solid rgba(0,0,0,0.2) !important; }
+.btn-delete:hover{ background:#c0392b !important; color:#fff !important; }
+
+/* Cart specific styles to match requested layout */
+.cart-table{ border: 1px solid rgba(0,0,0,0.08); background: #eef1f4; color: #111; }
+.cart-table thead th{ color: var(--pos-primary); font-weight:700; text-transform:uppercase; border-bottom:1px solid rgba(0,0,0,0.08); background: #2b2f33; color: #4D7CFE; }
+.cart-table tbody tr{ background: #f8f9fa; border-bottom: 1px solid rgba(0,0,0,0.09); }
+.cart-table tbody tr:nth-child(even){ background: #f1f3f5; }
+.cart-table td, .cart-table th{ padding: 10px 10px; vertical-align: middle; }
+/* thinner qty input for denser layout */
+.cart-table .qty-input{ background:#fff !important; color:#111 !important; border-radius:8px; padding:6px 8px; width:56px; text-align:center; border:1px solid rgba(0,0,0,0.08); }
+.cart-qty, .qty-input{ background:#fff !important; color:#111 !important; border-radius:8px; padding:6px 8px; width:56px; text-align:center; border:1px solid rgba(0,0,0,0.08); }
+/* Hide the placeholder empty row so the cart looks empty when no items */
+.cart-table .cart-empty-row{ display: none !important; }
+/* Support legacy/input class used by JS: ensure cart-qty receives same styling as qty-input */
+.cart-qty, .qty-input{ background:#fff !important; color:#111 !important; border-radius:8px; padding:8px 10px; width:68px; text-align:center; border:1px solid rgba(0,0,0,0.08); }
+.cart-table .action-stack{ display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+.cart-table .btn-increase{ background:#2ecc71 !important; color:#fff !important; border-radius:8px; }
+.cart-table .btn-decrease{ background:#e74c3c !important; color:#fff !important; border-radius:8px; }
+
+/* Light gray backgrounds for views with rows/columns */
+.light-row-bg table, .light-row-bg .table, .light-row-bg .data-table{ background: #f3f4f6 !important; }
+.light-row-bg table tbody tr, .light-row-bg .table tbody tr, .light-row-bg .data-table tbody tr{ background: #ffffff !important; }
+.light-row-bg table tbody tr:nth-child(even), .light-row-bg .table tbody tr:nth-child(even), .light-row-bg .data-table tbody tr:nth-child(even){ background: #f7f7f8 !important; }
+
+/* Product table stock values and explicit stock spans should be readable (black) */
+.product-table td, .product-table th, .product-table .stock-val{ color: #111 !important; }
+.product-table td { vertical-align: middle; }
+
+/* Logout nav link variant: keep nav-link appearance but red color */
+.logout-red{ color: #ff5c5c !important; font-weight:600; }
+.logout-red:hover{ color: #e04a4a !important; }
+
+/* Cerrar Caja: light yellow -> hover red */
+.btn-cerrar-caja{ background: #FFEB99 !important; color: #111 !important; border: 1px solid rgba(0,0,0,0.06) !important; }
+.btn-cerrar-caja:hover{ background: #E74C3C !important; color: #fff !important; }
+

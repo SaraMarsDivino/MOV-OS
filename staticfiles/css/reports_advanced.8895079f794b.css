@@ -1,0 +1,130 @@
+/* Modern accessible theme for advanced reports */
+:root {
+  --bg: #121416;
+  --bg-alt: #1e2227;
+  --surface: #252a31;
+  --surface-alt: #2f3640;
+  --border: #3d454f;
+  --text-primary: #f5f7fa;
+  --text-secondary: #c2c8d0;
+  --accent: #ffb347; /* warm amber */
+  --accent-alt: #ff7b54; /* coral */
+  --success: #3ddc97;
+  --danger: #ff4d4f;
+  --warning: #ffbf00;
+  --info: #4dabf7;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --shadow: 0 4px 14px rgba(0,0,0,.35);
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
+}
+body {background: var(--bg); color: var(--text-primary); font-family: 'Roboto', system-ui, sans-serif; line-height:1.4;}
+h1,h2,h3,h4,h5,h6 {font-family: 'Cinzel', serif; letter-spacing:.5px;}
+.container-fluid {padding-top:1.2rem; padding-bottom:2rem;}
+.card, .sidebar-card {background: var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); box-shadow: var(--shadow); margin-bottom:1rem;}
+.card-header {background: var(--surface-alt); border-bottom:1px solid var(--border); border-top-left-radius:var(--radius-md); border-top-right-radius:var(--radius-md);}
+.card-header h4 {color: var(--accent); font-weight:600;}
+.card-header p.small {color: var(--text-secondary);}
+#sidebar {background: var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius-md); box-shadow: var(--shadow);} 
+.list-group-item {background: var(--surface-alt); color: var(--text-primary); border:1px solid var(--border);} 
+input.form-control, select.form-select {background: var(--surface-alt); border:1px solid var(--border); color: var(--text-primary);} 
+input.form-control:focus, select.form-select:focus {border-color: var(--accent); box-shadow:0 0 0 2px rgba(255,179,71,.25);} 
+.btn-primary {background: var(--gradient-accent); border:none; color:#14181c; font-weight:600; text-shadow:none;} 
+.btn-primary:hover {filter: brightness(1.1);} 
+.btn-back {background: var(--surface-alt); border:1px solid var(--accent); color: var(--accent); transition:.25s; font-weight:600;} 
+.btn-back:hover {background: var(--accent); color:#14181c;} 
+.display-6 {font-size:1.9rem; font-weight:600; color: var(--accent);} 
+.small-kpis .col-md-2 {padding:0.6rem;}
+.small-kpis .h5 {color: var(--text-primary);}
+.small-kpis h6 {color: var(--text-secondary); font-weight:600;}
+.small-kpis p {color: var(--text-primary); margin-bottom:0;}
+
+/* KPI chip style for right column */
+.kpi-chip {background: linear-gradient(90deg, rgba(255,179,71,0.06), rgba(255,123,84,0.04)); border:1px solid rgba(255,179,71,0.08); border-radius:8px; padding:0.6rem;}
+.table-dark {--bs-table-bg: var(--surface-alt); --bs-table-striped-bg: #30363d; --bs-table-striped-color: var(--text-primary);}
+.heatmap td {text-align:center; font-size:.75rem; padding:2px;}
+.toggle-indicator label {color: var(--text-secondary); font-size:.85rem; cursor:pointer;}
+.toggle-indicator input:checked + label {color: var(--accent); font-weight:600;}
+
+/* Chart container improvements */
+.card canvas {background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0)); border-radius:6px; min-height:180px;}
+.chart-legend {color: var(--text-secondary);}
+
+/* Top productos form spacing */
+#topFilterForm {display:flex; gap:0.5rem; align-items:center; justify-content:center;}
+#topFilterForm .form-select {min-width:80px;}
+
+/* Table hover for readability */
+table.table tbody tr:hover {background: rgba(255,179,71,0.03);} 
+
+/* Market analysis card: reuse login aesthetic but wider */
+.market-card {
+  background: linear-gradient(180deg, rgba(42,48,56,0.98), rgba(36,40,46,0.98));
+  border-radius: 12px;
+  padding: 28px 28px;
+  width: 100%;
+  max-width: 1200px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 0 20px rgba(0,160,220,0.03);
+  border: 1px solid rgba(255,255,255,0.02);
+}
+.market-card .card-header h4 {color: var(--accent);}
+.market-card .form-control {background:#f7fafc; color:#111827; border-radius:8px;}
+.market-card .btn-primary {background: var(--gradient-accent); color:#14181c; font-weight:700;}
+
+/* Market header branding to match login */
+.market-brand {
+  font-family: 'Cinzel', serif;
+  color: var(--accent);
+  font-size: 48px;
+  letter-spacing: 3px;
+  margin: 0;
+  font-weight: 800;
+  text-shadow: 0 2px 14px rgba(0,208,255,0.06);
+}
+.market-subtitle {
+  color: var(--text-secondary);
+  margin-top: 6px;
+  font-size: 14px;
+}
+.section-title {
+  font-family: 'Cinzel', serif;
+  color: var(--accent);
+  font-size: 1.25rem;
+  margin: 0;
+  letter-spacing: 1px;
+}
+
+/* Pagination */
+.pagination .page-link {background: var(--surface-alt); color: var(--text-primary); border:1px solid var(--border);} 
+.pagination .page-item.active .page-link {background: var(--accent); color:#14181c; border-color: var(--accent);} 
+.pagination .page-link:hover {background: var(--surface); color: var(--accent);} 
+/* Force high contrast for headings and paragraph text inside dark cards */
+.card h4, .card h5, .card h6 {color: var(--accent);}
+.card p, .card .small, .card label {color: var(--text-secondary);} 
+table th {color: var(--text-primary);} 
+table td {color: var(--text-primary);} 
+/* Heatmap accessible focus */
+.heatmap td:focus {outline:2px solid var(--accent-alt);}
+/* Responsive grid refinements */
+@media (max-width: 992px){.display-6 {font-size:1.6rem;} #sidebar {margin-bottom:1rem;} }
+@media (prefers-color-scheme: light){ body {background:#f5f7fa; color:#1e2227;} .card,.sidebar-card {background:#fff;} .card-header{background:#fafafa;} input.form-control,select.form-select{background:#fff; color:#1e2227;} }
+/* Utility */
+.muted {color: var(--text-secondary)!important;}
+.text-accent {color: var(--accent)!important;}
+
+/* Sidebar chat sticky behavior */
+#sidebar { position: relative; }
+#reportsChatSidebar, #sidebar .sidebar-card { position: sticky; top: 80px; z-index: 40; }
+#reportsChatSidebar { max-height: calc(100vh - 110px); overflow:auto; }
+#convsListSidebar button.active { background: rgba(255,179,71,0.12); border-color: rgba(255,179,71,0.18); }
+.sidebar-card .input-group .form-control { background: var(--surface-alt); color: var(--text-primary); }
+.sidebar-card .btn { font-size: .85rem; }
+
+/* Floating assistant styles */
+#floatingAssistant .card { background: var(--surface); border:1px solid var(--border); }
+#fa-panel { width:100%; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+#fa-messages div.user { text-align: right; }
+#fa-messages div.assistant { text-align: left; color: var(--text-secondary); }
+#fa-messages .bubble { display:inline-block; padding:8px 10px; border-radius:10px; margin-bottom:6px; max-width:85%; }
+#fa-messages .bubble.user { background: linear-gradient(90deg, rgba(255,179,71,0.12), rgba(255,123,84,0.06)); color:var(--text-primary); }
+#fa-messages .bubble.assistant { background: rgba(255,255,255,0.03); color:var(--text-secondary); }

@@ -1,0 +1,156 @@
+{# filepath: c:\Users\rocha\OneDrive\Escritorio\Sistema-POS-main\reports\templates\reports\reporte_caja.html #}
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_cashier_pages.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 detalle-caja">
+        <h2 class="detalle-title">Detalle de Caja</h2>
+        <div class="row">
+                <div class="col-md-6">
+                        <h4>Información de la Caja</h4>
+                        <p><strong>ID de Caja:</strong> {{ caja.id }}</p>
+                        <p><strong>Cajero:</strong> {{ caja.vendedor.username }}</p>
+                        <p><strong>Sucursal:</strong> {{ caja.sucursal.nombre }}</p>
+                        <p><strong>Fecha de Apertura:</strong> {{ caja.apertura|date:"d/m/Y H:i" }}</p>
+                        <p>
+                                <strong>Fecha de Cierre:</strong>
+                                {% if caja.cierre %}
+                                        {{ caja.cierre|date:"d/m/Y H:i" }}
+                                {% else %}
+                                        <em>Aún no se ha cerrado</em>
+                                {% endif %}
+                        </p>
+                </div>
+                                <div class="col-md-6">
+                                                                                                <h4>Resumen Financiero</h4>
+                                                                                                <table class="table table-sm">
+                                                                                                        <colgroup>
+                                                                                                                <col style="width:55%">
+                                                                                                                <col style="width:22%">
+                                                                                                                <col style="width:23%">
+                                                                                                        </colgroup>
+                                                                                                        <thead>
+                                                                                                                <tr><th>Item</th><th class="text-end">Teórico</th><th class="text-end">Real</th></tr>
+                                                                                                        </thead>
+                                                                                                        <tbody>
+                                                                                                                <tr><td>Efectivo Total</td><td class="text-end">{{ formatted_efectivo_final }}</td><td class="text-end">{{ formatted_efectivo_final_display }}</td></tr>
+                                                                                                                <tr><td>Apertura</td><td class="text-end">{{ formatted_efectivo_inicial }}</td><td class="text-end">{{ formatted_efectivo_inicial }}</td></tr>
+                                                                                                                <tr><td>Ret. Efectivo</td><td class="text-end">0</td><td class="text-end">0</td></tr>
+                                                                                                                <tr><td>Vueltos</td><td class="text-end">(-) {{ formatted_vuelto_entregado }}</td><td class="text-end">(-) {{ formatted_vuelto_entregado }}</td></tr>
+                                                                                                                <tr><td>T.Crédito</td><td class="text-end">{{ formatted_total_credito }}</td><td class="text-end">{{ formatted_total_credito }}</td></tr>
+                                                                                                                <tr><td>T.Débito</td><td class="text-end">{{ formatted_total_debito }}</td><td class="text-end">{{ formatted_total_debito }}</td></tr>
+                                                                                                                <tr><td>Transferencia</td><td class="text-end">{{ formatted_total_transferencia }}</td><td class="text-end">{{ formatted_total_transferencia }}</td></tr>
+                                                                                                                <tr><td>Devoluciones (Total)</td><td class="text-end">(-) {{ formatted_devoluciones_total }}</td><td class="text-end">(-) {{ formatted_devoluciones_total }}</td></tr>
+                                                                                                                <tr><td>Devoluciones Efectivo</td><td class="text-end">(-) {{ formatted_devoluciones_efectivo }}</td><td class="text-end">(-) {{ formatted_devoluciones_efectivo }}</td></tr>
+                                                                                                                <tr><td>Devoluciones Débito</td><td class="text-end">(-) {{ formatted_devoluciones_debito }}</td><td class="text-end">(-) {{ formatted_devoluciones_debito }}</td></tr>
+                                                                                                                <tr><td>Devoluciones Crédito</td><td class="text-end">(-) {{ formatted_devoluciones_credito }}</td><td class="text-end">(-) {{ formatted_devoluciones_credito }}</td></tr>
+                                                                                                                <tr><td>Devoluciones Transferencia</td><td class="text-end">(-) {{ formatted_devoluciones_transferencia }}</td><td class="text-end">(-) {{ formatted_devoluciones_transferencia }}</td></tr>
+                                                                                                                <tr class="border-top"><td class="fw-bold">Total</td><td class="text-end fw-bold">{{ formatted_total_ventas }}</td><td class="text-end fw-bold">{{ formatted_total_ventas }}</td></tr>
+                                                                                                        </tbody>
+                                                                                                </table>
+                                                                                                <p class="mt-2"><strong>Efectivo Real en Caja:</strong> {{ formatted_efectivo_final_display }}</p>
+                                                                                                {% if formatted_efectivo_contado %}
+                                                                                                        <p><strong>Contado:</strong> {{ formatted_efectivo_contado }}</p>
+                                                                                                {% endif %}
+                                                                                                                {% if formatted_descuadre_signed and descuadre_label %}
+                                                                                                                        {% if descuadre_label == 'Efectivo Sobrante' %}
+                                                                                                                                {% with desc_class='text-success' %}
+                                                                                                                                        <p><strong>{{ descuadre_label }}:</strong> <span class="{{ desc_class }}">{{ formatted_descuadre_signed }}</span></p>
+                                                                                                                                {% endwith %}
+                                                                                                                        {% elif descuadre_label == 'Faltante' %}
+                                                                                                                                {% with desc_class='text-danger' %}
+                                                                                                                                        <p><strong>{{ descuadre_label }}:</strong> <span class="{{ desc_class }}">{{ formatted_descuadre_signed }}</span></p>
+                                                                                                                                {% endwith %}
+                                                                                                                        {% else %}
+                                                                                                                                {% with desc_class='text-secondary' %}
+                                                                                                                                        <p><strong>{{ descuadre_label }}:</strong> <span class="{{ desc_class }}">{{ formatted_descuadre_signed }}</span></p>
+                                                                                                                                {% endwith %}
+                                                                                                                        {% endif %}
+                                                                                                                {% endif %}
+                                </div>
+        </div>
+                <div class="mt-3 no-print d-flex align-items-start">
+                        <div style="flex: 0 0 auto; margin-right:1rem;">
+                                <a href="{% url 'cashier_dashboard' %}" class="btn btn-lg btn-primary btn-volver">Volver</a>
+                        </div>
+                        <div style="flex: 1 1 auto;">
+                                <div class="options-group d-flex gap-2 flex-wrap">
+                                        <a href="{% url 'print_caja' caja.id %}" target="_blank" class="btn btn-outline-secondary">Imprimir Detalle</a>
+                                        {% if caja.estado == 'abierta' %}
+                                            <button type="button" class="btn btn-warning" onclick="cerrarCajaForced()">Cerrar Caja (Forzar)</button>
+                                            <button type="button" class="btn btn-danger" onclick="cerrarCajaManual()">Cerrar Caja (Manual)</button>
+                                        {% endif %}
+                                        <a href="{% url 'abrir_caja' %}" class="btn btn-info">Abrir Nueva Caja</a>
+                                </div>
+                        </div>
+                </div>
+</div>
+ 
+<script>
+function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function _postCerrarCaja(efectivo) {
+        const csrftoken = getCookie('csrftoken');
+                const payload = JSON.stringify({ caja_id: {{ caja.id }}, efectivo_contado: efectivo, force: true });
+        fetch('{% url "cerrar_caja" %}', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                },
+                body: payload
+        }).then(r => r.json()).then(j => {
+                if (j.success && j.detalle_url) {
+                        window.location.href = j.detalle_url;
+                } else if (j.error) {
+                        alert('Error: ' + j.error);
+                } else {
+                        alert('No se pudo cerrar la caja');
+                }
+        }).catch(e => alert('Error en la petición: ' + e));
+}
+
+function cerrarCajaForced(){
+        // Auto usar el valor esperado calculado en servidor
+        const esperado = '{{ efectivo_final_expected }}';
+        if (!confirm('¿Forzar cierre de caja usando el valor esperado $' + esperado + '?')) return;
+        _postCerrarCaja(esperado);
+}
+
+function cerrarCajaManual(){
+        const esperado = '{{ efectivo_final_expected }}';
+        let contado = prompt('Ingrese el efectivo contado en caja (sugerido: ' + esperado + ')', esperado);
+        if (contado === null) return; // cancel
+        contado = contado.trim();
+        if (!contado) { alert('Debe ingresar un monto'); return; }
+        _postCerrarCaja(contado);
+}
+
+</script>
+<style>
+.detalle-caja { background-color: #1f2226; color: #e6eef7; padding: 1rem; border-radius: 6px; }
+.detalle-caja .detalle-title { color: #00c2ff; font-weight:700; }
+.detalle-caja p strong { color: #cfe8ff; }
+.options-group .btn { background-color: rgba(255,255,255,0.04); color: #f5f7fa; border: 1px solid rgba(255,255,255,0.06); }
+.btn-volver { background-color: #00bcd4; color: #072028; font-weight:700; }
+.options-group .btn-warning { background-color: #f59e0b; color: #081018; }
+.options-group .btn-danger { background-color: #ef4444; color: #081018; }
+.options-group .btn-info { background-color: #06b6d4; color: #081018; }
+@media print { .no-print { display:none !important; } }
+</style>
+<style>
+@media print {
+  .no-print { display: none !important; }
+}
+</style>
+{% endblock %}

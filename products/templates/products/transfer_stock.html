@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+  body { background: var(--bs-gray-200); color: #0f172a; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block content %}
+<div class="py-4">
+  <div class="container react-shell-wide react-compact react-forms">
+    <div class="react-card">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h2 class="m-0" style="font-weight:900;">Transferir stock entre sucursales</h2>
+          <div class="mt-1 text-muted" style="opacity:0.92;">Selecciona producto, origen y destino</div>
+        </div>
+      </div>
+
+      <form method="post" class="mt-3">
+        {% csrf_token %}
+        <div class="d-flex flex-wrap gap-2 align-items-end">
+          <div style="min-width:280px; flex:1 1 320px;">
+            <label class="form-label">Producto</label>
+            <select class="form-select" name="producto_id" required>
+              <option value="" disabled selected>Seleccione un producto</option>
+              {% for p in productos %}
+                <option value="{{ p.id }}" {% if pre_producto == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }} ({{ p.producto_id }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="min-width:200px; flex:1 1 220px;">
+            <label class="form-label">Sucursal origen</label>
+            <select class="form-select" name="sucursal_origen" id="sucursalOrigen" required>
+              <option value="" disabled selected>Seleccione</option>
+              {% for s in sucursales %}
+                <option value="{{ s.id }}" {% if pre_origen == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nombre }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text" id="origenStockInfo">Stock disponible: -</div>
+          </div>
+          <div style="min-width:200px; flex:1 1 220px;">
+            <label class="form-label">Sucursal destino</label>
+            <select class="form-select" name="sucursal_destino" required>
+              <option value="" disabled selected>Seleccione</option>
+              {% for s in sucursales %}
+                <option value="{{ s.id }}">{{ s.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="min-width:160px; flex:0 0 180px;">
+            <label class="form-label">Cantidad</label>
+            <input type="number" min="1" class="form-control" name="cantidad" placeholder="Ej: 10" required>
+          </div>
+          <div class="d-flex gap-2" style="flex:0 0 auto;">
+            <button class="btn" type="submit">Transferir</button>
+            {% if request.user.is_superuser %}
+              {% url 'product_management' as back_href %}
+              {% include 'partials/back_button.html' with href=back_href text='Volver a Productos' %}
+            {% endif %}
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function(){
+  const productSelect = document.querySelector('select[name="producto_id"]');
+  const originSelect = document.querySelector('select[name="sucursal_origen"]');
+  const stockInfo = document.getElementById('origenStockInfo');
+  const endpoint = '{% url "stock_availability" %}';
+
+  async function updateStockInfo() {
+    const productId = productSelect.value;
+    const sucursalId = originSelect.value;
+    if (!productId || !sucursalId) {
+      stockInfo.textContent = 'Stock disponible: -';
+      return;
+    }
+    stockInfo.textContent = 'Consultando stock...';
+    try {
+      const params = new URLSearchParams({ producto_id: productId, sucursal_id: sucursalId });
+      const resp = await fetch(`${endpoint}?${params.toString()}`, { credentials: 'same-origin' });
+      if (!resp.ok) {
+        stockInfo.textContent = 'Stock disponible: no disponible';
+        return;
+      }
+      const data = await resp.json();
+      stockInfo.textContent = `Stock disponible: ${data.cantidad}`;
+    } catch (err) {
+      stockInfo.textContent = 'Stock disponible: error al consultar';
+    }
+  }
+
+  if (productSelect && originSelect && stockInfo) {
+    productSelect.addEventListener('change', updateStockInfo);
+    originSelect.addEventListener('change', updateStockInfo);
+    updateStockInfo();
+  }
+})();
+</script>
+{% endblock %}

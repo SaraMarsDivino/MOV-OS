@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container" data-promedio-ganancia-neta="{{ promedio_ganancia_neta_raw|default:'0.00' }}">
+  <h1>Reportes Avanzados</h1>
+
+  {% if not show_data %}
+    <p>Seleccione filtros y presione aplicar.</p>
+  {% else %}
+    {% if comparativo_custom %}
+      <p>Comparando contra rango personalizado: {{ comparativo_inicio }} - {{ comparativo_fin }}</p>
+    {% endif %}
+
+    <h2>Top Productos Más Vendidos</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th>Cantidad Vendida</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in top_selling_products %}
+          <tr>
+            <td>{{ row.producto__nombre }}</td>
+            <td>{{ row.cantidad }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2">Sin datos</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</div>
+{% endblock %}

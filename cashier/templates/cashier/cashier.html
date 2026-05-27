@@ -1,0 +1,594 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_styles %}
+    <link rel="stylesheet" href="{% static 'css/cashier.css' %}">
+        <style>
+            /* Mobile-friendly toast width */
+            @media (max-width: 576px) {
+                #toast-container { width: 90vw !important; }
+            }
+
+            /* Make the cart table mobile-friendly (stacked rows) */
+            @media (max-width: 576px) {
+                .table-responsive table thead { display: none; }
+                .table-responsive table tbody tr { display: block; margin-bottom: .75rem; border: 1px solid rgba(148,163,184,0.30); border-radius: .5rem; overflow: hidden; }
+                .table-responsive table tbody td { display: flex; justify-content: space-between; align-items: center; gap: .75rem; padding: .5rem .75rem; }
+                .table-responsive table tbody td:nth-child(1)::before { content: 'Cant.'; font-weight: 600; color: rgba(248,250,252,0.70); }
+                .table-responsive table tbody td:nth-child(2)::before { content: 'Producto'; font-weight: 600; color: rgba(248,250,252,0.70); }
+                .table-responsive table tbody td:nth-child(3)::before { content: 'Total'; font-weight: 600; color: rgba(248,250,252,0.70); }
+                .table-responsive table tbody td:nth-child(4)::before { content: 'Acción'; font-weight: 600; color: rgba(248,250,252,0.70); }
+                /* Acción: alinear botones a la derecha */
+                .table-responsive table tbody td:nth-child(4) { justify-content: flex-end; }
+            }
+
+            /* Sticky mobile action bar */
+            .mobile-action-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #1E293B; border-top: 1px solid rgba(248,250,252,0.10); padding: .75rem; display: flex; gap: .75rem; align-items: center; z-index: 1040; }
+            .mobile-action-bar .total { color: #F8FAFC; font-weight: 700; font-size: 1rem; }
+            body.has-mobile-bar { padding-bottom: 72px; }
+
+            /* Card polish */
+            .cashier-container .card { box-shadow: 0 6px 24px rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.08); }
+            .cashier-container .card-title { font-weight: 600; }
+
+            /* Improve buttons layout on small screens */
+            @media (max-width: 576px) {
+                .payment-method-btn { padding: .65rem .45rem; font-size: .92rem; }
+            }
+
+            /* Payment panel sizing improvements */
+            .payment-panel {
+                display: flex;
+                flex-direction: column;
+                gap: .75rem;
+                height: 100%;
+            }
+            .payment-method-btn {
+                padding: .6rem .45rem;
+                font-size: .90rem;
+                font-weight: 600;
+            }
+            #cantidad_pagada {
+                font-size: .95rem;
+                height: 2.35rem;
+                padding: .35rem .6rem;
+            }
+            #vuelto {
+                font-size: 1.00rem;
+                padding: .42rem .65rem;
+                font-weight: 700;
+                display: inline-block;
+                min-width: 110px;
+                text-align: center;
+            }
+            @media (max-width: 768px) {
+                #cantidad_pagada { height: 2.45rem; font-size: .95rem; }
+                #vuelto { font-size: 1.05rem; min-width: 105px; }
+            }
+
+            /* --- Density + dividers + contrast improvements --- */
+            /* Explicit internal scroll to find products (avoid growing the page) */
+            .cashier-container .product-results-scroll,
+            .cashier-container .cart-scroll {
+                max-height: min(46dvh, 420px);
+            }
+
+            @media (max-width: 576px) {
+                .cashier-container .product-results-scroll,
+                .cashier-container .cart-scroll {
+                    max-height: min(40dvh, 380px);
+                }
+            }
+
+            /* Dedicated scroll areas: keep results/cart inside their cards (avoid page scroll) */
+            .cashier-container .product-results-scroll,
+            .cashier-container .cart-scroll {
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow-y: auto;
+            }
+
+            /* Search results: clearer rows + separators */
+            #product-search-results .list-group-item {
+                padding: .32rem .55rem;
+                margin: 0;
+                border-radius: 0;
+                border-left: 0;
+                border-right: 0;
+                border-top: 0;
+                border-bottom: 1px solid rgba(148,163,184,0.22);
+                background: rgba(15, 23, 42, 0.35);
+                color: rgba(248,250,252,0.94);
+            }
+            #product-search-results .list-group-item:first-child {
+                border-top: 1px solid rgba(148,163,184,0.22);
+            }
+            #product-search-results .list-group-item:hover {
+                background: rgba(59,130,246,0.12);
+            }
+
+            /* Cart table: higher contrast + thin rows + divider lines */
+            .cashier-container .cart-table {
+                background: rgba(0,0,0,0.22);
+                color: rgba(255,255,255,0.92);
+                border: 1px solid rgba(148,163,184,0.30);
+                border-radius: 10px;
+                overflow: hidden;
+                table-layout: fixed;
+                width: 100%;
+            }
+            .cashier-container .cart-table tbody tr {
+                background: rgba(248,250,252,0.04);
+            }
+            .cashier-container .cart-table tbody tr:hover {
+                background: rgba(248,250,252,0.06);
+            }
+            .cashier-container .cart-table thead th {
+                background: rgba(0,0,0,0.28);
+                color: rgba(255,255,255,0.95);
+                font-size: .85rem;
+                padding: .28rem .40rem;
+                border-bottom: 1px solid rgba(148,163,184,0.30);
+                white-space: nowrap;
+            }
+            .cashier-container .cart-table thead th:not(:last-child) {
+                border-right: 1px solid rgba(148,163,184,0.22);
+            }
+            .cashier-container .cart-table tbody td {
+                font-size: .85rem;
+                padding: .22rem .40rem;
+                border-top: 1px solid rgba(148,163,184,0.22);
+                color: rgba(255,255,255,0.92);
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Keep product name in one line (full name on hover via title) */
+            .cashier-container .cart-table td.cart-product {
+                white-space: nowrap;
+            }
+
+            /* Keep +1/-1 on a single row to avoid tall lines */
+            .cashier-container .cart-table .cart-actions {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                gap: .25rem;
+                flex-wrap: nowrap;
+            }
+            .cashier-container .cart-table tbody td:not(:last-child) {
+                border-right: 1px solid rgba(148,163,184,0.18);
+            }
+            .cashier-container .cart-table .cart-empty-row td {
+                color: rgba(255,255,255,0.72);
+            }
+
+            /* Make qty input + buttons compact */
+            .cashier-container .cart-table .cart-qty {
+                height: 24px;
+                padding: .02rem .26rem;
+                font-size: .82rem;
+                background: rgba(248,250,252,0.14) !important;
+                border: 2px solid rgba(148,163,184,0.55) !important;
+                color: rgba(15,23,42,0.95) !important;
+                font-weight: 700;
+                text-align: center;
+            }
+            .cashier-container .cart-table .btn {
+                padding: .12rem .26rem;
+                font-size: .80rem;
+                line-height: 1.1;
+                min-width: 38px;
+            }
+            .cashier-container .cart-table .btn-danger {
+                background: rgba(239,68,68,0.95) !important;
+                border-color: rgba(239,68,68,0.95) !important;
+                color: rgba(248,250,252,0.98) !important;
+            }
+            .cashier-container .cart-table .btn-danger:hover {
+                filter: brightness(0.95);
+            }
+
+            /* Cart footer bar contrast */
+            .cashier-container .card .mt-auto.pt-3.border-top {
+                border-top: 1px solid rgba(255,255,255,0.12) !important;
+                background: rgba(0,0,0,0.12);
+                border-radius: 10px;
+                padding-left: .75rem;
+                padding-right: .75rem;
+            }
+
+            /* Toasts: slightly smaller and readable */
+            #toast-container .toast {
+                backdrop-filter: blur(6px);
+            }
+        </style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block content %}
+<div class="container-fluid cashier-container" style="width:100%; margin:0 auto;">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <h2>Bienvenido, {{ user.username }}</h2>
+            <h3>Modo Cajero</h3>
+            {% if caja_abierta and caja_abierta.sucursal %}
+            <div class="mt-2">
+                <span class="badge bg-secondary" title="Sucursal activa">Sucursal: {{ caja_abierta.sucursal.nombre }}</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="ms-3">
+            <!-- Theme toggle temporarily disabled per user request
+            <button id="toggle-theme" class="btn btn-outline-light">Modo claro</button>
+            -->
+        </div>
+    </div>
+    <!-- Exponer ID de caja actual para las solicitudes AJAX -->
+    {% if caja_abierta %}
+    <meta name="current-caja-id" content="{{ caja_abierta.id }}" />
+    <meta name="current-caja-efectivo-expected" content="{{ caja_abierta.efectivo_final|default_if_none:caja_abierta.efectivo_inicial }}" />
+    {% endif %}
+
+    <div id="alertPlaceholder" class="position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 1050; width: 350px;"></div>
+    
+    <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1050; width: 350px;">
+        {% for message in mensajes %}
+            <div class="toast align-items-center text-white bg-{% if message.tags == 'error' %}danger{% else %}success{% endif %} border-0 show" role="alert" data-bs-delay="2000" data-bs-autohide="true">
+                <div class="d-flex">
+                    <div class="toast-body fs-5">{{ message }}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="row g-2 cashier-main-row">
+    <!-- Buscar Productos -->
+        <div class="col-12 col-md-4 col-lg-4">
+            <div class="card p-2 h-100 d-flex flex-column">
+                <h4 class="card-title">Buscar Productos</h4>
+                <form id="product-search-form" class="mb-2">
+                    <input type="text" id="product-search-input" class="form-control" placeholder="Buscar por nombre o código de barras" aria-label="Buscar producto por nombre o código de barras">
+                    <button type="button" id="product-search-button" class="btn btn-primary w-100 mt-1">Buscar</button>
+                </form>
+                <div class="flex-grow-1 overflow-auto product-results-scroll">
+                    <ul id="product-search-results" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+
+    <!-- Carrito de Compras -->
+        <div class="col-12 col-md-4 col-lg-4">
+            <div class="card p-2 h-100 d-flex flex-column">
+                <h4 class="card-title">Carrito de Compras</h4>
+                <input type="text" id="barcode-input" class="form-control mb-1" placeholder="Código de barras" aria-label="Ingresar código de barras">
+                <div class="table-responsive flex-grow-1 cart-scroll" style="overflow-y: auto;">
+                    <table class="table cart-table mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:70px;">Cant.</th>
+                                <th>Producto</th>
+                                <th>Total</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cart-items">
+                                    <tr class="cart-empty-row">
+                                        <td colspan="4" class="text-center">No hay productos en el carrito.</td>
+                                    </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-auto pt-2 border-top d-flex justify-content-between align-items-center gap-2">
+                    <p class="mb-0 fw-semibold">Total: $<span id="total-price">0.00</span></p>
+                    <button type="button" id="confirmar-compra" class="btn btn-success d-none d-md-inline-flex">Confirmar Compra</button>
+                </div>
+            </div>
+        </div>
+
+    <!-- Opciones de Pago y Tipo de Venta -->
+        <div class="col-12 col-md-4 col-lg-4">
+            <div class="card p-2 h-100 d-flex flex-column">
+                <h4 class="card-title">Opciones de Pago</h4>
+                <!-- Tipo de Venta -->
+                <div class="mb-2">
+                    <label class="form-label">Tipo de Venta</label>
+                    <div class="btn-group w-100" role="group" aria-label="Tipo de Venta">
+                        <button type="button" class="btn btn-primary active" data-sale-type="boleta">Boleta Electrónica</button>
+                        <button type="button" class="btn btn-outline-primary" data-sale-type="factura">Factura Electrónica</button>
+                    </div>
+                    <input type="hidden" id="sale-type" name="sale-type" value="boleta">
+                </div>
+                <!-- Forma de Pago -->
+                <div class="mb-2">
+                    <label class="form-label">Forma de Pago</label>
+                    <div class="row g-1">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-primary w-100 payment-method-btn active" data-payment-method="efectivo">Efectivo</button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-primary w-100 payment-method-btn" data-payment-method="debito">Tarjeta de Débito</button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-primary w-100 payment-method-btn" data-payment-method="credito">Tarjeta de Crédito</button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-primary w-100 payment-method-btn" data-payment-method="transferencia">Transferencia</button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="payment-method" name="payment-method" value="efectivo">
+                </div>
+                <!-- Información Extra para pagos no en efectivo -->
+                <div id="transaction-info" class="mb-3" style="display: none;">
+                    <label for="numero_transaccion" class="form-label">Número de Transacción</label>
+                    <input type="text" id="numero_transaccion" class="form-control" placeholder="Ingrese el número de transacción">
+                    <div id="banco-info" class="mt-2" style="display: none;">
+                        <label for="banco" class="form-label">Banco</label>
+                        <input type="text" id="banco" class="form-control" placeholder="Nombre del banco">
+                    </div>
+                </div>
+                <!-- Cantidad Pagada -->
+                <div class="mb-2" id="cantidad-pagada-wrapper">
+                    <label class="form-label">Cantidad Pagada</label>
+                    <input type="text" id="cantidad_pagada" class="form-control" placeholder="Ingrese la cantidad pagada" inputmode="numeric" pattern="[0-9]*">
+                </div>
+                <!-- Vuelto -->
+                <div class="mb-2">
+                    <label class="form-label">Vuelto</label>
+                    <p id="vuelto" class="badge bg-secondary">$0.00</p>
+                </div>
+                <button type="button" id="confirmar-compra-aux" class="btn btn-success w-100 mt-auto d-md-none">Confirmar Compra</button>
+            </div>
+        </div>
+    </div>
+    <div class="row justify-content-center mt-1 cashier-footer-row">
+            <div class="col-12 col-md-6 col-lg-4 mb-2">
+            <button type="button" id="close-cash-button" class="btn btn-cerrar-caja w-100">Cerrar Caja</button>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4 mb-2">
+            {% if request.user.is_superuser %}
+                {% url 'admin_dashboard' as back_href %}
+                {% include 'partials/back_button.html' with href=back_href text='Volver al Dashboard' %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Sticky mobile action bar (visible solo en pantallas pequeñas) -->
+<div class="mobile-action-bar d-md-none">
+    <div class="total">Total: $<span id="total-price-mobile">0.00</span></div>
+    <button type="button" id="mobile-confirmar-compra" class="btn btn-success btn-lg flex-grow-1">Confirmar</button>
+    <button type="button" id="mobile-cerrar-caja" class="btn btn-cerrar-caja">Caja</button>
+  
+</div>
+
+<!-- Modal para mostrar el reporte de venta en una ventana pequeña -->
+<div class="modal fade" id="saleReportModal" tabindex="-1" aria-labelledby="saleReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="saleReportModalLabel">Detalle de Venta</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="saleReportModalBody">
+                <div class="text-center text-muted">Cargando detalle...</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" id="printSaleReportBtn">Imprimir Detalle</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<!-- Modal para confirmar la compra -->
+<div class="modal fade" id="confirmPurchaseModal" tabindex="-1" aria-labelledby="confirmPurchaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmPurchaseModalLabel">Confirmar Compra</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Está seguro de la venta?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                <button type="button" class="btn btn-success" id="confirmAndPrintBtn">Sí</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para cerrar caja (efectivo contado) -->
+<div class="modal fade" id="closeCashModal" tabindex="-1" aria-labelledby="closeCashModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="closeCashModalLabel">Cerrar caja</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-2 text-dark">
+                    Ingresa el monto contado físicamente en caja.
+                </div>
+                <label for="closeCashEfectivoContado" class="form-label text-dark">Efectivo contado</label>
+                <input
+                    type="number"
+                    class="form-control form-control-lg"
+                    id="closeCashEfectivoContado"
+                    inputmode="numeric"
+                    min="0"
+                    step="1"
+                    placeholder="Ej: 25000"
+                    autocomplete="off"
+                >
+                <div class="form-text text-dark">Solo números.</div>
+
+                <div class="mt-3 text-dark" style="font-size:0.95rem;">
+                    Esperado por sistema: <strong id="closeCashExpected">-</strong>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-cerrar-caja" id="confirmCloseCashBtn">Cerrar caja</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario oculto para asegurar la generación de la cookie CSRF (aunque ya se incluye en base.html) -->
+<form style="display:none;">{% csrf_token %}</form>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'js/cashier.js' %}?v=3"></script>
+            <script>
+                // Add bottom padding when mobile action bar is present on small screens only
+                function updateMobilePadding(){
+                    if (window.innerWidth < 768) {
+                        document.body.classList.add('has-mobile-bar');
+                    } else {
+                        document.body.classList.remove('has-mobile-bar');
+                    }
+                }
+                updateMobilePadding();
+                window.addEventListener('resize', updateMobilePadding);
+
+            // Sync total to mobile bar (with diagnostics)
+            (function syncTotals(){
+                const source = document.getElementById('total-price');
+                const target = document.getElementById('total-price-mobile');
+                if (!source) {
+                    console.error('[cashier] total-price element not found');
+                    return;
+                }
+                if (!target) {
+                    console.error('[cashier] total-price-mobile element not found');
+                    return;
+                }
+                try {
+                    const obs = new MutationObserver(() => { target.textContent = source.textContent; });
+                    obs.observe(source, { characterData: true, subtree: true, childList: true });
+                    // Initialize immediately
+                    target.textContent = source.textContent;
+                    console.log('[cashier] syncTotals initialized');
+                } catch (err) {
+                    console.error('[cashier] error initializing syncTotals', err);
+                }
+            })();
+
+            // Forward mobile buttons to existing actions (with diagnostics)
+            (function wireMobileButtons(){
+                const mobileConfirm = document.getElementById('mobile-confirmar-compra');
+                const mainConfirm = document.getElementById('confirmar-compra');
+                const auxConfirm = document.getElementById('confirmar-compra-aux');
+                if (mobileConfirm && mainConfirm) {
+                    mobileConfirm.addEventListener('click', () => mainConfirm.click());
+                    console.log('[cashier] wired mobile-confirm to main confirm');
+                } else {
+                    if (!mobileConfirm) console.error('[cashier] mobile-confirmar-compra not found');
+                    if (!mainConfirm) console.error('[cashier] confirmar-compra (main) not found');
+                }
+                if (auxConfirm && mainConfirm) {
+                    auxConfirm.addEventListener('click', () => mainConfirm.click());
+                    console.log('[cashier] wired aux confirm to main confirm');
+                } else if (auxConfirm && !mainConfirm) {
+                    console.error('[cashier] aux confirm found but main confirm missing');
+                }
+
+                const mobileClose = document.getElementById('mobile-cerrar-caja');
+                const closeBtn = document.getElementById('close-cash-button');
+                if (mobileClose && closeBtn) {
+                    mobileClose.addEventListener('click', () => closeBtn.click());
+                    console.log('[cashier] wired mobile close to close button');
+                } else {
+                    if (!mobileClose) console.error('[cashier] mobile-cerrar-caja not found');
+                    if (!closeBtn) console.error('[cashier] close-cash-button not found');
+                }
+            })();
+        </script>
+        <!-- Theme toggle temporarily disabled per user request
+        <script>
+            // Theme toggle for cashier (light / dark) with diagnostics
+            document.addEventListener('DOMContentLoaded', function(){
+                const btn = document.getElementById('toggle-theme');
+                const container = document.querySelector('.cashier-container');
+                const storageKey = 'cashierTheme';
+                if (!btn) {
+                    console.error('[cashier] toggle-theme button (#toggle-theme) not found');
+                }
+                if (!container) {
+                    console.error('[cashier] .cashier-container not found');
+                }
+                function applyTheme() {
+                    try {
+                        const theme = localStorage.getItem(storageKey) || 'dark';
+                        console.log('[cashier] applyTheme current:', theme);
+                        if (theme === 'light') {
+                            if (container) container.classList.add('cashier-light');
+                            if (btn) {
+                                btn.textContent = 'Modo oscuro';
+                                btn.classList.remove('btn-outline-light');
+                                btn.classList.add('btn-outline-dark');
+                            }
+                        } else {
+                            if (container) container.classList.remove('cashier-light');
+                            if (btn) {
+                                btn.textContent = 'Modo claro';
+                                btn.classList.remove('btn-outline-dark');
+                                btn.classList.add('btn-outline-light');
+                            }
+                        }
+                    } catch (err) {
+                        console.error('[cashier] error applying theme', err);
+                    }
+                }
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        console.log('[cashier] toggle-theme clicked');
+                        const current = localStorage.getItem(storageKey) || 'dark';
+                        const next = current === 'dark' ? 'light' : 'dark';
+                        console.log('[cashier] theme change', { from: current, to: next });
+                        try {
+                            localStorage.setItem(storageKey, next);
+                        } catch (err) {
+                            console.error('[cashier] could not write to localStorage', err);
+                        }
+                        applyTheme();
+                    });
+                } else {
+                    console.error('[cashier] cannot attach click handler because toggle button is missing');
+                }
+                console.log('[cashier] applying theme on load');
+                applyTheme();
+            });
+                </script>
+        -->
+    <script>
+        (function(){
+            const wrapper = document.getElementById('cantidad-pagada-wrapper');
+            const paymentHiddenInput = document.getElementById('payment-method');
+            function setCantidadVisibility(method){
+                if (!wrapper) return;
+                if (method === 'efectivo') {
+                    wrapper.style.display = 'none';
+                } else {
+                    wrapper.style.display = '';
+                }
+            }
+            // initialize based on hidden input
+            if (paymentHiddenInput && paymentHiddenInput.value) setCantidadVisibility(paymentHiddenInput.value);
+            // wire buttons to toggle visibility when payment method changes
+            document.querySelectorAll('[data-payment-method]').forEach(btn => {
+                btn.addEventListener('click', function(){
+                    const m = this.getAttribute('data-payment-method');
+                    setCantidadVisibility(m);
+                });
+            });
+        })();
+    </script>
+{% endblock %}
+
+{% block page_wrapper_end %}{% endblock %}

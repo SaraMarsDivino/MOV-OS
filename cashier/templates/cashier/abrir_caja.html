@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_cashier_pages.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Abrir Caja</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="sucursal" class="form-label">Seleccione Sucursal:</label>
+            <select name="sucursal" id="sucursal" class="form-select">
+                <option value="" disabled selected>-- Seleccione una sucursal --</option>
+                {% for sucursal in sucursales %}
+                    <option value="{{ sucursal.id }}">{{ sucursal.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="efectivo_inicial" class="form-label">Efectivo Inicial:</label>
+            <input type="text" inputmode="numeric" class="form-control" id="efectivo_inicial" name="efectivo_inicial" value="0" placeholder="Ej: 10.000">
+        </div>
+        <button type="submit" class="btn btn-primary">Abrir Caja</button>
+        <a href="{% url 'logout' %}" class="btn btn-danger" onclick="return confirm('¿Está seguro que desea cerrar sesión?');">Cerrar Sesión</a>
+    </form>
+</div>
+{% endblock %}

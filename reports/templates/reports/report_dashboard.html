@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_reports.css">
+{% endblock %}
+{% block extra_styles %}
+<link rel="stylesheet" href="{% static 'css/reports.css' %}">
+<style>
+    /* Light, consistent report UI (match Market Analysis aesthetics) */
+    body { background:#E6EDF3; color:#111827; }
+    .reports-light-page { color:#0f172a; }
+    .reports-light-page h1,
+    .reports-light-page h2,
+    .reports-light-page h3,
+    .reports-light-page h4,
+    .reports-light-page h5,
+    .reports-light-page h6 { color:#0f172a !important; text-transform:none; letter-spacing:0; }
+    .reports-light-page .muted,
+    .reports-light-page .text-muted,
+    .reports-light-page .small.muted { color:#0f172a !important; opacity:0.88; }
+
+    /* Override global .card p{color:#fff !important;} by scoping report typography */
+    .reports-light-page p { color:#0f172a !important; }
+
+    .soft-card { background:#F7FAFC; border:1px solid rgba(0,0,0,0.14); border-radius:16px; box-shadow:0 8px 20px rgba(2,6,23,0.06); padding:18px; color:#111827; }
+    .report-card { height: 100%; display:flex; flex-direction:column; gap: 10px; }
+    .report-card-title { font-weight: 900; margin: 0; font-size: 1.1rem; }
+    .report-card-desc { margin: 0; color:#334155; }
+    .report-card-actions { margin-top: auto; }
+
+    .btn-primary { background-color:#0B84C1; border-color:#0B84C1; }
+    .btn-primary:hover { background-color:#0A78AE; border-color:#0A78AE; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+{% block content %}
+<div class="container py-4 reports-light-page content-max">
+    <div class="soft-card mb-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h2 class="mb-0">Dashboard de Reportes</h2>
+            <div class="muted small">Acceso rápido a reportes clave.</div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center g-3">
+        <!-- Tarjeta de Historial de Ventas -->
+        <div class="col-md-4">
+            <div class="soft-card report-card">
+                <h5 class="report-card-title">Historial de Ventas</h5>
+                <p class="report-card-desc">Consulta el historial detallado de las ventas realizadas.</p>
+                <div class="report-card-actions">
+                    <a href="{% url 'reports:sales_history' %}" class="btn btn-primary w-100">Ir al Historial de Ventas</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tarjeta de Historial de Caja -->
+        <div class="col-md-4">
+            <div class="soft-card report-card">
+                <h5 class="report-card-title">Historial de Caja</h5>
+                <p class="report-card-desc">Consulta los registros de apertura y cierre de caja.</p>
+                <div class="report-card-actions">
+                    <a href="{% url 'reports:historial_caja' %}" class="btn btn-primary w-100">Ir al Historial de Caja</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta de Historial de Devoluciones -->
+        <div class="col-md-4">
+            <div class="soft-card report-card">
+                <h5 class="report-card-title">Historial de Devoluciones</h5>
+                <p class="report-card-desc">Listado de todas las devoluciones realizadas, con detalle de productos y si se emitió nota de crédito.</p>
+                <div class="report-card-actions">
+                    <a href="{% url 'reports:returns_history' %}" class="btn btn-primary w-100">Ir al Historial de Devoluciones</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="soft-card report-card">
+                <h5 class="report-card-title">Análisis de Mercado</h5>
+                <p class="report-card-desc">Módulo retirado temporalmente para rediseño completo.</p>
+                <div class="report-card-actions">
+                    <button class="btn btn-secondary w-100" disabled>Próximamente</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="soft-card report-card">
+                <h5 class="report-card-title">Reportes Avanzados</h5>
+                <p class="report-card-desc">KPIs y análisis avanzados por rango de fechas, sucursal y cajero.</p>
+                <div class="report-card-actions">
+                    <a href="{% url 'reports:advanced_reports' %}" class="btn btn-primary w-100">Ir a Reportes Avanzados</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+        {% if request.user.is_superuser %}
+            {% url 'reports:returns_history' as back_href %}
+            {% include 'partials/back_button.html' with href=back_href text='Volver al Historial de Devoluciones' %}
+        {% endif %}
+
+</div>
+
+{% endblock %}

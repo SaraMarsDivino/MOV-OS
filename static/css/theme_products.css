@@ -1,0 +1,262 @@
+:root{
+  --movos-bg: var(--bs-gray-200);
+  --movos-surface: var(--bs-gray-300);
+  --movos-surface-2: var(--bs-gray-200);
+  --movos-divider: var(--bs-gray-400);
+  --movos-text: var(--bs-gray-900);
+  --movos-muted: var(--bs-gray-700);
+  --movos-border-strong: var(--bs-black);
+  --movos-shadow: var(--bs-box-shadow-lg);
+}
+
+/* Compact + high-contrast (cashier-like sizing) */
+html{ font-size: 13px; }
+body{
+  background: var(--movos-bg) !important;
+  color: var(--movos-text) !important;
+  line-height: 1.35;
+}
+
+/* Headings feel oversized in many Bootstrap templates; scale them down */
+main h1{ font-size: 1.30rem; margin-bottom: 0.70rem; color: var(--movos-text) !important; }
+main h2{ font-size: 1.15rem; margin-bottom: 0.60rem; color: var(--movos-text) !important; }
+main h3{ font-size: 1.05rem; margin-bottom: 0.50rem; color: var(--movos-text) !important; }
+main h4{ font-size: 0.98rem; margin-bottom: 0.45rem; color: var(--movos-text) !important; }
+main h5{ font-size: 0.93rem; margin-bottom: 0.40rem; color: var(--movos-text) !important; }
+main h6{ font-size: 0.88rem; margin-bottom: 0.35rem; color: var(--movos-text) !important; }
+
+.container, .container-fluid{ --bs-gutter-x: 1.25rem; }
+
+main.container-fluid.my-4{ margin-top: 1rem !important; margin-bottom: 1rem !important; }
+
+.page-card{
+  background: var(--movos-surface) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+  box-shadow: var(--movos-shadow) !important;
+  border-radius: 1rem !important;
+}
+.page-card.p-4{ padding: 1rem !important; }
+
+.card,
+.panel,
+.pos-card{
+  background: var(--movos-surface) !important;
+  color: var(--movos-text) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+  box-shadow: var(--movos-shadow) !important;
+  border-radius: 1rem !important;
+}
+
+hr{ border-top: 2px solid var(--movos-divider) !important; opacity: 1 !important; }
+
+.table{ color: var(--movos-text) !important; font-size: 0.95rem; }
+.table thead th{
+  background: var(--movos-surface-2) !important;
+  color: var(--movos-text) !important;
+  border-bottom: 2px solid var(--movos-divider) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+.table th{ color: var(--movos-text) !important; }
+.table td,
+.table th{ border-bottom-color: var(--movos-divider) !important; padding: 0.55rem 0.75rem; }
+.table-hover tbody tr:hover{ background: var(--movos-surface-2) !important; }
+
+.table-striped > tbody > tr:nth-of-type(odd) > *{
+  background-color: rgba(255,255,255,0.25) !important;
+  color: var(--movos-text) !important;
+}
+
+.list-group-item{
+  background: var(--movos-surface) !important;
+  color: var(--movos-text) !important;
+  border-color: var(--movos-divider) !important;
+}
+
+.text-muted{ color: var(--movos-muted) !important; }
+
+/* Some templates use "text-light/text-white" on headers; force readable text inside the content only */
+main .text-light,
+main .text-white{
+  color: var(--movos-text) !important;
+}
+
+main label,
+main .form-label{
+  color: var(--movos-text) !important;
+}
+
+.form-control,
+.form-select,
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+textarea,
+select{
+  background: var(--bs-white) !important;
+  color: var(--movos-text) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.95rem;
+}
+.form-control::placeholder{ color: var(--movos-muted) !important; }
+
+main .btn{ border-radius: 0.75rem !important; padding: 0.40rem 0.65rem; font-size: 0.92rem; }
+
+/* Back button: must remain readable on light product pages */
+main .btn.btn-back{
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 2px solid #000000 !important;
+}
+main .btn.btn-back:hover{
+  background: #eef2f6 !important;
+  color: #111111 !important;
+}
+main .btn.btn-back svg{ color: currentColor !important; }
+
+/* Ensure filter inputs/selects are white boxes with black text */
+main .row.g-2 .form-control,
+main .row.g-2 .form-select{
+  background: #ffffff !important;
+  color: #111111 !important;
+}
+
+.nav-tabs{ border-bottom: 2px solid var(--movos-divider) !important; }
+.nav-tabs .nav-link{ color: var(--movos-text) !important; }
+.nav-tabs .nav-link.active{
+  color: var(--movos-text) !important;
+  background: var(--movos-surface) !important;
+  border-color: var(--movos-divider) var(--movos-divider) var(--movos-surface) !important;
+  font-weight: 700;
+}
+
+.dropdown-menu{
+  background: var(--bs-white) !important;
+  border: 1px solid var(--movos-divider) !important;
+  box-shadow: var(--bs-box-shadow) !important;
+}
+.dropdown-item{ color: var(--movos-text) !important; }
+
+.form-label{
+  color: var(--movos-text) !important;
+  font-weight: 500;
+}
+
+.form-text{
+  color: var(--movos-muted) !important;
+}
+
+/* AGGRESSIVE CONTRAST FIX for all product views */
+main h1,
+main h2,
+main h3,
+main h4,
+main h5,
+main h6,
+main p,
+main label,
+main .form-label,
+main .form-text,
+main th,
+main td,
+main button,
+main a,
+main span,
+.container.content-max h1,
+.container.content-max h2,
+.container.content-max h3,
+.container.content-max h4,
+.container.content-max h5,
+.container.content-max h6,
+.container.content-max label,
+.container.content-max .form-label,
+.container.content-max .form-text,
+.container.content-max th,
+.container.content-max td,
+.container.content-max p,
+.row.g-2 label,
+.row.g-3 label,
+.col-md-4 .form-label,
+.col-md-3 .form-label,
+.col-md-6 .form-label,
+.page-card h1,
+.page-card h2,
+.page-card h3,
+.page-card h4,
+.page-card h5,
+.page-card h6,
+.page-card label,
+.page-card .form-label,
+.page-card .form-text,
+.nav ul li,
+.pagination a,
+.pagination span{
+  color: #212529 !important;
+  opacity: 1 !important;
+}
+
+table.table thead th,
+table.table-striped thead th{
+  color: #212529 !important;
+  background-color: var(--movos-surface-2) !important;
+}
+.dropdown-item:hover{ background: var(--movos-surface-2) !important; }
+
+/* Bulk assign products: force light controls inside card wrappers */
+.products-bulk-assign label,
+.products-bulk-assign .form-label,
+.products-bulk-assign .form-text{
+  color: var(--movos-text) !important;
+  text-shadow: none !important;
+}
+
+.products-bulk-assign .form-control,
+.products-bulk-assign .form-select,
+.products-bulk-assign input,
+.products-bulk-assign textarea,
+.products-bulk-assign select{
+  background: var(--bs-white) !important;
+  color: var(--movos-text) !important;
+  -webkit-text-fill-color: var(--movos-text) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+}
+
+.products-bulk-assign .btn{
+  border: 2px solid var(--movos-border-strong) !important;
+  font-weight: 700;
+}
+.products-bulk-assign .btn.btn-primary,
+.products-bulk-assign .btn.btn-danger{
+  color: var(--bs-white) !important;
+}
+.products-bulk-assign .btn.btn-secondary{
+  color: var(--bs-white) !important;
+}
+.products-bulk-assign .btn.btn-success,
+.products-bulk-assign .btn.btn-outline-primary{
+  color: var(--movos-text) !important;
+}
+
+/* Checkboxes: visible box even on light gray backgrounds */
+.products-bulk-assign input[type="checkbox"]{
+  width: 18px !important;
+  height: 18px !important;
+  accent-color: var(--movos-border-strong);
+  background: var(--bs-white) !important;
+  box-shadow: 0 0 0 2px var(--movos-border-strong) !important;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* Product list: strong black border around the table */
+.products-bulk-assign-table{
+  border: 2px solid var(--movos-border-strong) !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+.products-bulk-assign-table thead th{
+  border-bottom: 2px solid var(--movos-border-strong) !important;
+}

@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  web:
+    environment:
+      - SECURE_SSL_REDIRECT=0
+      - SESSION_COOKIE_SECURE=0
+      - CSRF_COOKIE_SECURE=0
+      - SECURE_HSTS_SECONDS=0
+      - SECURE_HSTS_INCLUDE_SUBDOMAINS=0
+      - SECURE_HSTS_PRELOAD=0
+      - DEBUG=1
+      - CANONICAL_HOST=
+      - CANONICAL_HOST_PERMANENT=
+      - CSRF_COOKIE_DOMAIN=
+      - SESSION_COOKIE_DOMAIN=

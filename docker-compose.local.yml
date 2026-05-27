@@ -1,0 +1,29 @@
+services:
+  web:
+    # Disable keep-alive so sync workers don't block waiting for next request,
+    # and use more workers to handle parallel browser connections.
+    command: gunicorn MOVOS.wsgi:application --bind 0.0.0.0:8000 --workers 9 --keep-alive 0 --timeout 120
+    environment:
+      DEBUG: "True"
+      # No Vite dev server inside Docker — prevents socket.create_connection hanging on Windows
+      VITE_DEV_SERVER_URL: ""
+      # Local dev: never redirect to the production canonical host
+      CANONICAL_HOST: ""
+      CANONICAL_HOST_PERMANENT: ""
+      # Local dev: don't scope cookies to the production domain
+      SESSION_COOKIE_DOMAIN: ""
+      CSRF_COOKIE_DOMAIN: ""
+      SESSION_COOKIE_SECURE: "0"
+      CSRF_COOKIE_SECURE: "0"
+      USE_X_FORWARDED_PROTO: "0"
+      USE_X_FORWARDED_HOST: "0"
+      SECURE_SSL_REDIRECT: "0"
+      SECURE_HSTS_SECONDS: "0"
+      SECURE_HSTS_INCLUDE_SUBDOMAINS: "0"
+      SECURE_HSTS_PRELOAD: "0"
+      # Ensure localhost is accepted when running locally
+      ALLOWED_HOSTS: "localhost,127.0.0.1"
+      CSRF_TRUSTED_ORIGINS: "http://localhost:8000"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles

@@ -1,0 +1,11 @@
+export { default as AdminDashboardPage } from './AdminDashboardPage';
+export { default as UsersManagementPage } from './UsersManagementPage';
+export { default as UserEditPage } from './UserEditPage';
+export { default as UserCreatePage } from './UserCreatePage';
+export { default as ProductsManagementPage } from './ProductsManagementPage';
+export { default as ReportsDashboardPage } from './ReportsDashboardPage';
+export { default as SucursalesManagementPage } from './SucursalesManagementPage';
+export { default as OpenCashPage } from './OpenCashPage';
+export { default as MarketAnalysisPage } from './MarketAnalysisPage';
+export { default as SucursalCreatePage } from './SucursalCreatePage';
+export { default as SucursalEditPage } from './SucursalEditPage';

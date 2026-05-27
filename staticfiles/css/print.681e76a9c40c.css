@@ -1,0 +1,29 @@
+@media print {/* Oculta los elementos que no deben imprimirse */.navbar,.btn,.btn-group,.form-control,.table-responsive,#product-search-form,#product-search-results,#barcode-input,#confirmar-compra,#close-cash-button,.footer {display: none !important;}/* Ajusta el contenido para que se vea bien en la impresión */
+.cashier-container {
+        padding: 0;
+        margin: 0;
+        box-shadow: none;
+        border: none;
+}
+
+.card {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #000000 !important;
+}
+
+h2, h3, h4, p, label {
+        color: #000000 !important;
+}
+
+/* Muestra solo el contenido que se desea imprimir */
+.print-only {
+        display: block !important;
+}
+
+/* Evita que los botones "Imprimir" y "Volver" se impriman */
+.no-print {
+        display: none !important;
+}
+}

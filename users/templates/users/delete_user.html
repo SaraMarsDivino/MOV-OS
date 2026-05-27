@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_users.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Eliminar Usuario</h2>
+    <p>¿Está seguro de que desea eliminar al usuario "{{ user.username }}"?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+        <a href="{% url 'user_management' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

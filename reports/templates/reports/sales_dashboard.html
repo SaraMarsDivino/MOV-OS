@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_reports.css">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Gestión de Ventas</h2>
+    <p>Selecciona una opción para gestionar o revisar las ventas:</p>
+
+    <div class="list-group">
+        <a href="{% url 'sales_history' %}" class="list-group-item list-group-item-action">
+            <h5 class="mb-1">Historial de Ventas</h5>
+            <p class="mb-1">Consulta y gestiona las ventas realizadas.</p>
+        </a>
+
+        <a href="{% url 'cash_history' %}" class="list-group-item list-group-item-action">
+            <h5 class="mb-1">Historial de Caja</h5>
+            <p class="mb-1">Consulta los reportes de apertura y cierre de caja.</p>
+        </a>
+    </div>
+
+    <br>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
+</div>
+{% endblock %}

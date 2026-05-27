@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_sucursales.css">
+{% endblock %}
+
+{% block content %}
+<div class="container content-max">
+    <h2>Lista de Sucursales</h2>
+    <a href="{% url 'sucursales:create_sucursal' %}" class="btn btn-success mb-3">Crear Nueva Sucursal</a>
+    <div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>Teléfono</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sucursal in sucursales %}
+            <tr>
+                <td>{{ sucursal.nombre }}</td>
+                <td>{{ sucursal.direccion }}</td>
+                <td>{{ sucursal.telefono }}</td>
+                <td>
+                    <a href="{% url 'sucursales:edit_sucursal' sucursal.id %}" class="btn btn-sm btn-warning me-1">Editar</a>
+                    <a href="{% url 'sucursales:sucursal_products' sucursal.id %}" class="btn btn-sm btn-primary">Ver productos</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No se han creado sucursales aún.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+                {% if request.user.is_superuser %}
+                    {% url 'admin_dashboard' as back_href %}
+                    {% include 'partials/back_button.html' with href=back_href text='Volver al Dashboard' %}
+                {% endif %}
+    
+</div>
+
+{% endblock %}

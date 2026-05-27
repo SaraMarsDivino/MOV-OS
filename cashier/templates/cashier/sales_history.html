@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_cashier_pages.css">
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+  body { background: var(--bs-gray-200); color:#111827; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block content %}
+<div class="py-4">
+  <div class="container react-shell-wide react-compact react-forms">
+
+    <div class="react-card mb-3">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h2 class="m-0" style="font-weight:900;">Buscar venta para devolución</h2>
+          <div class="mt-1 text-muted" style="opacity:0.92;">Sucursal: {{ caja_abierta.sucursal.nombre }}</div>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{% url 'cashier_dashboard' %}" class="btn">Volver al Cajero</a>
+        </div>
+      </div>
+
+      <form method="get" class="mt-3">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-3">
+            <label class="form-label" for="venta_id">ID de venta</label>
+            <input id="venta_id" name="venta_id" class="form-control" value="{{ venta_id|default:'' }}" placeholder="Ej: 138" />
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label" for="numero_transaccion">Nº de transacción</label>
+            <input id="numero_transaccion" name="numero_transaccion" class="form-control" value="{{ numero_transaccion|default:'' }}" placeholder="Ej: 123456" />
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label" for="per_page">Filas</label>
+            <div class="d-flex gap-2">
+              <select id="per_page" name="per_page" class="form-select" style="max-width:120px;">
+                <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+              </select>
+              <button type="submit" class="btn">Buscar</button>
+              <a href="{% url 'cashier_sales_history' %}" class="btn">Limpiar</a>
+            </div>
+          </div>
+        </div>
+        <div class="text-muted mt-2" style="opacity:0.92; font-size:12px;">Tip: si hay varias ventas con el mismo Nº de transacción, usa el ID.</div>
+      </form>
+    </div>
+
+    <div class="react-card mb-3">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h3 class="m-0" style="font-weight:900;">Ventas</h3>
+          <div class="mt-1 text-muted" style="opacity:0.92; font-size:12px;">Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }} de {{ page_obj.paginator.count }}</div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+          {% if page_obj.has_previous %}
+            <a class="btn" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+          {% else %}
+            <span class="btn" style="opacity:0.5; pointer-events:none;">Anterior</span>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a class="btn" href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+          {% else %}
+            <span class="btn" style="opacity:0.5; pointer-events:none;">Siguiente</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="react-table-shell mt-3">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead>
+              <tr>
+                <th style="width:90px;">ID</th>
+                <th>Fecha</th>
+                <th>Pago</th>
+                <th>Nº transacción</th>
+                <th class="text-end">Total</th>
+                <th style="width:120px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for v in page_obj.object_list %}
+                <tr>
+                  <td style="font-weight:900;">#{{ v.id }}</td>
+                  <td>{{ v.fecha|date:"d/m/Y H:i" }}</td>
+                  <td>{{ v.get_forma_pago_display }}</td>
+                  <td>
+                    {% if v.forma_pago == "debito" or v.forma_pago == "credito" or v.forma_pago == "transferencia" %}
+                      {{ v.numero_transaccion|default:"Sin número" }}
+                    {% else %}
+                      —
+                    {% endif %}
+                  </td>
+                  <td class="text-end">${{ v.total|clp }}</td>
+                  <td class="text-end">
+                    <a class="btn" href="?venta_id={{ v.id }}&per_page={{ per_page }}{% if numero_transaccion %}&numero_transaccion={{ numero_transaccion }}{% endif %}">Seleccionar</a>
+                  </td>
+                </tr>
+              {% empty %}
+                <tr>
+                  <td colspan="6" class="text-muted" style="opacity:0.92;">No hay ventas para mostrar con los filtros actuales.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    {% if venta %}
+      <div class="react-card mb-3">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <div>
+            <h3 class="m-0" style="font-weight:900;">Detalle de venta #{{ venta.id }}</h3>
+            <div class="mt-1 text-muted" style="opacity:0.92;">{{ venta.fecha|date:"d/m/Y H:i" }} · {{ venta.empleado.username }}</div>
+          </div>
+          <div class="d-flex gap-2">
+            <a class="btn" href="{% url 'reporte_venta' venta.id %}">Ver detalle</a>
+          </div>
+        </div>
+        <div class="mt-3">
+          <div><strong>Forma de pago:</strong> {{ venta.get_forma_pago_display }}</div>
+          {% if venta.forma_pago == "debito" or venta.forma_pago == "credito" or venta.forma_pago == "transferencia" %}
+            <div><strong>Nº de transacción:</strong> {{ venta.numero_transaccion|default:"Sin número" }}</div>
+          {% endif %}
+          <div><strong>Total:</strong> {{ venta.display_total }}</div>
+        </div>
+      </div>
+
+      <div class="react-card">
+        <h3 class="m-0" style="font-weight:900;">Registrar devolución</h3>
+        <form method="post" action="{% url 'devolver_venta' venta.id %}" class="mt-3" id="refund_form">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}" />
+
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-lg-4">
+              <label class="form-label">Método de devolución</label>
+              <select name="metodo_pago" id="metodo_pago" class="form-select">
+                <option value="efectivo">Efectivo</option>
+                <option value="debito">Tarjeta de Débito</option>
+                <option value="credito">Tarjeta de Crédito</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="nota_credito">Nota de crédito (saldo)</option>
+              </select>
+            </div>
+
+            <div class="col-12 col-lg-4" id="transaccion_wrap" style="display:none;">
+              <label class="form-label">Nº transacción (devolución)</label>
+              <input name="numero_transaccion" class="form-control" placeholder="Ej: 123456" />
+            </div>
+
+            <div class="col-12 col-lg-4" id="banco_wrap" style="display:none;">
+              <label class="form-label">Banco</label>
+              <input name="banco" class="form-control" placeholder="Ej: Banco Estado" />
+            </div>
+          </div>
+
+          <div class="react-table-shell mt-3">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th class="text-end">Comprado</th>
+                    <th class="text-end">Devuelto</th>
+                    <th class="text-end">Disponible</th>
+                    <th style="min-width:160px;">Cantidad a devolver</th>
+                    <th style="min-width:160px;">Destino</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in lineas %}
+                    <tr>
+                      <td>
+                        <div style="font-weight:900;">{{ row.detalle.producto.nombre }}</div>
+                        <div class="text-muted" style="font-size:12px; opacity:0.9;">Precio: ${{ row.detalle.precio_unitario|clp }}</div>
+                      </td>
+                      <td class="text-end">{{ row.detalle.cantidad }}</td>
+                      <td class="text-end">{{ row.ya_devuelto }}</td>
+                      <td class="text-end">{{ row.max_returnable }}</td>
+                      <td>
+                        <input type="number" name="qty_{{ row.detalle.id }}" min="0" max="{{ row.max_returnable }}" value="0" class="form-control" {% if row.max_returnable == 0 %}disabled{% endif %} />
+                        {% if row.max_returnable == 0 %}
+                          <div class="text-muted" style="font-size:12px; opacity:0.9;">Ya devuelto</div>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <select name="destino_{{ row.detalle.id }}" class="form-select" {% if row.max_returnable == 0 %}disabled{% endif %}>
+                          <option value="stock">Vuelve a stock</option>
+                          <option value="merma">Merma</option>
+                        </select>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2 justify-content-end mt-3">
+            <button type="submit" class="btn">Registrar devolución</button>
+          </div>
+        </form>
+      </div>
+    {% else %}
+      {% if found %}
+        <div class="react-card">
+          <div class="text-muted" style="opacity:0.92;">Ingresa un ID o Nº de transacción para buscar una venta.</div>
+        </div>
+      {% endif %}
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+  (function() {
+    const metodo = document.getElementById('metodo_pago');
+    const txWrap = document.getElementById('transaccion_wrap');
+    const bankWrap = document.getElementById('banco_wrap');
+    if (!metodo) return;
+
+    function refresh() {
+      const v = metodo.value;
+      const showTx = (v === 'debito' || v === 'credito' || v === 'transferencia');
+      const showBank = (v === 'transferencia');
+      txWrap.style.display = showTx ? '' : 'none';
+      bankWrap.style.display = showBank ? '' : 'none';
+    }
+
+    metodo.addEventListener('change', refresh);
+    refresh();
+  })();
+
+  (function() {
+    const form = document.getElementById('refund_form');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+      const ok = window.confirm('¿Está seguro de registrar esta devolución?');
+      if (!ok) e.preventDefault();
+    });
+  })();
+</script>
+{% endblock %}

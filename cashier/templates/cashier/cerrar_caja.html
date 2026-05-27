@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+{% block extra_styles %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}" media="print">
+<style>
+  body { background: var(--bs-gray-200); color: #0f172a; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block content %}
+<div class="py-4">
+    <div class="container react-shell-wide react-compact react-forms">
+        <div class="react-card">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h2 class="m-0" style="font-weight:900;">Detalle de Cierre de Caja</h2>
+                    <div class="mt-1 text-muted" style="opacity:0.92;">Caja #{{ caja.id }}</div>
+                </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-6">
+                    <div class="react-card h-100">
+                        <h3 class="m-0" style="font-weight:900;">Informacion de la Caja</h3>
+                        <div class="mt-2">
+                            <p><strong>ID de Caja:</strong> {{ caja.id }}</p>
+                            <p><strong>Cajero:</strong> {{ caja.usuario.username }}</p>
+                            <p><strong>Fecha de Apertura:</strong> {{ caja.fecha_apertura|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Fecha de Cierre:</strong> {% if caja.fecha_cierre %}{{ caja.fecha_cierre|date:"d/m/Y H:i" }}{% else %}<em>Aun no se ha cerrado</em>{% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="react-card h-100">
+                        <h3 class="m-0" style="font-weight:900;">Resumen Financiero</h3>
+                        <div class="mt-2">
+                            <p><strong>Efectivo Inicial:</strong> ${{ caja.efectivo_inicial|clp|default:"0" }}</p>
+                            <p><strong>Total en Debito:</strong> ${{ caja.total_ventas_debito|clp|default:"0" }}</p>
+                            <p><strong>Total en Credito:</strong> ${{ caja.total_ventas_credito|clp|default:"0" }}</p>
+                            <p><strong>Total en Efectivo:</strong> ${{ caja.total_ventas_efectivo|clp|default:"0" }}</p>
+                            <p><strong>Vuelto Entregado:</strong> ${{ caja.vuelto_entregado|clp|default:"0" }}</p>
+                            <p><strong>Efectivo Final en Caja:</strong> ${{ caja.efectivo_final|clp|default:"0" }}</p>
+                            <p><strong>Total de Ventas:</strong> ${{ caja.ventas_totales|clp|default:"0" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="no-print d-flex gap-2 mt-3">
+                <button onclick="window.print()" class="btn">Imprimir Detalle</button>
+                <a href="{% url 'cashier_dashboard' %}" class="btn">Abrir Nueva Caja</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

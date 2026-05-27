@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block app_styles %}{% endblock %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+  body { background: #e2e8f0; color: #0f172a; }
+  footer { display: none !important; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block content %}
+<div class="py-4">
+  <div class="container react-shell-wide react-compact react-forms">
+    <div class="react-card mb-3">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h2 class="m-0" style="font-weight:900;">Productos en {{ sucursal.nombre }}</h2>
+          <div class="mt-1 text-muted" style="opacity:0.92;">Mostrando: {{ page_obj.paginator.count|default:0 }}</div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a class="btn btn-sm" href="{% url 'allow_without_stock_report' %}?sucursal={{ sucursal.id }}">Reporte venta sin stock</a>
+        </div>
+      </div>
+
+      <form method="get" class="mt-3">
+        <div class="d-flex flex-wrap gap-2 align-items-end">
+          <div style="min-width:240px; flex:1 1 280px;">
+            <label for="search" class="form-label">Buscar</label>
+            <input type="text" id="search" name="search" value="{{ search_query }}" class="form-control" placeholder="Nombre o código">
+          </div>
+          <div style="min-width:140px; flex:0 0 160px;">
+            <label for="per_page" class="form-label">Elementos</label>
+            <select id="per_page" name="per_page" class="form-select">
+              {% for opt in per_page_options %}
+                <option value="{{ opt }}" {% if per_page == opt %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="min-width:140px; flex:0 0 160px;">
+            <label for="stock" class="form-label">Stock</label>
+            <select id="stock" name="stock" class="form-select">
+              <option value="" {% if not stock_filter %}selected{% endif %}>Todos</option>
+              <option value="low" {% if stock_filter == 'low' %}selected{% endif %}>Bajo</option>
+              <option value="out" {% if stock_filter == 'out' %}selected{% endif %}>Agotado</option>
+            </select>
+          </div>
+          <div class="d-flex gap-2" style="flex:0 0 auto;">
+            <button type="submit" class="btn">Aplicar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="react-table-shell">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 admin-table">
+          <colgroup>
+            <col style="width:32%" />
+            <col style="width:12%" />
+            <col style="width:12%" />
+            <col style="width:12%" />
+            <col style="width:20%" />
+            <col style="width:12%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="text-start wrap">Nombre</th>
+              <th class="text-start">Codigo</th>
+              <th class="text-start">Stock</th>
+              <th class="text-start">Precio Venta</th>
+              <th class="text-start">Venta sin stock</th>
+              <th class="text-end">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in page_obj %}
+              {% with s=p.stock_sucursal|default:p.stock|default:0 %}
+              <tr class="{% if s <= 0 %}table-warning{% endif %}">
+                <td class="text-start wrap">{{ p.nombre }}</td>
+                <td class="text-start">{{ p.producto_id }}</td>
+                <td class="text-start">
+                  {% if s <= 0 %}
+                    <span class="badge bg-danger text-dark">Agotado</span>
+                  {% elif s <= low_stock_threshold %}
+                    <span class="badge bg-warning text-dark">Bajo ({{ s }})</span>
+                  {% else %}
+                    {{ s }}
+                  {% endif %}
+                </td>
+                <td class="text-start">${{ p.formatted_precio_venta }}</td>
+                <td class="text-start">
+                  {% if p.allow_override is not None %}
+                    {% if p.allow_override %}
+                      <span class="badge bg-success">Permitir (Sucursal)</span>
+                    {% else %}
+                      <span class="badge bg-secondary">No permitir (Sucursal)</span>
+                    {% endif %}
+                  {% else %}
+                    {% if p.allow_without_stock %}
+                      <span class="badge bg-success">Global: Si</span>
+                    {% else %}
+                      <span class="badge bg-secondary">Global: No</span>
+                    {% endif %}
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <a class="btn btn-sm" href="{% url 'transfer_stock' %}?producto={{ p.id }}&sucursal_origen={{ sucursal.id }}">Transferir</a>
+                </td>
+              </tr>
+              {% endwith %}
+            {% empty %}
+              <tr><td colspan="6" class="text-center">Sin productos</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <nav aria-label="Paginación" class="mt-3">
+      <ul class="pagination react-pagination justify-content-end mb-0">
+        {% if page_obj.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}&search={{ search_query }}">Anterior</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Pagina {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}&search={{ search_query }}">Siguiente</a></li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+
+    <div class="react-card mt-3">
+      <h3 class="m-0" style="font-weight:900;">Trabajadores habilitados para esta sucursal</h3>
+      <div class="mt-2">
+        {% with workers=sucursal.vendedores_autorizados.all %}
+          {% if workers %}
+            <div class="react-table-shell">
+              <table class="table align-middle mb-0">
+                <tbody>
+                  {% for v in workers %}
+                    <tr><td class="text-start">{{ v.user.username }}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div style="opacity:0.7; font-size:0.90rem;">Sin trabajadores asignados</div>
+          {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+
+    {% if request.user.is_superuser %}
+      <div class="mt-3">
+        {% url 'sucursales:sucursal_list' as back_href %}
+        {% include 'partials/back_button.html' with href=back_href text='Volver a Sucursales' %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

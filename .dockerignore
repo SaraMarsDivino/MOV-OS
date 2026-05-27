@@ -1,0 +1,22 @@
+.git
+.gitignore
+
+# Never bake local Django overrides into images
+MOVOS/local_settings.py
+MOVOS/local_settings.py.bak
+
+.venv
+**/__pycache__
+**/*.pyc
+
+db.sqlite3
+**/*.sqlite3
+
+frontend/pos-cashier/node_modules
+frontend/pos-cashier/dist
+frontend/pos-cashier/.vite
+
+# Include built React assets under static/pos-cashier (required when the Docker build
+# does not run the Node/Vite build inside the container).
+
+staticfiles

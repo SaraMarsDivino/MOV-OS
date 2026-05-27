@@ -1,0 +1,490 @@
+/* Cashier — Minimalista "Deep Tech" (solo para la vista cashier) */
+body {
+    background-color: #0F172A;
+    color: #F8FAFC;
+}
+
+.cashier-container {
+    text-align: center;
+    color: #F8FAFC;
+    /* Don't force near-viewport height; base.html already has footer/margins.
+       Forcing min-height here causes unwanted page scroll at 100% zoom. */
+    min-height: 0;
+    padding-bottom: 12px;
+}
+
+/* Reduce base layout chrome for cashier page (cashier.css is only loaded here) */
+main.container-fluid.my-4 {
+    margin-top: .75rem !important;
+    margin-bottom: .75rem !important;
+}
+footer.bg-dark {
+    padding-top: .5rem !important;
+    padding-bottom: .5rem !important;
+}
+footer.bg-dark p {
+    font-size: .85rem;
+}
+
+/* Make cashier fit better at 100% zoom */
+.cashier-container { font-size: 0.80rem; }
+.cashier-container h2 { font-size: 1.06rem; margin-bottom: .08rem; }
+.cashier-container h3 { font-size: 0.90rem; margin-bottom: .08rem; }
+.cashier-container .card-title { font-size: 0.92rem; margin-bottom: .3rem; }
+.cashier-container h4 { font-size: 0.92rem; }
+
+/* Labels/controls slightly smaller (still readable) */
+.cashier-container .form-label { font-size: 0.86rem; margin-bottom: .20rem; }
+.cashier-container .form-control,
+.cashier-container .form-select {
+    padding-top: .33rem;
+    padding-bottom: .33rem;
+}
+.cashier-container .btn { font-size: 0.90rem; }
+
+/* Ensure columns/cards stretch and internal scroll works */
+.cashier-container .cashier-main-row { align-items: stretch; }
+.cashier-container .cashier-main-row { min-height: 0; }
+.cashier-container .card { min-height: 0; }
+.cashier-container .card.h-100 { min-height: 0; }
+.cashier-container .card.h-100 .flex-grow-1,
+.cashier-container .card.h-100 .overflow-auto,
+.cashier-container .card.h-100 .table-responsive {
+    min-height: 0;
+}
+
+/* Desktop: keep everything in one viewport when possible */
+@media (min-width: 992px) and (max-height: 900px) {
+    .cashier-container { font-size: 0.82rem; }
+    .cashier-container h2 { font-size: 1.08rem; }
+    .cashier-container h3 { font-size: 0.90rem; }
+    .cashier-container .payment-method-btn { height: 50px; }
+}
+
+/* Desktop: give the 3-column row a bounded viewport height so lists scroll inside cards */
+@media (min-width: 992px) {
+    .cashier-container .cashier-main-row {
+        height: calc(100dvh - 320px);
+    }
+}
+
+@media (min-width: 1200px) {
+    .cashier-container .cashier-main-row {
+        height: calc(100dvh - 300px);
+    }
+}
+
+@media (min-width: 1200px) {
+    .cashier-container { font-size: 0.82rem; }
+}
+
+/* Ensure cards fill column height and their contents scroll when needed */
+.cashier-container .card.h-100 {
+    display: flex;
+    flex-direction: column;
+}
+.cashier-container .card.h-100 .flex-grow-1,
+.cashier-container .card.h-100 .overflow-auto {
+    flex: 1 1 auto;
+    overflow: auto;
+}
+
+/* Make totals and action bar sticky at bottom of card */
+.cashier-container .card .mt-auto.pt-3 {
+    position: sticky;
+    bottom: 0;
+    background: transparent;
+}
+
+/* Cards */
+.cashier-container .card {
+    background-color: #1E293B;
+    color: #F8FAFC;
+    border: 1px solid rgba(248, 250, 252, 0.10);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.cashier-container h1,
+.cashier-container h2,
+.cashier-container h3,
+.cashier-container h4,
+.cashier-container h5,
+.cashier-container h6 {
+    color: #F8FAFC;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* Horizontal cashier layout: left = products/sale details, right = payment/actions */
+.cashier-layout { display: flex; gap: 18px; align-items: stretch; }
+.cashier-left { flex: 1 1 65%; }
+.cashier-right { flex: 0 0 34%; max-width: 420px; }
+
+/* Ensure numbers and totals contrast strongly */
+.cashier-total .amount, .cashier-figure { color: #ffffff !important; font-weight: 800; }
+.cashier-right .card { background-color: #f3f4f6; color: #081222; border: 1px solid rgba(0,0,0,0.06); }
+
+/* Buttons contrast and spacing */
+.cashier-right .btn { width:100%; margin-bottom:10px; background-color:#2b2f33; color:#e9eef2; border:1px solid rgba(255,255,255,0.03); }
+.cashier-right .btn-primary { background-color: #005a8a; color: #fff; }
+.cashier-right .btn-success { background-color: #0f9d58; color: #fff; }
+.cashier-right .btn-danger { background-color: #b91c1c; color: #fff; }
+
+/* Make lists and tables inside cashier use horizontal space */
+.cashier-left .table, .cashier-left .list-group { width:100% }
+
+
+/* Estilo de botones */
+.btn-group .btn {
+    background-color: #282a40;
+    color: #ffffff;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.btn-group .btn:hover {
+    background-color: #1f223f;
+    transform: scale(1.05);
+}
+
+.btn-group .btn.active {
+    background-color: #7289da;
+    color: #ffffff;
+}
+
+/* Tablas */
+.table-dark {
+    background-color: #2f3136;
+    color: #ffffff;
+}
+
+.table-dark th {
+    background-color: #36393f;
+}
+
+.table-dark td {
+    background-color: #2f3136;
+    color: #b9bbbe;
+}
+
+/* Inputs */
+.form-control {
+    background-color: #ffffff; /* Fondo blanco para los campos de texto */
+    border: 1px solid #40444b;
+    color: #000000; /* Texto en color negro */
+    border-radius: 8px;
+}
+
+.form-control:focus {
+    border-color: #5865f2;
+}
+
+/* Botón de volver */
+.btn-secondary {
+    background-color: #5865f2;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background-color: #4752c4;
+}
+
+/* Botón de cerrar caja */
+.btn-danger {
+    background-color: #d9534f;
+}
+
+.btn-danger:hover {
+    background-color: #c9302c;
+}
+
+/* Botón confirmar compra */
+.btn-success {
+    background-color: #28a745;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.vibrate {
+    animation: vibrar 0.25s ease;
+}
+
+@keyframes vibrar {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    50% { transform: translateX(2px); }
+    75% { transform: translateX(-2px); }
+    100% { transform: translateX(0); }
+}
+
+.payment-method-btn {
+    height: 52px;             /* Más compacto sin perder legibilidad */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: normal;      /* Permite que el texto se ajuste en varias líneas si es necesario */
+    text-align: center;
+}
+
+/* Button label readability: white text with black outline (for sale type + payment buttons) */
+.cashier-container .btn-group .btn,
+.cashier-container .payment-method-btn {
+    color: #ffffff !important;
+    -webkit-text-stroke: 0.35px rgba(0,0,0,0.55);
+    text-shadow:
+        0 1px 2px rgba(0,0,0,0.35),
+        0 0 1px rgba(0,0,0,0.55);
+}
+
+/* Inputs (deep tech) */
+.cashier-container .form-control,
+.cashier-container .form-select,
+.cashier-container select {
+    background-color: #0F172A;
+    color: #F8FAFC;
+    border: 1px solid rgba(248, 250, 252, 0.14);
+    border-radius: 10px;
+}
+.cashier-container .form-control::placeholder {
+    color: rgba(248, 250, 252, 0.55);
+}
+.cashier-container .form-control:focus,
+.cashier-container .form-select:focus {
+    border-color: rgba(59, 130, 246, 0.85);
+    box-shadow: 0 0 0 0.15rem rgba(59, 130, 246, 0.25);
+}
+
+/* Buttons (secondary actions = blue, primary confirm = emerald) */
+.cashier-container .btn-primary {
+    background-color: #3B82F6 !important;
+    border-color: #3B82F6 !important;
+    color: #F8FAFC !important;
+}
+.cashier-container .btn-outline-primary {
+    color: #3B82F6 !important;
+    border-color: rgba(59, 130, 246, 0.70) !important;
+}
+.cashier-container .btn-outline-primary:hover {
+    background-color: rgba(59, 130, 246, 0.14) !important;
+}
+.cashier-container .btn-outline-primary:focus {
+    box-shadow: 0 0 0 0.15rem rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Make non-selected options readable + clearly different from selected */
+.cashier-container .btn-group .btn,
+.cashier-container .payment-method-btn {
+    border-radius: 12px;
+}
+
+/* Inactive (outline) buttons get a subtle filled background for readability */
+.cashier-container .btn-group .btn.btn-outline-primary:not(.active),
+.cashier-container .payment-method-btn.btn-outline-primary:not(.active) {
+    background: rgba(59, 130, 246, 0.16) !important;
+    border-color: rgba(59, 130, 246, 0.55) !important;
+    color: #F8FAFC !important;
+    opacity: 0.92;
+}
+.cashier-container .btn-group .btn.btn-outline-primary:not(.active):hover,
+.cashier-container .payment-method-btn.btn-outline-primary:not(.active):hover {
+    background: rgba(59, 130, 246, 0.24) !important;
+    opacity: 1;
+}
+
+/* Active buttons should pop more */
+.cashier-container .btn-group .btn.active,
+.cashier-container .payment-method-btn.active {
+    background: #3B82F6 !important;
+    border-color: #3B82F6 !important;
+    color: #F8FAFC !important;
+    box-shadow: 0 10px 22px rgba(59, 130, 246, 0.22);
+}
+.cashier-container .btn-success {
+    background-color: #10B981 !important;
+    border-color: #10B981 !important;
+    color: #0B1220 !important;
+}
+.cashier-container .btn-success:hover {
+    filter: brightness(0.95);
+}
+
+/* Highlight: Cerrar caja (amber) */
+.cashier-container .btn-cerrar-caja {
+    background-color: #F59E0B !important;
+    border-color: #F59E0B !important;
+    color: #0B1220 !important;
+}
+.cashier-container .btn-cerrar-caja:hover {
+    filter: brightness(0.95);
+}
+
+/* Modals (deep tech) */
+#saleReportModal .modal-content,
+#confirmPurchaseModal .modal-content,
+#closeCashModal .modal-content {
+    background: #1E293B;
+    color: #F8FAFC;
+    border: 1px solid rgba(248, 250, 252, 0.10);
+}
+#saleReportModal .modal-header,
+#confirmPurchaseModal .modal-header,
+#closeCashModal .modal-header {
+    border-bottom: 1px solid rgba(248, 250, 252, 0.10);
+}
+#saleReportModal .modal-footer,
+#confirmPurchaseModal .modal-footer,
+#closeCashModal .modal-footer {
+    border-top: 1px solid rgba(248, 250, 252, 0.10);
+}
+#saleReportModal .btn-close,
+#confirmPurchaseModal .btn-close,
+#closeCashModal .btn-close {
+    filter: invert(1);
+}
+
+/* Inputs dentro de modales (no están dentro de .cashier-container) */
+#saleReportModal .form-control,
+#confirmPurchaseModal .form-control,
+#closeCashModal .form-control {
+    background-color: #0F172A;
+    color: #F8FAFC;
+    border: 1px solid rgba(248, 250, 252, 0.14);
+    border-radius: 10px;
+}
+#saleReportModal .form-control::placeholder,
+#confirmPurchaseModal .form-control::placeholder,
+#closeCashModal .form-control::placeholder {
+    color: rgba(248, 250, 252, 0.68);
+}
+
+/* Modal Confirmar Compra: ambos botones iguales */
+#confirmPurchaseModal .modal-footer .btn {
+    background: transparent;
+    border: 1px solid rgba(248, 250, 252, 0.85);
+    color: #F8FAFC;
+    min-width: 110px;
+}
+#confirmPurchaseModal .modal-footer .btn:hover {
+    background: rgba(248, 250, 252, 0.08);
+    border-color: rgba(248, 250, 252, 0.92);
+    color: #F8FAFC;
+}
+
+/* Stock (text-muted) más legible en fondo oscuro */
+.cashier-container .text-muted {
+    color: rgba(248, 250, 252, 0.70) !important;
+}
+
+/* Light theme overrides scoped to cashier container */
+.cashier-container.cashier-light {
+    background-color: #f4f7fb; /* pale background inside cashier area */
+    color: #0f1724; /* dark text */
+}
+.cashier-container.cashier-light .card {
+    background-color: #ffffff;
+    color: #0f1724;
+    border: 1px solid #e6eef7;
+    box-shadow: 0 6px 24px rgba(16,24,40,0.06);
+}
+.cashier-container.cashier-light .card-title {
+    color: #0b1220;
+}
+.cashier-container.cashier-light .table-dark,
+.cashier-container.cashier-light .table-dark td,
+.cashier-container.cashier-light .table-dark th {
+    background-color: transparent;
+    color: #0f1724;
+}
+.cashier-container.cashier-light .table-responsive table thead { color: #0b1220; }
+.cashier-container.cashier-light .form-control {
+    background-color: #ffffff;
+    border: 1px solid #cbd5e1;
+    color: #0b1220;
+}
+.cashier-container.cashier-light .form-control:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 0.15rem rgba(37,99,235,0.15);
+}
+.cashier-container.cashier-light .btn-group .btn {
+    background-color: #eef2ff;
+    color: #0b1220;
+}
+.cashier-container.cashier-light .btn-group .btn.active {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+.cashier-container.cashier-light .btn-success { background-color: #16a34a; }
+.cashier-container.cashier-light .btn-danger { background-color: #dc2626; }
+.cashier-container.cashier-light .badge { background-color: #eef2ff; color: #0b1220; }
+
+/* Ensure the payment panel stands out in light mode */
+.cashier-container.cashier-light .payment-method-btn {
+    background-color: #eef2ff;
+    color: #0b1220;
+    border: 1px solid #c7d2fe;
+}
+
+/* Emphasis para totales en la vista cashier */
+.cashier-total {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+.cashier-total .label {
+    font-size: 0.95rem;
+    color: #cbd5e1;
+}
+.cashier-total .amount {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+.cashier-container.cashier-light .cashier-total .amount {
+    color: #0b1220;
+}
+
+/* High-contrast helpers for detalle de caja */
+.detalle-caja { background-color: #15171a; border: 1px solid rgba(255,255,255,0.03); padding: 18px; border-radius: 12px; }
+.detalle-caja h2, .detalle-caja h4 { color: #79e0ff; }
+.detalle-caja p { color: #dbeafe; }
+.detalle-caja .btn { border-radius: 6px; padding: 10px 14px; }
+.btn-volver { padding: 14px 20px; font-size: 1.05rem; }
+.options-group .btn { opacity: 0.95; }
+
+/* Typography + tables inside cashier */
+.cashier-container .table,
+.cashier-container .table td,
+.cashier-container .table th {
+    color: #F8FAFC;
+}
+.cashier-container .table thead th {
+    background: rgba(15, 23, 42, 0.55);
+    border-bottom: 1px solid rgba(248, 250, 252, 0.10);
+    color: #F8FAFC;
+}
+
+/* Light cashier: ensure rounded corners are visually clipped on list/table blocks */
+.cashier-container.cashier-light .table-responsive,
+.cashier-container.cashier-light .list-group,
+.cashier-container.cashier-light .card .border-top {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+}
+.cashier-container.cashier-light .table-responsive table {
+    border-radius: 12px !important;
+    overflow: hidden;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.cashier-container.cashier-light .table-responsive table thead th:first-child {
+    border-top-left-radius: 12px !important;
+}
+.cashier-container.cashier-light .table-responsive table thead th:last-child {
+    border-top-right-radius: 12px !important;
+}
+
+/* Reduce font-size slightly in cashier panels */
+.cashier-container, .cashier-container .card { font-size: 0.90rem; }
+

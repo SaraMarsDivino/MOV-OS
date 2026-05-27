@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-movos}
+      POSTGRES_USER: ${POSTGRES_USER:-movos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-movos}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    command: gunicorn MOVOS.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    restart: unless-stopped
+    environment:
+      DEBUG: "False"
+      REACT_UI_ENABLED: "1"
+      SECRET_KEY: ${SECRET_KEY:-REPLACE_THIS_WITH_A_LONG_RANDOM_SECRET_KEY_BEFORE_PRODUCTION_2026}
+      SECRET_KEY_FALLBACKS: ${SECRET_KEY_FALLBACKS:-}
+      # Canonical host + shared cookie domain (avoid split sessions between www and non-www)
+      CANONICAL_HOST: ${CANONICAL_HOST:-www.rochart-multiservicios.cl}
+      CANONICAL_HOST_PERMANENT: ${CANONICAL_HOST_PERMANENT:-1}
+      SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN:-.rochart-multiservicios.cl}
+      CSRF_COOKIE_DOMAIN: ${CSRF_COOKIE_DOMAIN:-.rochart-multiservicios.cl}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-1}
+      CSRF_COOKIE_SECURE: ${CSRF_COOKIE_SECURE:-1}
+      USE_X_FORWARDED_PROTO: ${USE_X_FORWARDED_PROTO:-1}
+      USE_X_FORWARDED_HOST: ${USE_X_FORWARDED_HOST:-1}
+      SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-1}
+      SECURE_HSTS_SECONDS: ${SECURE_HSTS_SECONDS:-31536000}
+      SECURE_HSTS_INCLUDE_SUBDOMAINS: ${SECURE_HSTS_INCLUDE_SUBDOMAINS:-1}
+      SECURE_HSTS_PRELOAD: ${SECURE_HSTS_PRELOAD:-1}
+      # Incluir trycloudflare por defecto para evitar 403 al usar Quick Tunnel
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,.trycloudflare.com},www.rochart-multiservicios.cl
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8000,https://*.trycloudflare.com},https://www.rochart-multiservicios.cl
+      DB_ENGINE: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-movos}
+      POSTGRES_USER: ${POSTGRES_USER:-movos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-movos}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - static_volume:/app/staticfiles
+
+volumes:
+  pgdata:
+  static_volume:

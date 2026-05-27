@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Polygonal MOV-OS logo: transparent background, stylized wordmark -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 160" role="img" aria-label="MOV-OS logo">
+  <defs>
+    <linearGradient id="blueGrad" x1="0" x2="1">
+      <stop offset="0" stop-color="#40C4FF"/>
+      <stop offset="1" stop-color="#0066A3"/>
+    </linearGradient>
+    <linearGradient id="orangeGrad" x1="0" x2="1">
+      <stop offset="0" stop-color="#FF9A4D"/>
+      <stop offset="1" stop-color="#FF5A3C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- transparent background -->
+  <rect width="100%" height="100%" fill="transparent" />
+
+  <!-- polygon emblem (stylized bird/shape) -->
+  <g transform="translate(24,8) scale(1.1)">
+    <polygon points="24,24 68,10 94,36 78,64 40,56" fill="#1E8FE6" />
+    <polygon points="94,36 140,18 180,32 158,54 116,48" fill="#66D4FF" />
+    <polygon points="20,84 72,74 96,110 52,122" fill="#FFB84D" />
+    <polygon points="120,80 168,72 196,100 150,116" fill="#FF4D6E" />
+  </g>
+
+  <!-- Wordmark: MOV-OS with polygonal fills -->
+  <g transform="translate(220,118)">
+    <g font-family="Segoe UI, Roboto, Arial, sans-serif" font-weight="800" font-size="42">
+      <text x="0" y="0" fill="#40C4FF">MOV</text>
+      <text x="120" y="0" fill="#EAF3FA">-OS</text>
+    </g>
+  </g>
+
+  <!-- low-opacity polygon accents under wordmark -->
+  <g transform="translate(220,40) scale(0.6)">
+    <polygon points="10,10 60,0 80,30 45,40" fill="url(#blueGrad)" opacity="0.9" />
+    <polygon points="140,10 190,0 220,34 180,48" fill="url(#orangeGrad)" opacity="0.95" />
+  </g>
+
+</svg>

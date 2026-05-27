@@ -1,0 +1,53 @@
+html{ font-size: 13.5px; }
+body{ background: var(--bs-gray-200) !important; color: var(--bs-gray-900) !important; line-height: 1.35; }
+main.container-fluid.my-4{ margin-top: 1rem !important; margin-bottom: 1rem !important; }
+
+h1{ font-size: 1.35rem; margin-bottom: 0.75rem; }
+h2{ font-size: 1.20rem; margin-bottom: 0.65rem; }
+h3{ font-size: 1.10rem; margin-bottom: 0.55rem; }
+h4{ font-size: 1.00rem; margin-bottom: 0.5rem; }
+h5{ font-size: 0.95rem; margin-bottom: 0.45rem; }
+h6{ font-size: 0.90rem; margin-bottom: 0.4rem; }
+
+.container, .container-fluid{ --bs-gutter-x: 1.25rem; }
+
+.page-card{
+  background: var(--bs-gray-300) !important;
+  border: 2px solid var(--bs-black) !important;
+  box-shadow: var(--bs-box-shadow-lg) !important;
+  border-radius: 1rem !important;
+}
+.page-card.p-4{ padding: 1rem !important; }
+
+.form-control,
+.form-select{
+  background: var(--bs-white) !important;
+  color: var(--bs-gray-900) !important;
+  border: 1px solid var(--bs-gray-400) !important;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.95rem;
+}
+
+.btn{ border-radius: 0.75rem !important; padding: 0.45rem 0.75rem; font-size: 0.95rem; }
+.text-muted{ color: var(--bs-gray-700) !important; }
+
+/* Login contrast fixes */
+.login-card{
+  background: var(--bs-gray-300) !important;
+  border: 2px solid var(--bs-black) !important;
+  color: var(--bs-gray-900) !important;
+}
+.login-brand,
+.login-subtitle,
+.login-card p,
+.login-card .form-label,
+.login-card label,
+.login-card .text-muted{
+  color: var(--bs-gray-900) !important;
+}
+.login-card .form-control,
+.login-card .form-select{
+  background: var(--bs-white) !important;
+  color: var(--bs-gray-900) !important;
+  border: 1px solid var(--bs-gray-500) !important;
+}

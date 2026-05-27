@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+  body { background: var(--bs-gray-200); color: #0f172a; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block content %}
+<div class="py-4">
+  <div class="container react-shell-wide react-compact react-forms">
+    <div class="react-card mb-3">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+          <h2 class="m-0" style="font-weight:900;">Reporte: Venta sin stock por sucursal</h2>
+          <div class="mt-1 text-muted" style="opacity:0.92;">Mostrando: {{ rows|length|default:0 }}</div>
+        </div>
+      </div>
+
+      <form method="get" class="mt-3">
+        <div class="d-flex flex-wrap gap-2 align-items-end">
+          <div style="min-width:200px; flex:1 1 220px;">
+            <label for="sucursal" class="form-label">Sucursal</label>
+            <select id="sucursal" name="sucursal" class="form-select">
+              <option value="">Todas</option>
+              {% for s in sucursales %}
+                <option value="{{ s.id }}" {% if s.id|stringformat:'s' == sucursal_sel %}selected{% endif %}>{{ s.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="min-width:260px; flex:1 1 280px;">
+            <label for="q" class="form-label">Buscar</label>
+            <input id="q" name="q" type="text" class="form-control" placeholder="Producto, codigo o sucursal" value="{{ q_text }}">
+          </div>
+          <div class="d-flex gap-2" style="flex:0 0 auto;">
+            <button class="btn" type="submit">Aplicar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="react-table-shell">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 admin-table">
+          <colgroup>
+            <col style="width:24%" />
+            <col style="width:30%" />
+            <col style="width:16%" />
+            <col style="width:12%" />
+            <col style="width:18%" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="text-start">Sucursal</th>
+              <th class="text-start wrap">Producto</th>
+              <th class="text-start">Codigo</th>
+              <th class="text-start">Stock</th>
+              <th class="text-start">Venta sin stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td class="text-start">{{ row.sucursal.nombre }}</td>
+                <td class="text-start wrap">{{ row.producto.nombre }}</td>
+                <td class="text-start">{{ row.producto.producto_id }}</td>
+                <td class="text-start">{{ row.cantidad }}</td>
+                <td class="text-start">
+                  {% if row.permitir_venta_sin_stock %}
+                    <span class="badge bg-success">Permitir</span>
+                  {% else %}
+                    <span class="badge bg-secondary">No permitir</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" class="text-center">Sin overrides configurados.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

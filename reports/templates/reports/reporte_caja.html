@@ -1,0 +1,70 @@
+{# filepath: c:\Users\rocha\OneDrive\Escritorio\Sistema-POS-main\reports\templates\reports\reporte_caja.html #}
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}" media="print">
+<style>
+  body { background: var(--bs-gray-200); color: #0f172a; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block content %}
+<div class="py-4">
+        <div class="container react-shell-wide react-compact react-forms">
+                <div class="react-card">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                                <div>
+                                        <h2 class="m-0" style="font-weight:900;">Detalle de Cierre de Caja</h2>
+                                        <div class="mt-1 text-muted" style="opacity:0.92;">Caja #{{ caja.id }}</div>
+                                </div>
+                        </div>
+
+                        <div class="row g-3 mt-2">
+                                <div class="col-md-6">
+                                        <div class="react-card h-100">
+                                                <h3 class="m-0" style="font-weight:900;">Informacion de la Caja</h3>
+                                                <div class="mt-2">
+                                                        <p><strong>ID de Caja:</strong> {{ caja.id }}</p>
+                                                        <p><strong>Cajero:</strong> {{ caja.vendedor.username }}</p>
+                                                        <p><strong>Sucursal:</strong> {{ caja.sucursal.nombre }}</p>
+                                                        <p><strong>Fecha de Apertura:</strong> {{ caja.apertura|date:"d/m/Y H:i" }}</p>
+                                                        <p><strong>Fecha de Cierre:</strong> {% if caja.cierre %}{{ caja.cierre|date:"d/m/Y H:i" }}{% else %}<em>Aun no se ha cerrado</em>{% endif %}</p>
+                                                </div>
+                                        </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                        <div class="react-card h-100">
+                                                <h3 class="m-0" style="font-weight:900;">Resumen Financiero</h3>
+                                                <div class="mt-2">
+                                                        <p><strong>Efectivo Inicial:</strong> {{ caja.formatted_efectivo_inicial }}</p>
+                                                        <p><strong>Total en Debito:</strong> {{ caja.formatted_total_ventas_debito }}</p>
+                                                        <p><strong>Total en Credito:</strong> {{ caja.formatted_total_ventas_credito }}</p>
+                                                        <p><strong>Total en Transferencia:</strong> {{ caja.formatted_total_ventas_transferencia }}</p>
+                                                        <p><strong>Total en Efectivo:</strong> {{ caja.formatted_total_ventas_efectivo }}</p>
+                                                        <p><strong>Vuelto Entregado:</strong> {{ caja.formatted_vuelto_entregado }}</p>
+                                                        <p><strong>Efectivo Final en Caja:</strong> {{ caja.formatted_efectivo_final }}</p>
+                                                        <p><strong>Total de Ventas:</strong> {{ caja.formatted_ventas_totales }}</p>
+                                                </div>
+                                        </div>
+                                </div>
+                        </div>
+
+                        <div class="no-print d-flex gap-2 mt-3">
+                                <a href="{% url 'print_caja' caja.id %}" target="_blank" class="btn">Imprimir Detalle</a>
+                                {% url 'reports:historial_caja' as back_href %}
+                                {% include 'partials/back_button.html' with href=back_href text='Volver al Historial de Caja' %}
+                        </div>
+                </div>
+        </div>
+</div>
+{% endblock %}

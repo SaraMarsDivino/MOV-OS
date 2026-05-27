@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_products.css?v=20260425">
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .product-upload-page, .product-upload-page h2, .product-upload-page p, .product-upload-page label {
+        color: #000000 !important;
+    }
+    .product-upload-page .btn {
+        font-weight: 700;
+    }
+    .product-upload-page .form-control {
+        background-color: #ffffff;
+        color: #000000;
+        border-color: #c1c1c1;
+    }
+
+    /* Section box (visual container) */
+    .section-box {
+        border: 3px solid #000 !important;
+        border-radius: 18px !important;
+        background: #e9edf0 !important;
+        padding: 1.25rem !important;
+    }
+
+    /* Make the primary submit button green and reactive on hover */
+    .product-upload-page .btn-success {
+        background-color: #198754 !important; /* bootstrap success green */
+        border-color: #12673f !important;
+        color: inherit !important; /* keep text color as the template defines */
+        box-shadow: 0 6px 12px rgba(25,135,84,0.12) !important;
+        font-weight: 700 !important;
+    }
+    .product-upload-page .btn-success:hover {
+        background-color: #146c3c !important;
+        border-color: #0f4d2e !important;
+        transform: translateY(-1px);
+    }
+
+    /* Keep other buttons neutral but visible; back button is grey */
+    .product-upload-page .btn-info,
+    .product-upload-page .btn-secondary {
+        color: inherit !important;
+        background-color: #f0f0f0 !important;
+        border: 2px solid #000 !important;
+    }
+    .product-upload-page .btn-back {
+        background: #d9d9d9 !important; /* grey */
+        color: inherit !important;
+        border: 2px solid #000 !important;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.06) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container content-max product-upload-page section-box">
+    <h2>Cargar Productos por Excel</h2>
+    <p>Sube un archivo Excel para agregar o actualizar productos. Si un producto ya existe, será actualizado.</p>
+    <br>
+    <p>
+        Descarga la plantilla en el siguiente enlace:
+        <a href="{% url 'download_template' %}" class="btn btn-info">Descargar Plantilla</a>
+        <a href="{% url 'export_products_to_excel' %}" class="btn btn-secondary ms-2">Descargar productos actuales</a>
+    </p>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="file">Archivo Excel:</label>
+            <input type="file" name="file" id="file" class="form-control" accept=".xlsx" required>
+        </div>
+        <button type="submit" class="btn btn-success mt-3">Subir Archivo</button>
+    </form>
+    <br>
+        {% if request.user.is_superuser %}
+            {% url 'product_management' as back_href %}
+            {% include 'partials/back_button.html' with href=back_href text='Volver a Productos' %}
+        {% endif %}
+</div>
+{% endblock %}

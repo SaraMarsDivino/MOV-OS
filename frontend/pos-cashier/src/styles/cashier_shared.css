@@ -1,0 +1,33 @@
+/* Shared Cashier aesthetic overrides */
+:root {
+  --cashier-bg: #e2e8f0;
+  --cashier-surface: #f8fafc;
+  --cashier-foreground: #0f172a;
+  --cashier-accent: #0f172a;
+}
+
+.cashier-page {
+  background: var(--cashier-bg);
+  color: var(--cashier-foreground);
+}
+
+.btn-cashier {
+  border: 2px solid #000;
+  border-radius: 0.75rem;
+  background: var(--cashier-surface);
+  padding: 0.5rem 0.75rem;
+  font-weight: 800;
+  color: var(--cashier-foreground);
+}
+
+.modal-cashier {
+  border-radius: 1rem;
+  border: 2px solid #000;
+  background: var(--cashier-surface);
+}
+
+/* Placeholder and select darker override for inputs inside cashier pages */
+.cashier-page input::placeholder,
+.cashier-page select {
+  color: #0f172a !important;
+}

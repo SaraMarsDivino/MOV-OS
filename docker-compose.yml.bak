@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-movos}
+      POSTGRES_USER: ${POSTGRES_USER:-movos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-movos}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    command: gunicorn MOVOS.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    restart: unless-stopped
+    environment:
+      DEBUG: "False"
+      SECRET_KEY: ${SECRET_KEY:-change-me}
+      # Incluir trycloudflare por defecto para evitar 403 al usar Quick Tunnel
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,.trycloudflare.com}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:8000,https://*.trycloudflare.com}
+      DB_ENGINE: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-movos}
+      POSTGRES_USER: ${POSTGRES_USER:-movos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-movos}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - static_volume:/app/staticfiles
+
+volumes:
+  pgdata:
+  static_volume:

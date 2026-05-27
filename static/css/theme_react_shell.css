@@ -1,0 +1,255 @@
+:root{
+  /* Match React admin container width (max-w-5xl) */
+  --react-shell-max: 1024px;
+  /* Match React ProductsManagementPage container (max-w-6xl) */
+  --react-shell-wide: 1152px;
+}
+
+/* Width helper: use on pages that should look like the React admin screens */
+.react-shell{
+  max-width: var(--react-shell-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Wide helper: use on pages that must match React Products screen width */
+.react-shell-wide{
+  max-width: var(--react-shell-wide);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Slightly smaller container (use for reports when they feel too wide) */
+.react-shell-sm{
+  max-width: 820px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Compact density mode */
+.react-compact{
+  font-size: 13px;
+}
+
+.react-compact .react-card{
+  padding: 12px;
+}
+
+.react-compact h2{ font-size: 1.05rem !important; }
+.react-compact .muted, .react-compact .text-muted{ font-size: 0.90rem; }
+
+/* Card style that matches the React pages (gray surface + strong border) */
+.react-card{
+  background: var(--bs-gray-300);
+  border: 2px solid var(--bs-black);
+  border-radius: 1rem;
+  box-shadow: var(--bs-box-shadow-lg);
+  padding: 18px;
+  color: #111827;
+}
+
+/* Forms theme: apply only when you also add .react-forms */
+.react-forms h1,
+.react-forms h2,
+.react-forms h3,
+.react-forms h4,
+.react-forms h5,
+.react-forms h6{
+  color: #0f172a !important;
+  text-shadow: none !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+.react-forms label{
+  color: #0f172a !important;
+  font-weight: 800;
+}
+
+/* Django's form.as_p output */
+.react-forms form p{ margin-bottom: 12px; }
+.react-forms form p label{ display: block; margin-bottom: 6px; }
+/* Make form.as_p inputs fill their container (no form-control class) */
+.react-forms form p input:not([type="checkbox"]):not([type="radio"]),
+.react-forms form p select,
+.react-forms form p textarea{
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
+.react-forms .form-control,
+.react-forms .form-select,
+.react-forms input,
+.react-forms select,
+.react-forms textarea{
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
+  border-radius: 0.75rem !important;
+  box-shadow: var(--bs-box-shadow-sm) !important;
+}
+
+.react-forms .form-control:focus,
+.react-forms .form-select:focus,
+.react-forms input:focus,
+.react-forms select:focus,
+.react-forms textarea:focus{
+  border-color: #000000 !important;
+  box-shadow: none !important;
+}
+
+/* Reports filters: neutralize legacy reports.css dark panel when using react shell */
+.react-forms .filtros-container{
+  padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.react-compact .react-forms .form-control,
+.react-compact .react-forms .form-select,
+.react-compact .react-forms input,
+.react-compact .react-forms select,
+.react-compact .react-forms textarea{
+  font-size: 0.90rem;
+  padding: 0.45rem 0.75rem;
+}
+
+.react-compact .react-forms label,
+.react-compact .react-forms .form-label{
+  font-size: 0.88rem;
+}
+
+/* Compact filter layout (reports) */
+.react-forms .filtros-row{
+  gap: 0.75rem;
+}
+
+.react-forms .filtro-item{
+  flex: 1 1 180px;
+  min-width: 140px;
+}
+
+.react-forms .filtro-date{
+  flex: 0 0 140px;
+}
+
+.react-forms .filtros-actions{
+  display: flex;
+  flex-direction: row;
+  gap: 0.50rem;
+  align-items: flex-end;
+}
+
+.react-compact .react-forms .btn{
+  padding: 0.45rem 0.85rem !important;
+  font-size: 0.90rem;
+}
+
+/* Unify buttons: same look across actions */
+.react-forms .btn{
+  margin-top: 0 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.55rem 0.95rem !important;
+  font-size: 0.95rem;
+  font-weight: 900 !important;
+  border: 2px solid #000000 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: var(--bs-box-shadow) !important;
+}
+
+.react-forms .btn:hover,
+.react-forms .btn:focus{
+  background: var(--bs-gray-200) !important;
+  color: #0f172a !important;
+}
+
+.react-forms .btn:disabled,
+.react-forms .btn.disabled{
+  opacity: 0.6;
+}
+
+/* Smaller action buttons inside tables */
+.react-forms .btn.btn-sm{
+  padding: 0.35rem 0.70rem !important;
+  font-size: 0.85rem !important;
+  border-radius: 0.75rem !important;
+}
+
+/* Table container style (match React admin tables) */
+.react-table-shell{
+  border: 2px solid #000000;
+  border-radius: 1rem;
+  overflow: hidden;
+  background: var(--bs-gray-300);
+  box-shadow: var(--bs-box-shadow-lg);
+}
+
+.react-table-shell .table-responsive{
+  overflow: auto;
+}
+
+.react-table-shell .table{
+  margin-bottom: 0;
+  color: #0f172a !important;
+}
+
+.react-table-shell .table thead th{
+  background: var(--bs-gray-200) !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+  border-bottom: 2px solid #000000 !important;
+}
+
+.react-compact .react-table-shell .table td,
+.react-compact .react-table-shell .table th{
+  padding: 0.50rem 0.70rem;
+}
+
+.react-table-shell .table td{
+  border-bottom: 1px solid rgba(0,0,0,0.18) !important;
+}
+
+.react-table-shell .table tbody tr:nth-child(odd){
+  background: rgba(255,255,255,0.20) !important;
+}
+
+.react-table-shell .table tbody tr:nth-child(even){
+  background: rgba(255,255,255,0.08) !important;
+}
+
+/* Optional fixed layout tables for consistent column widths */
+.react-table-shell .table.admin-table{
+  table-layout: fixed;
+  width: 100%;
+}
+
+.react-table-shell .table.admin-table th,
+.react-table-shell .table.admin-table td{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.react-table-shell .table.admin-table td.wrap,
+.react-table-shell .table.admin-table th.wrap{
+  white-space: normal;
+}
+
+/* Pagination styling to resemble React admin controls */
+.react-pagination{
+  gap: 10px;
+}
+
+.react-pagination .page-link{
+  border: 2px solid #000000 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-radius: 0.75rem !important;
+  font-weight: 900;
+}
+
+.react-pagination .page-item.disabled .page-link{
+  opacity: 0.6;
+}

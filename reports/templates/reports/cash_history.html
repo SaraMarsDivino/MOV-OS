@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block app_styles %}{% endblock %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_reports.css">
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    body { background: #e2e8f0; color:#111827; }
+    footer { display: none !important; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+{% block content %}
+<div class="py-4">
+    <div class="container react-shell-wide react-compact react-forms">
+        <div class="react-card mb-3">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                    <h2 class="m-0" style="font-weight:900;">Historial de Caja</h2>
+                    <div class="mt-1 text-muted" style="opacity:0.92;">Mostrando: {% if cajas %}{{ cajas|length }}{% else %}0{% endif %}</div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% url 'reports:report_dashboard' as back_href %}
+                    {% include 'partials/back_button.html' with href=back_href text='Volver' %}
+                </div>
+            </div>
+
+            <form method="get" action="{% url 'reports:historial_caja' %}" class="mt-3">
+                <div class="d-flex flex-wrap gap-2 align-items-end">
+                    <div style="min-width:160px; flex:0 0 180px;">
+                        <label for="id_caja_filtro" class="form-label">ID Caja</label>
+                        <input type="number" class="form-control" id="id_caja_filtro" name="id_caja" value="{{ id_caja_filtro|default:'' }}" placeholder="Ej. 123">
+                    </div>
+
+                    <div style="min-width:220px; flex:1 1 240px;">
+                        <label for="cajero_filtro" class="form-label">Cajero</label>
+                        <select id="cajero_filtro" name="cajero" class="form-select">
+                            <option value="">Todos</option>
+                            {% for u in usuarios %}
+                                <option value="{{ u.id }}" {% if cajero_filtro and cajero_filtro|stringformat:'s' == u.id|stringformat:'s' %}selected{% endif %}>{{ u.get_full_name|default:u.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="min-width:220px; flex:1 1 240px;">
+                        <label for="sucursal_filtro" class="form-label">Sucursal</label>
+                        <select id="sucursal_filtro" name="sucursal" class="form-select">
+                            <option value="">Todas</option>
+                            {% for s in sucursales %}
+                                <option value="{{ s.id }}" {% if s.id|stringformat:'s' == sucursal_filtro|stringformat:'s' %}selected{% endif %}>{{ s.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="min-width:160px; flex:0 0 180px;">
+                        <label for="fecha_inicio" class="form-label">Fecha inicio</label>
+                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio_filtro }}">
+                    </div>
+
+                    <div style="min-width:160px; flex:0 0 180px;">
+                        <label for="fecha_fin" class="form-label">Fecha fin</label>
+                        <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin_filtro }}">
+                    </div>
+
+                    <div style="min-width:120px; flex:0 0 auto;">
+                        <label for="per_page" class="form-label">Mostrar</label>
+                        <select id="per_page" name="per_page" class="form-select">
+                            {% for n in per_page_options %}
+                                <option value="{{ n }}" {% if per_page == n %}selected{% endif %}>{{ n }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="d-flex gap-2" style="flex:0 0 auto;">
+                        <button type="submit" class="btn">Filtrar</button>
+                        <a href="{% url 'reports:historial_caja' %}" class="btn">Limpiar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {% if cajas %}
+            <div class="react-table-shell">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 admin-table" id="historial-caja">
+                        <colgroup>
+                            <col style="width:8%" />
+                            <col style="width:18%" />
+                            <col style="width:20%" />
+                            <col style="width:18%" />
+                            <col style="width:14%" />
+                            <col style="width:8%" />
+                            <col style="width:14%" />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th class="text-start">ID</th>
+                                <th class="text-start">Cajero</th>
+                                <th class="text-start">Apertura</th>
+                                <th class="text-start">Cierre</th>
+                                <th class="text-end">Total Ventas</th>
+                                <th class="text-center">Estado</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for caja in cajas %}
+                                <tr {% if caja.estado == 'cerrada' %} class="row-link" style="cursor:pointer" data-href="{% url 'reports:caja_report' caja.id %}" {% endif %}>
+                                    <td class="text-start">{{ caja.id }}</td>
+                                    <td class="text-start">{{ caja.vendedor.username }}</td>
+                                    <td class="text-start">{{ caja.apertura|date:"d/m/Y H:i" }}</td>
+                                    <td class="text-start">
+                                        {% if caja.cierre %}
+                                            {{ caja.cierre|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            <em>Sin cerrar</em>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">{{ caja.formatted_ventas_totales }}</td>
+                                    <td class="text-center">
+                                        {% if caja.estado == 'abierta' %}
+                                            <span class="badge bg-success">Abierta</span>
+                                        {% elif caja.estado == 'cerrada' %}
+                                            <span class="badge bg-danger">Cerrada</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ caja.estado|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        {% if caja.estado == 'cerrada' %}
+                                            <a href="{% url 'reports:caja_report' caja.id %}" class="btn btn-sm">Ver Detalle</a>
+                                        {% else %}
+                                            <button type="button" class="btn btn-sm btn-forzar-cierre" data-caja-id="{{ caja.id }}" data-efectivo-expected="{{ caja.efectivo_esperado_raw }}">Forzar Cierre</button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">No hay registros de caja disponibles.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <nav aria-label="Paginación" class="mt-3">
+                <ul class="pagination react-pagination justify-content-end mb-0">
+                    {% if cajas.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1&per_page={{ per_page }}{% if id_caja_filtro %}&id_caja={{ id_caja_filtro }}{% endif %}{% if cajero_filtro %}&cajero={{ cajero_filtro }}{% endif %}{% if sucursal_filtro %}&sucursal={{ sucursal_filtro }}{% endif %}{% if fecha_inicio_filtro %}&fecha_inicio={{ fecha_inicio_filtro }}{% endif %}{% if fecha_fin_filtro %}&fecha_fin={{ fecha_fin_filtro }}{% endif %}#historial-caja" aria-label="Primera">&laquo;</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ cajas.previous_page_number }}&per_page={{ per_page }}{% if id_caja_filtro %}&id_caja={{ id_caja_filtro }}{% endif %}{% if cajero_filtro %}&cajero={{ cajero_filtro }}{% endif %}{% if sucursal_filtro %}&sucursal={{ sucursal_filtro }}{% endif %}{% if fecha_inicio_filtro %}&fecha_inicio={{ fecha_inicio_filtro }}{% endif %}{% if fecha_fin_filtro %}&fecha_fin={{ fecha_fin_filtro }}{% endif %}#historial-caja" aria-label="Anterior">&lsaquo;</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item disabled">
+                        <span class="page-link">Página {{ cajas.number }} de {{ cajas.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if cajas.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ cajas.next_page_number }}&per_page={{ per_page }}{% if id_caja_filtro %}&id_caja={{ id_caja_filtro }}{% endif %}{% if cajero_filtro %}&cajero={{ cajero_filtro }}{% endif %}{% if sucursal_filtro %}&sucursal={{ sucursal_filtro }}{% endif %}{% if fecha_inicio_filtro %}&fecha_inicio={{ fecha_inicio_filtro }}{% endif %}{% if fecha_fin_filtro %}&fecha_fin={{ fecha_fin_filtro }}{% endif %}#historial-caja" aria-label="Siguiente">&rsaquo;</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ cajas.paginator.num_pages }}&per_page={{ per_page }}{% if id_caja_filtro %}&id_caja={{ id_caja_filtro }}{% endif %}{% if cajero_filtro %}&cajero={{ cajero_filtro }}{% endif %}{% if sucursal_filtro %}&sucursal={{ sucursal_filtro }}{% endif %}{% if fecha_inicio_filtro %}&fecha_inicio={{ fecha_inicio_filtro }}{% endif %}{% if fecha_fin_filtro %}&fecha_fin={{ fecha_fin_filtro }}{% endif %}#historial-caja" aria-label="Última">&raquo;</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% else %}
+            <div class="react-card">
+                <div class="text-center">No hay registros de caja disponibles.</div>
+            </div>
+        {% endif %}
+
+        <div class="d-flex align-items-center justify-content-end mt-3">
+            <div class="text-end" style="min-width:220px;">
+                <div style="font-weight:900; color:#0f172a;">Total ventas cajas abiertas</div>
+                <div style="font-size:1.00rem; font-weight:900; color:#0B84C1;">{{ open_cajas_ventas_total|default:"$0" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getMetaCSRF() {
+        const meta = document.querySelector("meta[name='csrf-token']");
+        return meta ? meta.getAttribute('content') : '';
+    }
+    function syncCSRFCookies() {
+        const token = getMetaCSRF();
+        if (!token) return;
+        // Normaliza el cookie en rutas comunes para evitar duplicados con distinto valor
+        const attrs = '; path=/; SameSite=Lax';
+        document.cookie = `csrftoken=${encodeURIComponent(token)}${attrs}`;
+        // Intenta también normalizar en rutas específicas usadas anteriormente
+        document.cookie = `csrftoken=${encodeURIComponent(token)}; path=/reports; SameSite=Lax`;
+        document.cookie = `csrftoken=${encodeURIComponent(token)}; path=/cashier; SameSite=Lax`;
+    }
+    function getCSRFToken() {
+        // Preferimos el token de meta (coincide con el emitido por el servidor para esta vista)
+        const meta = getMetaCSRF();
+        if (meta) return meta;
+        // Fallback: lee cookie
+        const parts = (document.cookie || '').split(';');
+        for (const p of parts) {
+            const [name, ...rest] = p.trim().split('=');
+            if (name === 'csrftoken') return decodeURIComponent(rest.join('='));
+        }
+        return '';
+    }
+
+    // Sincroniza cookies al cargar el script
+    try { syncCSRFCookies(); } catch (e) { console.warn('CSRF sync error', e); }
+    function forzarCierreCaja(cajaId) {
+        if (!confirm("¿Estás seguro de que deseas forzar el cierre de la caja?")) return;
+        // Tomar el valor sugerido (efectivo esperado) del atributo data si está disponible
+        const btn = document.querySelector('button.btn-forzar-cierre[data-caja-id="' + cajaId + '"]');
+        const esperado = (btn && btn.getAttribute('data-efectivo-expected')) ? btn.getAttribute('data-efectivo-expected') : null;
+        const payloadBody = esperado ? { caja_id: cajaId, efectivo_contado: esperado, force: true } : { caja_id: cajaId, force: true };
+        fetch("/cashier/cerrar_caja/", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken()
+            },
+            body: JSON.stringify(payloadBody)
+        })
+        .then(async (response) => {
+            const ct = response.headers.get('content-type') || '';
+            if (!ct.includes('application/json')) {
+                const text = await response.text();
+                throw new Error(`HTTP ${response.status} - ${text.substring(0, 200)}...`);
+            }
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            }
+            alert("Caja cerrada correctamente.");
+            location.reload();
+        })
+        .catch(err => {
+            console.error("Error en forzarCierreCaja:", err);
+            alert(`Error al cerrar la caja: ${err && err.message ? err.message : err}`);
+        });
+    }
+    // limpiarHistorial removed — destructive action hidden from UI
+    // Delegamos eventos al cargar el DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        // Click en filas cerradas para navegar
+        document.querySelectorAll('tr.row-link').forEach(function(row) {
+            row.addEventListener('click', function(ev) {
+                const href = row.getAttribute('data-href');
+                if (href) { window.location.href = href; }
+            });
+        });
+        // Botones de forzar cierre (evita propagar para no activar el click de fila)
+        document.querySelectorAll('button.btn-forzar-cierre').forEach(function(btn) {
+            btn.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                const id = btn.getAttribute('data-caja-id');
+                if (id) { forzarCierreCaja(id); }
+            });
+        });
+    });
+</script>
+{% endblock %}

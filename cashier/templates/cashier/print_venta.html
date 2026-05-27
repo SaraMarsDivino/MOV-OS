@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+{% load tz %}
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Boleta Venta #{{ venta.id }}</title>
+  <style>
+    @page { size: 80mm auto; margin: 0; }
+    body { width: 76mm; margin: 0 auto; font-family: "Courier New", Courier, monospace; font-size: 12px; color: #000; }
+    .wrap { padding: 6px 6px 12px; }
+    .center { text-align: center; }
+    .bold { font-weight: 700; }
+    .small { font-size: 11px; }
+    .line { border-top: 1px dashed #000; margin: 6px 0; }
+    .kv { display: flex; justify-content: space-between; gap: 8px; }
+    .mt { margin-top: 6px; }
+    .mb { margin-bottom: 6px; }
+    .items { margin: 6px 0; }
+    .item { display: flex; flex-direction: column; margin-bottom: 4px; }
+    .item .top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .item .name { flex: 1 1 auto; min-width: 0; white-space: pre-wrap; word-break: break-word; }
+    .item .top .small { flex: 0 0 auto; white-space: nowrap; }
+    .totals .kv span { white-space: nowrap; }
+    .footer { margin-top: 10px; text-align: center; }
+    .cut { margin-top: 10px; border-top: 1px dotted #000; }
+    @media screen { body { background: #fff; } }
+  </style>
+  <script>
+    window.addEventListener('load', function(){
+      // Auto print then close after a short delay (allow print dialog)
+      window.print();
+      setTimeout(() => { try { window.close(); } catch(e){} }, 500);
+    });
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <div class="center bold">Rochart Multiservicios digitales</div>
+    {% if sucursal %}<div class="center small">Sucursal: {{ sucursal.nombre }}</div>{% endif %}
+    <div class="center small">Venta #{{ venta.id }}</div>
+  {% if venta.caja %}<div class="center small">Caja #{{ venta.caja.id }}</div>{% endif %}
+  <div class="center small">{{ venta.fecha|localtime|date:"d/m/Y H:i" }}</div>
+    <div class="line"></div>
+
+    <div class="small">Cajero: {{ venta.empleado.username }}</div>
+    <div class="small">Tipo: {{ venta.get_tipo_venta_display }}</div>
+    <div class="small">Pago: {{ forma_pago_label|default:venta.get_forma_pago_display }}</div>
+    {% if show_payment_breakdown and payment_breakdown %}
+      {% for p in payment_breakdown %}
+        <div class="small">- {{ p.metodo_display }}: {{ p.formatted_monto }}{% if p.nota_credito_codigo %} ({{ p.nota_credito_codigo }}){% endif %}</div>
+        {% if p.numero_transaccion %}<div class="small">  Tx: {{ p.numero_transaccion }}</div>{% endif %}
+        {% if p.banco %}<div class="small">  Banco: {{ p.banco }}</div>{% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if venta.forma_pago == "debito" or venta.forma_pago == "credito" or venta.forma_pago == "transferencia" %}
+      {% if venta.numero_transaccion %}
+        <div class="small">Nº transacción: {{ venta.numero_transaccion }}</div>
+      {% endif %}
+      {% if venta.forma_pago == "transferencia" and venta.banco %}
+        <div class="small">Banco: {{ venta.banco }}</div>
+      {% endif %}
+    {% endif %}
+    {% if formatted_nota_credito and not show_payment_breakdown %}
+      <div class="small">Nota crédito: {{ formatted_nota_credito }}{% if venta.nota_credito_usada %} ({{ venta.nota_credito_usada.codigo }}){% endif %}</div>
+    {% endif %}
+    <div class="line"></div>
+
+    <div class="items">
+      {% for d in detalles %}
+        <div class="item">
+          <div class="top">
+            <span class="name">{{ d.producto.nombre }}</span>
+            <span class="small">{{ d.formatted_subtotal }}</span>
+          </div>
+          <div class="small">{{ d.cantidad }} x ${{ d.precio_unitario|clp }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="line"></div>
+    <div class="totals">
+      <div class="kv"><span>Total</span><span>{{ formatted_total }}</span></div>
+      {% if formatted_nota_credito %}
+        <div class="kv"><span>A pagar</span><span>{{ formatted_total_a_pagar }}</span></div>
+      {% endif %}
+      {% if venta.forma_pago == "efectivo" %}
+        <div class="kv"><span>Pagado</span><span>{{ formatted_cliente_paga }}</span></div>
+        <div class="kv"><span>Vuelto</span><span>{{ formatted_vuelto_entregado }}</span></div>
+      {% endif %}
+    </div>
+
+    <div class="line"></div>
+    <div class="footer small">
+      ¡Gracias por su compra!
+    </div>
+    <div class="cut"></div>
+  </div>
+</body>
+</html>

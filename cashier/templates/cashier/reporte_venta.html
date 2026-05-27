@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_cashier_pages.css">
+{% endblock %}
+{% block extra_styles %}
+  <link rel="stylesheet" href="{% static 'css/print.css' %}" media="print">
+  <style type="text/css" media="print">
+    .no-print {
+      display: none !important;
+    }
+  </style>
+  <style>
+    /* Ensure readable content text if a theme applies light text.
+       Keep Bootstrap button colors intact. */
+    body .cashier-sale-detail {
+      color: #0f172a !important;
+      text-shadow: none !important;
+    }
+
+    body .cashier-sale-detail :is(h1,h2,h3,h4,h5,h6,p,span,small,strong,em,li,td,th,label,div) {
+      color: #0f172a !important;
+      text-shadow: none !important;
+    }
+
+    body .cashier-sale-detail a:not(.btn) {
+      color: inherit !important;
+    }
+
+    body .cashier-sale-detail .btn,
+    body .cashier-sale-detail .btn * {
+      color: var(--bs-btn-color) !important;
+    }
+  </style>
+{% endblock %}
+{% block content %}
+<div class="container mt-4 cashier-sale-detail">
+  <h2 class="mb-3">Detalle de Venta #{{ venta.id }}</h2>
+  <p><strong>ID de venta:</strong> {{ venta.id }}</p>
+  <p><strong>Fecha:</strong> {{ venta.fecha|date:"d M Y, H:i" }}</p>
+  <p><strong>Empleado:</strong> {{ venta.empleado.username }}</p>
+  {# Caja vinculada oculta en vista del cajero #}
+  {% if sucursal %}
+    <p><strong>Sucursal:</strong> {{ sucursal.nombre }}</p>
+  {% endif %}
+  <p><strong>Tipo de Venta:</strong> {{ venta.get_tipo_venta_display }}</p>
+  <p><strong>Forma de Pago:</strong> {{ forma_pago_label|default:venta.get_forma_pago_display }}</p>
+  {% if show_payment_breakdown and payment_breakdown %}
+    <div class="mt-2">
+      <p class="mb-2"><strong>Detalle de pago:</strong></p>
+      <table class="table table-bordered table-sm" style="max-width:640px;">
+        <thead class="table-light">
+          <tr>
+            <th>Método</th>
+            <th class="text-end">Monto</th>
+            <th>Nº transacción</th>
+            <th>Banco</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payment_breakdown %}
+            <tr>
+              <td>
+                {{ p.metodo_display }}
+                {% if p.nota_credito_codigo %}<div class="text-muted" style="font-size:12px; opacity:0.9;">({{ p.nota_credito_codigo }})</div>{% endif %}
+              </td>
+              <td class="text-end">{{ p.formatted_monto }}</td>
+              <td>{{ p.numero_transaccion|default:"-" }}</td>
+              <td>{{ p.banco|default:"-" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+  {% if venta.forma_pago == "debito" or venta.forma_pago == "credito" or venta.forma_pago == "transferencia" %}
+    {% if venta.numero_transaccion %}
+      <p><strong>Nº de transacción:</strong> {{ venta.numero_transaccion }}</p>
+    {% endif %}
+    {% if venta.forma_pago == "transferencia" and venta.banco %}
+      <p><strong>Banco:</strong> {{ venta.banco }}</p>
+    {% endif %}
+  {% endif %}
+  {% if formatted_nota_credito %}
+    {% if not show_payment_breakdown %}
+      <p><strong>Nota de crédito aplicada:</strong> {{ formatted_nota_credito }}{% if venta.nota_credito_usada %} ({{ venta.nota_credito_usada.codigo }}){% endif %}</p>
+    {% endif %}
+    <p><strong>Total a pagar:</strong> {{ formatted_total_a_pagar }}</p>
+  {% endif %}
+  <p><strong>Total:</strong> {{ formatted_total }}</p>
+  {% if venta.forma_pago == "efectivo" %}
+    <p><strong>Cliente Pagó:</strong> {{ formatted_cliente_paga }}</p>
+    <p><strong>Vuelto Entregado:</strong> {{ formatted_vuelto_entregado }}</p>
+  {% endif %}
+
+  <h4 class="mt-4">Productos Vendidos:</h4>
+  <table class="table table-bordered table-sm">
+    <thead class="table-light">
+      <tr>
+        <th>Producto</th>
+        <th>Cantidad</th>
+        <th>Precio Unitario</th>
+        <th>Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in detalles %}
+      <tr>
+        <td>{{ item.producto.nombre }}</td>
+        <td>{{ item.cantidad }}</td>
+        <td>${{ item.precio_unitario|clp }}</td>
+        <td>{{ item.formatted_subtotal }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  
+  <div class="no-print mt-3 d-flex gap-2">
+    <a href="{% url 'print_venta' venta.id %}" target="_blank" class="btn btn-primary">Imprimir Detalle</a>
+    <a href="{% url 'devolver_venta' venta.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-outline-secondary">Devolver</a>
+    {% if request.user.is_superuser %}
+      {% url 'reports:sales_history' as back_href %}
+      {% include 'partials/back_button.html' with href=back_href text='Volver al Historial de Ventas' %}
+    {% else %}
+      {% url 'cashier_dashboard' as back_href %}
+      {% include 'partials/back_button.html' with href=back_href text='Volver al Cajero' %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

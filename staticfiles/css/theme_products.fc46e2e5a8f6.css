@@ -1,0 +1,123 @@
+:root{
+  --movos-bg: var(--bs-gray-200);
+  --movos-surface: var(--bs-gray-300);
+  --movos-surface-2: var(--bs-gray-200);
+  --movos-divider: var(--bs-gray-400);
+  --movos-text: var(--bs-gray-900);
+  --movos-muted: var(--bs-gray-700);
+  --movos-border-strong: var(--bs-black);
+  --movos-shadow: var(--bs-box-shadow-lg);
+}
+
+/* Compact + high-contrast (cashier-like sizing) */
+html{ font-size: 13px; }
+body{
+  background: var(--movos-bg) !important;
+  color: var(--movos-text) !important;
+  line-height: 1.35;
+}
+
+/* Headings feel oversized in many Bootstrap templates; scale them down */
+main h1{ font-size: 1.30rem; margin-bottom: 0.70rem; color: var(--movos-text) !important; }
+main h2{ font-size: 1.15rem; margin-bottom: 0.60rem; color: var(--movos-text) !important; }
+main h3{ font-size: 1.05rem; margin-bottom: 0.50rem; color: var(--movos-text) !important; }
+main h4{ font-size: 0.98rem; margin-bottom: 0.45rem; color: var(--movos-text) !important; }
+main h5{ font-size: 0.93rem; margin-bottom: 0.40rem; color: var(--movos-text) !important; }
+main h6{ font-size: 0.88rem; margin-bottom: 0.35rem; color: var(--movos-text) !important; }
+
+.container, .container-fluid{ --bs-gutter-x: 1.25rem; }
+
+main.container-fluid.my-4{ margin-top: 1rem !important; margin-bottom: 1rem !important; }
+
+.page-card{
+  background: var(--movos-surface) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+  box-shadow: var(--movos-shadow) !important;
+  border-radius: 1rem !important;
+}
+.page-card.p-4{ padding: 1rem !important; }
+
+.card,
+.panel,
+.pos-card{
+  background: var(--movos-surface) !important;
+  color: var(--movos-text) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+  box-shadow: var(--movos-shadow) !important;
+  border-radius: 1rem !important;
+}
+
+hr{ border-top: 2px solid var(--movos-divider) !important; opacity: 1 !important; }
+
+.table{ color: var(--movos-text) !important; font-size: 0.95rem; }
+.table thead th{
+  background: var(--movos-surface-2) !important;
+  color: var(--movos-text) !important;
+  border-bottom: 2px solid var(--movos-divider) !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+.table th{ color: var(--movos-text) !important; }
+.table td,
+.table th{ border-bottom-color: var(--movos-divider) !important; padding: 0.55rem 0.75rem; }
+.table-hover tbody tr:hover{ background: var(--movos-surface-2) !important; }
+
+.table-striped > tbody > tr:nth-of-type(odd) > *{
+  background-color: rgba(255,255,255,0.25) !important;
+  color: var(--movos-text) !important;
+}
+
+.list-group-item{
+  background: var(--movos-surface) !important;
+  color: var(--movos-text) !important;
+  border-color: var(--movos-divider) !important;
+}
+
+.text-muted{ color: var(--movos-muted) !important; }
+
+/* Some templates use "text-light/text-white" on headers; force readable text inside the content only */
+main .text-light,
+main .text-white{
+  color: var(--movos-text) !important;
+}
+
+main label,
+main .form-label{
+  color: var(--movos-text) !important;
+}
+
+.form-control,
+.form-select,
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+textarea,
+select{
+  background: var(--bs-white) !important;
+  color: var(--movos-text) !important;
+  border: 2px solid var(--movos-border-strong) !important;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.95rem;
+}
+.form-control::placeholder{ color: var(--movos-muted) !important; }
+
+main .btn{ border-radius: 0.75rem !important; padding: 0.40rem 0.65rem; font-size: 0.92rem; }
+
+.nav-tabs{ border-bottom: 2px solid var(--movos-divider) !important; }
+.nav-tabs .nav-link{ color: var(--movos-text) !important; }
+.nav-tabs .nav-link.active{
+  color: var(--movos-text) !important;
+  background: var(--movos-surface) !important;
+  border-color: var(--movos-divider) var(--movos-divider) var(--movos-surface) !important;
+  font-weight: 700;
+}
+
+.dropdown-menu{
+  background: var(--bs-white) !important;
+  border: 1px solid var(--movos-divider) !important;
+  box-shadow: var(--bs-box-shadow) !important;
+}
+.dropdown-item{ color: var(--movos-text) !important; }
+.dropdown-item:hover{ background: var(--movos-surface-2) !important; }

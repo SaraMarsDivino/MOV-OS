@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_products.css?v=20260425">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="alert alert-danger" role="alert">
+        <h4 class="alert-heading">⚠️ ¡Cuidado! Estás a punto de eliminar todos los productos.</h4>
+        <p>Esta acción es irreversible y borrará todos los productos de la base de datos.</p>
+        <hr>
+        <p class="mb-0">¿Estás seguro de que deseas continuar?</p>
+    </div>
+    <form method="post" action="{% url 'delete_all_products' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger me-2">Sí, borrar todos los productos</button>
+        <a href="{% url 'product_management' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

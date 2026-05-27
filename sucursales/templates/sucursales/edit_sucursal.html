@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block app_styles %}{% endblock %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    body { background: #e2e8f0; color:#111827; }
+    footer { display: none !important; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block content %}
+<div class="container react-shell react-forms py-4">
+    <div class="react-card mb-3">
+        <h2 class="mb-0">Editar Sucursal: {{ sucursal.nombre }}</h2>
+    </div>
+    <div class="react-card">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                <button type="submit" class="btn">Guardar cambios</button>
+                <a href="{% url 'sucursales:sucursal_list' %}" class="btn">Volver a la lista</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block site_theme_styles %}
+<link rel="stylesheet" href="{% static 'css/theme_products.css' %}?v=20260425">
+{% endblock %}
+{% block content %}
+<div class="container mt-4 products-bulk-assign">
+  <h2>Asignar Productos a una Sucursal</h2>
+  <form method="post">
+    {% csrf_token %}
+    <!-- Filtros y opciones del paginador -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <input type="text" name="search" value="{{ search_query }}" class="form-control" placeholder="Buscar productos...">
+      </div>
+      <div class="col-md-4">
+        <select name="per_page" class="form-control" onchange="this.form.submit()">
+          {% for option in per_page_options %}
+            <option value="{{ option }}" {% if per_page == option %}selected{% endif %}>
+              Mostrar {{ option }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+      </div>
+    </div>
+    <!-- Lista de productos -->
+    <table class="table table-striped products-bulk-assign-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="select-all"></th>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Precio Venta</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in page_obj.object_list %}
+        <tr>
+          <td><input type="checkbox" name="products" value="{{ product.id }}"></td>
+          <td>{{ product.id }}</td>
+          <td>{{ product.nombre }}</td>
+          <td>${{ product.precio_venta|clp }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">No se encontraron productos.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <!-- Paginador con bloque de páginas -->
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center flex-wrap">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1&per_page={{ per_page }}&search={{ search_query }}">Primero</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}&search={{ search_query }}">Anterior</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Primero</span></li>
+          <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+        {% endif %}
+
+        {# Si el bloque no inicia en 1, muestro enlace para el bloque anterior #}
+        {% if block_range.0 > 1 %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ block_range.0|add:"-1" }}&per_page={{ per_page }}&search={{ search_query }}">...</a>
+          </li>
+        {% endif %}
+
+        {% for num in block_range %}
+          {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+          {% else %}
+            <li class="page-item"><a class="page-link" href="?page={{ num }}&per_page={{ per_page }}&search={{ search_query }}">{{ num }}</a></li>
+          {% endif %}
+        {% endfor %}
+
+        {# Si el bloque final es menor que el total de páginas, muestro enlace para el siguiente bloque #}
+        {% if block_range|last < page_obj.paginator.num_pages %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ block_range|last|add:"1" }}&per_page={{ per_page }}&search={{ search_query }}">...</a>
+          </li>
+        {% endif %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}&search={{ search_query }}">Siguiente</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&per_page={{ per_page }}&search={{ search_query }}">Último</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+          <li class="page-item disabled"><span class="page-link">Último</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+    <!-- Selección de sucursal -->
+    <div class="mb-3">
+      <label for="sucursal" class="form-label">Sucursal a asignar</label>
+      <select name="sucursal" id="sucursal" class="form-control" required>
+        <option value="" disabled selected>Seleccione una sucursal</option>
+        {% for sucursal in sucursales %}
+          <option value="{{ sucursal.id }}">{{ sucursal.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="cantidad" class="form-label">Cantidad inicial de stock (opcional)</label>
+      <input type="number" name="cantidad" id="cantidad" class="form-control" min="0" placeholder="Ej: 10">
+      <div class="form-text">Si se indica, se establecerá este valor como stock para todos los productos seleccionados en la sucursal asignada.</div>
+    </div>
+    <div class="mb-3">
+      <label for="allow_without_stock" class="form-label">Permitir venta sin stock (opcional)</label>
+      <select name="allow_without_stock" id="allow_without_stock" class="form-control">
+        <option value="" selected>Usar valor global del producto</option>
+        <option value="allow">Permitir</option>
+        <option value="deny">No permitir</option>
+      </select>
+      <div class="form-text">Si seleccionas una opcion, se aplica a todos los productos elegidos en esta sucursal.</div>
+    </div>
+    <button type="submit" class="btn btn-success">Asignar Productos</button>
+    <a href="{% url 'product_management' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+
+<script>
+  // Botón para seleccionar/deseleccionar todos
+  document.getElementById('select-all').addEventListener('change', function(){
+    const checkboxes = document.querySelectorAll('input[name="products"]');
+    for(let checkbox of checkboxes) {
+      checkbox.checked = this.checked;
+    }
+  });
+</script>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Agrega los scripts de jQuery y Select2, asegúrate de tenerlos instalados o cargados -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+<script>
+  $(document).ready(function(){
+    $('.select2').select2({
+      width: '100%',
+      placeholder: "Seleccione los productos..."
+    });
+  });
+</script>
+{% endblock %}

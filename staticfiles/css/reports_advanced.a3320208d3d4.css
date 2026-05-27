@@ -1,0 +1,57 @@
+/* Modern accessible theme for advanced reports */
+:root {
+  --bg: #121416;
+  --bg-alt: #1e2227;
+  --surface: #252a31;
+  --surface-alt: #2f3640;
+  --border: #3d454f;
+  --text-primary: #f5f7fa;
+  --text-secondary: #c2c8d0;
+  --accent: #ffb347; /* warm amber */
+  --accent-alt: #ff7b54; /* coral */
+  --success: #3ddc97;
+  --danger: #ff4d4f;
+  --warning: #ffbf00;
+  --info: #4dabf7;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --shadow: 0 4px 14px rgba(0,0,0,.35);
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, var(--accent-alt) 100%);
+}
+body {background: var(--bg); color: var(--text-primary); font-family: 'Roboto', system-ui, sans-serif; line-height:1.4;}
+h1,h2,h3,h4,h5,h6 {font-family: 'Cinzel', serif; letter-spacing:.5px;}
+.container-fluid {padding-top:1.2rem; padding-bottom:2rem;}
+.card, .sidebar-card {background: var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); box-shadow: var(--shadow);}
+.card-header {background: var(--surface-alt); border-bottom:1px solid var(--border); border-top-left-radius:var(--radius-md); border-top-right-radius:var(--radius-md);}
+.card-header h4 {color: var(--accent); font-weight:600;}
+.card-header p.small {color: var(--text-secondary);}
+#sidebar {background: var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius-md); box-shadow: var(--shadow);} 
+.list-group-item {background: var(--surface-alt); color: var(--text-primary); border:1px solid var(--border);} 
+input.form-control, select.form-select {background: var(--surface-alt); border:1px solid var(--border); color: var(--text-primary);} 
+input.form-control:focus, select.form-select:focus {border-color: var(--accent); box-shadow:0 0 0 2px rgba(255,179,71,.25);} 
+.btn-primary {background: var(--gradient-accent); border:none; color:#14181c; font-weight:600; text-shadow:none;} 
+.btn-primary:hover {filter: brightness(1.1);} 
+.btn-back {background: var(--surface-alt); border:1px solid var(--accent); color: var(--accent); transition:.25s; font-weight:600;} 
+.btn-back:hover {background: var(--accent); color:#14181c;} 
+.display-6 {font-size:1.9rem; font-weight:600; color: var(--accent);}
+.table-dark {--bs-table-bg: var(--surface-alt); --bs-table-striped-bg: #30363d; --bs-table-striped-color: var(--text-primary);}
+.heatmap td {text-align:center; font-size:.75rem; padding:2px;}
+.toggle-indicator label {color: var(--text-secondary); font-size:.85rem; cursor:pointer;}
+.toggle-indicator input:checked + label {color: var(--accent); font-weight:600;}
+/* Pagination */
+.pagination .page-link {background: var(--surface-alt); color: var(--text-primary); border:1px solid var(--border);} 
+.pagination .page-item.active .page-link {background: var(--accent); color:#14181c; border-color: var(--accent);} 
+.pagination .page-link:hover {background: var(--surface); color: var(--accent);} 
+/* Force high contrast for headings and paragraph text inside dark cards */
+.card h4, .card h5, .card h6 {color: var(--accent);}
+.card p, .card .small, .card label {color: var(--text-secondary);} 
+table th {color: var(--text-primary);} 
+table td {color: var(--text-primary);} 
+/* Heatmap accessible focus */
+.heatmap td:focus {outline:2px solid var(--accent-alt);}
+/* Responsive grid refinements */
+@media (max-width: 992px){.display-6 {font-size:1.6rem;} #sidebar {margin-bottom:1rem;} }
+@media (prefers-color-scheme: light){ body {background:#f5f7fa; color:#1e2227;} .card,.sidebar-card {background:#fff;} .card-header{background:#fafafa;} input.form-control,select.form-select{background:#fff; color:#1e2227;} }
+/* Utility */
+.muted {color: var(--text-secondary)!important;}
+.text-accent {color: var(--accent)!important;}

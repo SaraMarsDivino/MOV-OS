@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load vite_tags %}
+
+{% block title %}Cajero | MOVOS{% endblock %}
+
+{# Avoid global CSS on this view; React UI provides its own styling #}
+{% block app_styles %}{% endblock %}
+
+{# Also avoid the global site theme on this view; React UI is fully styled #}
+{% block site_theme_styles %}{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+  /* POS: maximize viewport space under the Bootstrap navbar */
+  html, body { height: 100%; }
+  body { overflow: hidden; }
+  main.container-fluid.my-4 {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: calc(100dvh - var(--movos-nav-h, 56px));
+    overflow: hidden;
+  }
+  #root {
+    height: 100%;
+  }
+  footer { display: none !important; }
+
+  /* Keep logout link red even without the global stylesheet */
+  .logout-red{ color: #ff5c5c !important; font-weight:600; }
+  .logout-red:hover{ color: #e04a4a !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="root">
+  <div id="pos-loading" class="p-3">
+    Cargando POS…
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    (function () {
+      function setNavHeight() {
+        var nav = document.querySelector('nav.navbar');
+        var h = nav ? nav.offsetHeight : 56;
+        document.documentElement.style.setProperty('--movos-nav-h', h + 'px');
+      }
+      window.addEventListener('resize', setNavHeight);
+      document.addEventListener('DOMContentLoaded', setNavHeight);
+      setNavHeight();
+    })();
+  </script>
+  {# Dev: load Vite dev server entrypoint #}
+  {% if vite_dev_server_url %}
+    {# Required when embedding Vite+React into a non-Vite HTML template #}
+    <script type="module">
+      import RefreshRuntime from "{{ vite_dev_server_url }}/@react-refresh";
+      RefreshRuntime.injectIntoGlobalHook(window);
+      window.$RefreshReg$ = () => {};
+      window.$RefreshSig$ = () => (type) => type;
+      window.__vite_plugin_react_preamble_installed__ = true;
+    </script>
+    <script type="module" src="{{ vite_dev_server_url }}/@vite/client"></script>
+    <script type="module" src="{{ vite_dev_server_url }}/src/main.tsx"></script>
+    <script>
+      // If Vite isn't running (or the module fails), avoid a “blank page” in dev.
+      window.setTimeout(function () {
+        var loading = document.getElementById('pos-loading');
+        if (!loading) return;
+        // React will replace the root content quickly when the module loads.
+        loading.innerHTML =
+          'No se pudo cargar el POS React (Vite).<br>' +
+          'Levanta el frontend en otra terminal:<br>' +
+          '<code>cd frontend/pos-cashier</code><br>' +
+          '<code>npm install</code><br>' +
+          '<code>npm run dev</code>';
+      }, 1500);
+    </script>
+  {% else %}
+    {# Prod: load built assets from Vite manifest (served by Django staticfiles) #}
+    {% vite_build_assets 'src/main.tsx' as assets %}
+    {% if assets %}
+      {% for css_url in assets.css %}
+        <link rel="stylesheet" href="{{ css_url }}">
+      {% endfor %}
+      <script type="module" src="{{ assets.js }}"></script>
+    {% else %}
+      <script>
+        document.getElementById('root').innerHTML = '<div style="padding:16px">No se encontró el build del POS (manifest). Rebuild del contenedor requerido.</div>';
+      </script>
+    {% endif %}
+  {% endif %}
+{% endblock %}
