@@ -8,6 +8,7 @@
 {% block extra_styles %}
 <style>
   body { background: #e2e8f0; color: #0f172a; }
+  .caja-titulo { color: #000 !important; font-family: 'Roboto', sans-serif !important; font-weight: 800 !important; font-size: 1.5rem !important; text-transform: none !important; letter-spacing: -.02em !important; }
   .kv-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
   .kv-row:last-child { border-bottom: none; }
   .kv-row .kv-label { color: #64748b; font-size: .82rem; }
@@ -41,7 +42,7 @@
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 no-print">
     <div class="d-flex flex-column gap-1">
       <div class="d-flex align-items-center gap-2 flex-wrap">
-        <h1 class="mb-0" style="font-family:'Roboto',sans-serif; font-weight:700; font-size:1.5rem; color:#0f172a; letter-spacing:-.01em;">Caja #{{ caja.id }}</h1>
+        <h1 class="mb-0 caja-titulo">Caja #{{ caja.id }}</h1>
         {% if caja.estado == 'abierta' %}
           <span class="badge-estado badge-estado-abierta">Abierta</span>
         {% else %}
