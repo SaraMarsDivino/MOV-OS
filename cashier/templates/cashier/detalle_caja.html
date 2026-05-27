@@ -39,14 +39,16 @@
 
   <!-- ── HEADER ── -->
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 no-print">
-    <div class="d-flex align-items-center gap-3 flex-wrap">
-      <h1 class="mb-0" style="font-family:'Cinzel',serif; font-weight:700; font-size:1.25rem; letter-spacing:.04em; color:#0f172a;">Caja #{{ caja.id }}</h1>
-      {% if caja.estado == 'abierta' %}
-        <span class="badge-estado badge-estado-abierta">Abierta</span>
-      {% else %}
-        <span class="badge-estado badge-estado-cerrada">Cerrada</span>
-      {% endif %}
-      <span class="text-muted small">{{ caja.sucursal.nombre }}</span>
+    <div class="d-flex flex-column gap-1">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <h1 class="mb-0" style="font-family:'Roboto',sans-serif; font-weight:700; font-size:1.5rem; color:#0f172a; letter-spacing:-.01em;">Caja #{{ caja.id }}</h1>
+        {% if caja.estado == 'abierta' %}
+          <span class="badge-estado badge-estado-abierta">Abierta</span>
+        {% else %}
+          <span class="badge-estado badge-estado-cerrada">Cerrada</span>
+        {% endif %}
+      </div>
+      <span class="text-muted small">{{ caja.sucursal.nombre }} · {{ caja.vendedor.username }}</span>
     </div>
     <div class="d-flex gap-2 flex-wrap">
       <a href="{% url 'print_caja' caja.id %}" target="_blank"
