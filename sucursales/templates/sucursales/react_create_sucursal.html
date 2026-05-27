@@ -13,6 +13,9 @@
 </style>
 {% endblock %}
 
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
 {% block content %}
 {{ react_context|json_script:"movos-react-ctx" }}
 <script>

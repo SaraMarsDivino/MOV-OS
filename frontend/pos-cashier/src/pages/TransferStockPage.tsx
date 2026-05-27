@@ -34,20 +34,54 @@ function fmtDate(iso: string): string {
   );
 }
 
-function StockBadge({ stock, loading, label }: { stock: number | null; loading: boolean; label: string }) {
-  if (loading) return <span className="text-xs text-slate-400">{label}: …</span>;
-  if (stock === null) return <span className="text-xs text-slate-400">{label}: —</span>;
-  const color =
-    stock === 0 ? 'text-red-600' : stock < 5 ? 'text-amber-600' : 'text-emerald-600';
+function StockPill({
+  stock,
+  loading,
+  label,
+}: {
+  stock: number | null;
+  loading: boolean;
+  label: string;
+}) {
+  if (loading)
+    return (
+      <span className="inline-block rounded-lg bg-slate-100 text-slate-400 text-xs font-medium px-2.5 py-1">
+        {label}: …
+      </span>
+    );
+  if (stock === null)
+    return (
+      <span className="inline-block rounded-lg bg-slate-100 text-slate-400 text-xs font-medium px-2.5 py-1">
+        {label}: —
+      </span>
+    );
+  const bg =
+    stock === 0
+      ? 'bg-red-50 text-red-700'
+      : stock < 5
+        ? 'bg-amber-50 text-amber-700'
+        : 'bg-emerald-50 text-emerald-700';
   return (
-    <span className={`text-xs font-semibold ${color}`}>
-      {label}: {stock} unid.
+    <span className={`inline-block rounded-lg text-xs font-semibold px-2.5 py-1 ${bg}`}>
+      {label}: {stock} u.
     </span>
   );
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+      {children}
+    </p>
+  );
+}
+
 export default function TransferStockPage() {
-  const ctx = (window as unknown as { __MOVOS_REACT_CONTEXT__?: { products?: Product[]; sucursales?: Sucursal[] } }).__MOVOS_REACT_CONTEXT__ ?? {};
+  const ctx = (
+    window as unknown as {
+      __MOVOS_REACT_CONTEXT__?: { products?: Product[]; sucursales?: Sucursal[] };
+    }
+  ).__MOVOS_REACT_CONTEXT__ ?? {};
   const products: Product[] = ctx.products ?? [];
   const sucursales: Sucursal[] = ctx.sucursales ?? [];
 
@@ -65,20 +99,23 @@ export default function TransferStockPage() {
   const [history, setHistory] = useState<Transfer[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
-  const fetchStock = useCallback(async (type: 'origen' | 'destino', pId: string, sId: string) => {
-    const setStock = type === 'origen' ? setStockOrigen : setStockDestino;
-    const setLoading = type === 'origen' ? setLoadingOrigen : setLoadingDestino;
-    setLoading(true);
-    try {
-      const r = await fetch(`/products/stock/availability/?producto_id=${pId}&sucursal_id=${sId}`);
-      const d = await r.json();
-      setStock(d.cantidad ?? null);
-    } catch {
-      setStock(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const fetchStock = useCallback(
+    async (type: 'origen' | 'destino', pId: string, sId: string) => {
+      const setStock = type === 'origen' ? setStockOrigen : setStockDestino;
+      const setLoading = type === 'origen' ? setLoadingOrigen : setLoadingDestino;
+      setLoading(true);
+      try {
+        const r = await fetch(`/products/stock/availability/?producto_id=${pId}&sucursal_id=${sId}`);
+        const d = await r.json();
+        setStock(d.cantidad ?? null);
+      } catch {
+        setStock(null);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (productoId && origenId) fetchStock('origen', productoId, origenId);
@@ -127,7 +164,7 @@ export default function TransferStockPage() {
       if (!r.ok || d.error) {
         setError(d.error ?? 'Error al realizar la transferencia.');
       } else {
-        setSuccess(d.message ?? 'Transferencia realizada.');
+        setSuccess(d.message ?? 'Transferencia realizada correctamente.');
         setStockOrigen(d.nuevo_stock_origen ?? null);
         setStockDestino(d.nuevo_stock_destino ?? null);
         setCantidad('');
@@ -140,129 +177,138 @@ export default function TransferStockPage() {
     }
   };
 
-  const selectedProduct = products.find((p) => String(p.id) === productoId);
+  const cantidadNum = parseInt(cantidad) || 0;
+  const exceedsStock =
+    stockOrigen !== null && cantidadNum > 0 && cantidadNum > stockOrigen;
 
   return (
-    <div className="min-h-[calc(100dvh-56px)] bg-slate-200 p-4">
-      {/* Header */}
-      <div className="mx-auto max-w-5xl mb-4 flex items-center gap-3 flex-wrap">
+    <div className="min-h-[calc(100dvh-56px)] bg-slate-200 p-4 md:p-6">
+      {/* Page header */}
+      <div className="mx-auto max-w-5xl mb-5 flex items-center gap-3 flex-wrap">
         <a
           href="/products/management/"
-          className="text-sm font-medium text-slate-600 hover:text-slate-900 flex items-center gap-1"
+          className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
         >
-          ← Volver a Productos
+          ← Volver
         </a>
-        <span className="text-slate-400 hidden sm:inline">|</span>
-        <h1 className="text-xl font-bold text-slate-900">Transferir Stock entre Sucursales</h1>
+        <span className="text-slate-300">|</span>
+        <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">
+          Transferir Stock entre Sucursales
+        </h1>
       </div>
 
-      {/* 2-column grid */}
-      <div className="mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-4">
+      {/* Two-column grid — equal widths, cards stretch to same height */}
+      <div className="mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
 
-        {/* Left card: form */}
-        <div className="rounded-2xl border-2 border-black bg-white p-5 shadow">
-          <h2 className="text-base font-bold text-slate-900 mb-4">Nueva Transferencia</h2>
+        {/* ── LEFT: form card ── */}
+        <div className="rounded-2xl border-2 border-black bg-white shadow-sm overflow-hidden">
+          {/* Card header strip */}
+          <div className="bg-slate-900 px-5 py-3">
+            <h2 className="text-sm font-bold text-white">Nueva Transferencia</h2>
+          </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Producto */}
+          <form onSubmit={handleSubmit} className="p-5 flex flex-col gap-5">
+            {/* ── Section 1: Producto ── */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                Producto *
-              </label>
+              <SectionLabel>Producto</SectionLabel>
               <select
                 required
-                className="w-full rounded-xl border-2 border-slate-200 p-2.5 text-sm focus:border-slate-900 outline-none bg-white"
+                className="w-full rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm focus:border-slate-900 outline-none bg-white"
                 value={productoId}
                 onChange={(e) => setProductoId(e.target.value)}
               >
-                <option value="">Seleccione un producto</option>
+                <option value="">Seleccione un producto…</option>
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.nombre} — {p.producto_id}
                   </option>
                 ))}
               </select>
-              {selectedProduct && (
-                <p className="text-xs text-slate-400 mt-1">Código: {selectedProduct.producto_id}</p>
-              )}
             </div>
 
-            {/* Origen + Destino */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                  Origen *
-                </label>
-                <select
-                  required
-                  className="w-full rounded-xl border-2 border-slate-200 p-2.5 text-sm focus:border-slate-900 outline-none bg-white"
-                  value={origenId}
-                  onChange={(e) => setOrigenId(e.target.value)}
-                >
-                  <option value="">Seleccione</option>
-                  {sucursales.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nombre}
-                    </option>
-                  ))}
-                </select>
-                <div className="mt-1.5">
-                  <StockBadge stock={stockOrigen} loading={loadingOrigen} label="Disponible" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                  Destino *
-                </label>
-                <select
-                  required
-                  className="w-full rounded-xl border-2 border-slate-200 p-2.5 text-sm focus:border-slate-900 outline-none bg-white"
-                  value={destinoId}
-                  onChange={(e) => setDestinoId(e.target.value)}
-                >
-                  <option value="">Seleccione</option>
-                  {sucursales.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nombre}
-                    </option>
-                  ))}
-                </select>
-                <div className="mt-1.5">
-                  <StockBadge stock={stockDestino} loading={loadingDestino} label="Stock actual" />
-                </div>
-              </div>
-            </div>
+            <hr className="border-slate-100" />
 
-            {/* Cantidad */}
+            {/* ── Section 2: Ruta ── */}
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
-                Cantidad *
-              </label>
+              <SectionLabel>Ruta de transferencia</SectionLabel>
+              <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2">
+                {/* Origen */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-500">Origen</label>
+                  <select
+                    required
+                    className="w-full rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm focus:border-slate-900 outline-none bg-white"
+                    value={origenId}
+                    onChange={(e) => setOrigenId(e.target.value)}
+                  >
+                    <option value="">Seleccione…</option>
+                    {sucursales.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <StockPill stock={stockOrigen} loading={loadingOrigen} label="Disponible" />
+                </div>
+
+                {/* Arrow */}
+                <div className="pt-7 text-slate-400 font-bold text-lg">→</div>
+
+                {/* Destino */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-slate-500">Destino</label>
+                  <select
+                    required
+                    className="w-full rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm focus:border-slate-900 outline-none bg-white"
+                    value={destinoId}
+                    onChange={(e) => setDestinoId(e.target.value)}
+                  >
+                    <option value="">Seleccione…</option>
+                    {sucursales.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  <StockPill stock={stockDestino} loading={loadingDestino} label="Stock actual" />
+                </div>
+              </div>
+            </div>
+
+            <hr className="border-slate-100" />
+
+            {/* ── Section 3: Cantidad ── */}
+            <div>
+              <SectionLabel>Cantidad a transferir</SectionLabel>
               <input
                 type="number"
                 min="1"
                 required
-                className="w-full rounded-xl border-2 border-slate-200 p-2.5 text-sm focus:border-slate-900 outline-none"
+                className={`w-full rounded-xl border-2 px-3 py-2.5 text-sm outline-none ${
+                  exceedsStock
+                    ? 'border-amber-400 focus:border-amber-500'
+                    : 'border-slate-200 focus:border-slate-900'
+                }`}
                 placeholder="Ej: 10"
                 value={cantidad}
                 onChange={(e) => setCantidad(e.target.value)}
               />
-              {stockOrigen !== null && cantidad && parseInt(cantidad) > stockOrigen && (
-                <p className="text-xs text-amber-600 mt-1">
-                  La cantidad supera el stock disponible ({stockOrigen} unid.)
+              {exceedsStock && (
+                <p className="text-xs text-amber-600 mt-1.5 font-medium">
+                  ⚠ Supera el stock disponible en origen ({stockOrigen} u.)
                 </p>
               )}
             </div>
 
             {/* Feedback */}
             {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm p-3">
+              <div className="rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm p-3 leading-snug">
                 {error}
               </div>
             )}
             {success && (
-              <div className="rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm p-3">
-                {success}
+              <div className="rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm p-3 leading-snug">
+                ✓ {success}
               </div>
             )}
 
@@ -270,53 +316,61 @@ export default function TransferStockPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full rounded-xl bg-slate-900 text-white font-semibold py-2.5 text-sm hover:bg-slate-700 disabled:opacity-50 transition-colors"
+              className="w-full rounded-xl bg-slate-900 text-white font-bold py-3 text-sm hover:bg-slate-700 disabled:opacity-50 transition-colors"
             >
               {submitting ? 'Transfiriendo…' : 'Transferir'}
             </button>
           </form>
         </div>
 
-        {/* Right card: recent history */}
-        <div className="rounded-2xl border-2 border-black bg-white p-5 shadow flex flex-col">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-slate-900">Historial reciente</h2>
+        {/* ── RIGHT: history card ── */}
+        <div className="rounded-2xl border-2 border-black bg-white shadow-sm overflow-hidden flex flex-col">
+          {/* Card header strip */}
+          <div className="bg-slate-900 px-5 py-3 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white">Historial reciente</h2>
             <a
               href="/products/transfer/history/"
-              className="text-xs text-slate-500 hover:text-slate-900 font-medium"
+              className="text-xs text-slate-300 hover:text-white font-medium transition-colors"
             >
               Ver todo →
             </a>
           </div>
 
-          {loadingHistory ? (
-            <div className="text-sm text-slate-400">Cargando…</div>
-          ) : history.length === 0 ? (
-            <div className="text-sm text-slate-400">Sin transferencias registradas.</div>
-          ) : (
-            <div className="flex flex-col gap-2 overflow-y-auto">
-              {history.map((t) => (
+          <div className="p-4 flex flex-col gap-2.5 overflow-y-auto flex-1">
+            {loadingHistory ? (
+              <p className="text-sm text-slate-400 text-center py-6">Cargando…</p>
+            ) : history.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-2xl mb-1">📦</p>
+                <p className="text-sm text-slate-400">Sin transferencias registradas</p>
+              </div>
+            ) : (
+              history.map((t) => (
                 <div
                   key={t.id}
-                  className="rounded-xl bg-slate-50 border border-slate-200 p-3 flex flex-col gap-0.5"
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex gap-3 items-start"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-semibold text-slate-800 text-xs leading-snug">{t.producto}</span>
-                    <span className="text-xs font-bold bg-slate-900 text-white rounded-full px-2 py-0.5 shrink-0">
-                      {t.cantidad} u.
-                    </span>
+                  {/* Quantity badge */}
+                  <div className="rounded-lg bg-slate-900 text-white text-xs font-bold px-2.5 py-1.5 shrink-0 tabular-nums">
+                    {t.cantidad} u.
                   </div>
-                  <div className="text-xs text-slate-500">
-                    {t.origen} → {t.destino}
-                  </div>
-                  <div className="text-xs text-slate-400">
-                    {fmtDate(t.fecha)}
-                    {t.usuario ? ` · ${t.usuario}` : ''}
+                  {/* Details */}
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate leading-snug">
+                      {t.producto}
+                    </p>
+                    <p className="text-xs text-slate-500 truncate">
+                      {t.origen} → {t.destino}
+                    </p>
+                    <p className="text-xs text-slate-400">
+                      {fmtDate(t.fecha)}
+                      {t.usuario ? ` · ${t.usuario}` : ''}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

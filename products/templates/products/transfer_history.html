@@ -1,74 +1,125 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block site_theme_styles %}
-<link rel="stylesheet" href="/static/css/theme_products.css?v=20260425">
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
 {% endblock %}
+
+{% block extra_styles %}
+<style>
+  body { background: #e2e8f0; color: #0f172a; }
+</style>
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+
 {% block content %}
-<div class="container content-max py-3">
-  <h3>Historial de transferencias</h3>
-  <form class="row g-2 mb-3" method="get">
-    <div class="col-md-5">
-      <label class="form-label">Producto</label>
-      <select name="producto" class="form-select">
-        <option value="">Todos</option>
-        {% for p in productos %}
-          <option value="{{ p.id }}" {% if producto_sel == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
-        {% endfor %}
-      </select>
+<div class="py-5 px-4">
+  <div class="container react-shell-wide" style="max-width:900px;">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+      <a href="{% url 'transfer_stock' %}" class="text-sm fw-semibold text-secondary text-decoration-none">← Nueva transferencia</a>
+      <span class="text-secondary">|</span>
+      <h1 class="h5 fw-bold mb-0">Historial de Transferencias</h1>
     </div>
-    <div class="col-md-5">
-      <label class="form-label">Sucursal</label>
-      <select name="sucursal" class="form-select">
-        <option value="">Todas</option>
-        {% for s in sucursales %}
-          <option value="{{ s.id }}" {% if sucursal_sel == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nombre }}</option>
-        {% endfor %}
-      </select>
+
+    <!-- Filter card -->
+    <div class="react-card mb-4">
+      <p class="text-muted small fw-bold text-uppercase mb-2" style="letter-spacing:.07em;">Filtros</p>
+      <form class="row g-2 align-items-end" method="get">
+        <div class="col-md-5">
+          <label class="form-label small fw-semibold text-secondary mb-1">Producto</label>
+          <select name="producto" class="form-select form-select-sm">
+            <option value="">Todos los productos</option>
+            {% for p in productos %}
+              <option value="{{ p.id }}" {% if producto_sel == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-5">
+          <label class="form-label small fw-semibold text-secondary mb-1">Sucursal</label>
+          <select name="sucursal" class="form-select form-select-sm">
+            <option value="">Todas las sucursales</option>
+            {% for s in sucursales %}
+              <option value="{{ s.id }}" {% if sucursal_sel == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-dark btn-sm w-100" type="submit">Filtrar</button>
+        </div>
+      </form>
     </div>
-    <div class="col-md-2">
-      <label class="form-label">&nbsp;</label>
-      <button class="btn btn-primary w-100" type="submit">Filtrar</button>
+
+    <!-- Results card -->
+    <div class="react-card p-0 overflow-hidden">
+      <!-- Table header bar -->
+      <div class="d-flex align-items-center justify-content-between px-4 py-3"
+           style="background:#0f172a; border-radius:14px 14px 0 0;">
+        <span class="text-white fw-bold small">Registros</span>
+        <span class="text-white opacity-75 small">{{ page_obj.paginator.count }} transferencia{% if page_obj.paginator.count != 1 %}s{% endif %}</span>
+      </div>
+
+      {% if page_obj.object_list %}
+      <div class="table-responsive">
+        <table class="table table-sm mb-0" style="font-size:.85rem;">
+          <thead style="background:#f8fafc;">
+            <tr>
+              <th class="px-4 py-2 text-muted fw-semibold border-0" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Fecha</th>
+              <th class="px-4 py-2 text-muted fw-semibold border-0" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Producto</th>
+              <th class="px-4 py-2 text-muted fw-semibold border-0" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Ruta</th>
+              <th class="px-4 py-2 text-muted fw-semibold border-0 text-center" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Cantidad</th>
+              <th class="px-4 py-2 text-muted fw-semibold border-0" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in page_obj.object_list %}
+            <tr class="border-top">
+              <td class="px-4 py-2 text-muted small">{{ t.fecha|date:"d M H:i" }}</td>
+              <td class="px-4 py-2 fw-semibold">{{ t.producto.nombre }}</td>
+              <td class="px-4 py-2 text-muted small">{{ t.origen.nombre }} → {{ t.destino.nombre }}</td>
+              <td class="px-4 py-2 text-center">
+                <span class="badge rounded-pill" style="background:#0f172a; font-size:.8rem;">{{ t.cantidad }} u.</span>
+              </td>
+              <td class="px-4 py-2 text-muted small">
+                {% if t.usuario %}{{ t.usuario.username }}{% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center py-5 text-muted">
+        <div style="font-size:2rem;">📦</div>
+        <p class="mt-2 mb-0">Sin transferencias para los filtros seleccionados</p>
+      </div>
+      {% endif %}
     </div>
-  </form>
-  <div class="table-responsive">
-    <table class="table table-striped table-sm">
-      <thead><tr>
-        <th>Fecha</th><th>Producto</th><th>Origen</th><th>Destino</th><th>Cantidad</th><th>Usuario</th>
-      </tr></thead>
-      <tbody>
-        {% for t in page_obj.object_list %}
-          <tr>
-            <td>{{ t.fecha|date:"Y-m-d H:i" }}</td>
-            <td>{{ t.producto.nombre }}</td>
-            <td>{{ t.origen.nombre }}</td>
-            <td>{{ t.destino.nombre }}</td>
-            <td>{{ t.cantidad }}</td>
-            <td>{% if t.usuario %}{{ t.usuario.username }}{% else %}-{% endif %}</td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="6" class="text-center">Sin transferencias registradas</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+      <span class="text-muted small">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+      <div class="d-flex gap-2">
+        {% if page_obj.has_previous %}
+          <a class="btn btn-sm btn-outline-dark"
+             href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}&producto={{ producto_sel }}&sucursal={{ sucursal_sel }}">
+            ← Anterior
+          </a>
+        {% endif %}
+        {% if page_obj.has_next %}
+          <a class="btn btn-sm btn-dark"
+             href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}&producto={{ producto_sel }}&sucursal={{ sucursal_sel }}">
+            Siguiente →
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
   </div>
-  {% if page_obj and page_obj.paginator.num_pages > 1 %}
-  <ul class="pagination justify-content-end align-items-center">
-    {% if page_obj.has_previous %}
-      <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}&producto={{ producto_sel }}&sucursal={{ sucursal_sel }}">Anterior</a></li>
-    {% else %}
-      <li class="page-item disabled"><span class="page-link">Anterior</span></li>
-    {% endif %}
-    <li class="page-item disabled"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
-    {% if page_obj.has_next %}
-      <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}&producto={{ producto_sel }}&sucursal={{ sucursal_sel }}">Siguiente</a></li>
-    {% else %}
-      <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
-    {% endif %}
-  </ul>
-  {% endif %}
-  {% if request.user.is_superuser %}
-    {% url 'product_management' as back_href %}
-    {% include 'partials/back_button.html' with href=back_href text='Volver a Productos' %}
-  {% endif %}
-  <a href="{% url 'transfer_stock' %}" class="btn btn-outline-primary ms-2">Nueva transferencia</a>
 </div>
 {% endblock %}
