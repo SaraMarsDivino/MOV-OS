@@ -29,7 +29,129 @@
             </div>
             <button type="submit" class="btn btn-primary w-100">Iniciar sesión</button>
         </form>
+
+        <!-- Aviso de novedades -->
+        <div class="mt-3 text-center">
+            <button type="button"
+                    class="btn btn-sm patch-notes-btn"
+                    data-bs-toggle="modal" data-bs-target="#patchNotesModal"
+                    style="background:#f0f4ff; color:#1e40af; border:1.5px solid #bfdbfe; border-radius:99px; font-size:.78rem; font-weight:700; padding:5px 14px; transition:all .15s ease;">
+                🚀 &nbsp;Novedades de la versión 0.7
+            </button>
+        </div>
     </div>
+</div>
+
+<!-- ── MODAL NOTAS DE PARCHE v0.7 ── -->
+<div class="modal fade" id="patchNotesModal" tabindex="-1" aria-labelledby="patchNotesModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:560px;">
+    <div class="modal-content" style="border:none; border-radius:18px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.35);">
+
+      <!-- Header -->
+      <div class="modal-header" style="background:#0f172a; border:none; padding:20px 24px 16px;">
+        <div>
+          <div style="font-size:.7rem; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px;">Notas de parche</div>
+          <h5 class="modal-title" id="patchNotesModalLabel"
+              style="color:#fff; font-family:'Roboto',sans-serif; font-weight:800; font-size:1.25rem; margin:0;">
+            MOV-OS · Versión 0.7
+          </h5>
+          <div style="color:#94a3b8; font-size:.8rem; margin-top:3px;">Mayo 2026</div>
+        </div>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal" aria-label="Cerrar" style="opacity:.7;"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body" style="padding:24px; background:#fff; max-height:65vh; overflow-y:auto;">
+
+        <!-- Sección: POS y Caja -->
+        <div class="pn-section mb-4">
+          <div class="pn-badge mb-2" style="display:inline-block; background:#dcfce7; color:#15803d; font-size:.7rem; font-weight:800; padding:3px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.06em;">Caja y Cierre</div>
+          <ul class="pn-list" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px;">
+            <li class="pn-item" style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-size:1rem; flex-shrink:0; margin-top:1px;">🖨️</span>
+              <div>
+                <strong style="color:#0f172a; font-size:.88rem;">Comprobante de cierre en formato térmico</strong>
+                <p style="color:#64748b; font-size:.8rem; margin:2px 0 0;">Al imprimir el cierre de caja, el documento ahora sale en formato de ticket 80mm, igual que los comprobantes de venta. Se adapta perfectamente a cualquier impresora térmica.</p>
+              </div>
+            </li>
+            <li class="pn-item" style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-size:1rem; flex-shrink:0; margin-top:1px;">📊</span>
+              <div>
+                <strong style="color:#0f172a; font-size:.88rem;">Vista de caja rediseñada</strong>
+                <p style="color:#64748b; font-size:.8rem; margin:2px 0 0;">El detalle de cada sesión de caja se muestra ahora en 4 cuadrantes: <em>Información general</em>, <em>Ventas por método de pago</em>, <em>Devoluciones</em> y <em>Cuadratura</em>. Más claro y fácil de revisar.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sección: Inventario -->
+        <div class="pn-section mb-4">
+          <div class="pn-badge mb-2" style="display:inline-block; background:#e0f2fe; color:#0369a1; font-size:.7rem; font-weight:800; padding:3px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.06em;">Inventario</div>
+          <ul class="pn-list" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px;">
+            <li class="pn-item" style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-size:1rem; flex-shrink:0; margin-top:1px;">🔄</span>
+              <div>
+                <strong style="color:#0f172a; font-size:.88rem;">Nueva pantalla de transferencia de stock</strong>
+                <p style="color:#64748b; font-size:.8rem; margin:2px 0 0;">Pasar productos de una sucursal a otra es ahora mucho más fácil. La nueva pantalla muestra en tiempo real cuánto stock hay en origen y destino, avisa si intentas transferir más de lo disponible y guarda un historial completo de todos los movimientos.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sección: Seguridad -->
+        <div class="pn-section mb-4">
+          <div class="pn-badge mb-2" style="display:inline-block; background:#fef9c3; color:#854d0e; font-size:.7rem; font-weight:800; padding:3px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.06em;">Seguridad y permisos</div>
+          <ul class="pn-list" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px;">
+            <li class="pn-item" style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-size:1rem; flex-shrink:0; margin-top:1px;">🔒</span>
+              <div>
+                <strong style="color:#0f172a; font-size:.88rem;">Control de acceso al módulo de Productos</strong>
+                <p style="color:#64748b; font-size:.8rem; margin:2px 0 0;">La sección de <em>Productos</em> en el menú ahora solo aparece para usuarios que tienen permiso explícito de gestión de productos. Los cajeros sin ese permiso ya no ven esa opción ni pueden acceder a ella.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sección: Reportes -->
+        <div class="pn-section mb-4">
+          <div class="pn-badge mb-2" style="display:inline-block; background:#f3e8ff; color:#6b21a8; font-size:.7rem; font-weight:800; padding:3px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.06em;">Reportes</div>
+          <ul class="pn-list" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px;">
+            <li class="pn-item" style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-size:1rem; flex-shrink:0; margin-top:1px;">📈</span>
+              <div>
+                <strong style="color:#0f172a; font-size:.88rem;">Corrección en Análisis de Mercado</strong>
+                <p style="color:#64748b; font-size:.8rem; margin:2px 0 0;">El botón "Volver" del módulo de Análisis de Mercado ahora lleva correctamente al Dashboard de Reportes, en lugar de mostrar error.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sección: Experiencia general -->
+        <div class="pn-section">
+          <div class="pn-badge mb-2" style="display:inline-block; background:#fce7f3; color:#9d174d; font-size:.7rem; font-weight:800; padding:3px 10px; border-radius:99px; text-transform:uppercase; letter-spacing:.06em;">Experiencia de uso</div>
+          <ul class="pn-list" style="list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px;">
+            <li class="pn-item" style="display:flex; gap:10px; align-items:flex-start;">
+              <span style="font-size:1rem; flex-shrink:0; margin-top:1px;">✨</span>
+              <div>
+                <strong style="color:#0f172a; font-size:.88rem;">La interfaz ahora responde al cursor</strong>
+                <p style="color:#64748b; font-size:.8rem; margin:2px 0 0;">Todos los botones del sistema, el cajero, los formularios y las tarjetas ahora tienen efectos suaves al pasar el cursor y al hacer clic. La página se siente más moderna y reactiva sin ser distractora.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer" style="background:#f8fafc; border:none; padding:14px 24px; justify-content:space-between; align-items:center;">
+        <span style="color:#94a3b8; font-size:.75rem;">MOV-OS v0.7 · Todos los módulos activos</span>
+        <button type="button" class="btn btn-sm btn-dark" data-bs-dismiss="modal" style="border-radius:99px; font-weight:700; font-size:.8rem; padding:6px 16px;">
+          Entendido
+        </button>
+      </div>
+
+    </div>
+  </div>
 </div>
 {% block page_wrapper_end %}{% endblock %}
 {% endblock %}
