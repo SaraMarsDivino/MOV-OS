@@ -40,7 +40,7 @@
   <!-- ── HEADER ── -->
   <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 no-print">
     <div class="d-flex align-items-center gap-3 flex-wrap">
-      <h1 class="h5 fw-black mb-0">Caja #{{ caja.id }}</h1>
+      <h1 class="mb-0" style="font-family:'Cinzel',serif; font-weight:700; font-size:1.25rem; letter-spacing:.04em; color:#0f172a;">Caja #{{ caja.id }}</h1>
       {% if caja.estado == 'abierta' %}
         <span class="badge-estado badge-estado-abierta">Abierta</span>
       {% else %}
@@ -61,12 +61,12 @@
   </div>
 
   <!-- ── GRID 2×2 ── -->
-  <div class="row g-3 mb-3">
+  <div class="row g-3 mb-3 align-items-stretch">
 
     <!-- Cuadrante 1: Información -->
-    <div class="col-md-6 col-lg-3">
+    <div class="col-md-6 col-lg-3 d-flex flex-column">
       <div class="card-header-dark">Información</div>
-      <div class="info-card">
+      <div class="info-card" style="flex:1;">
         <div class="kv-row">
           <span class="kv-label">Cajero</span>
           <span class="kv-val">{{ caja.vendedor.username }}</span>
@@ -97,9 +97,9 @@
     </div>
 
     <!-- Cuadrante 2: Ventas por método -->
-    <div class="col-md-6 col-lg-3">
+    <div class="col-md-6 col-lg-3 d-flex flex-column">
       <div class="card-header-dark">Ventas por Método</div>
-      <div class="info-card">
+      <div class="info-card" style="flex:1;">
         <div class="kv-row">
           <span class="kv-label">Efectivo</span>
           <span class="kv-val">{{ formatted_total_efectivo }}</span>
@@ -124,9 +124,9 @@
     </div>
 
     <!-- Cuadrante 3: Devoluciones -->
-    <div class="col-md-6 col-lg-3">
+    <div class="col-md-6 col-lg-3 d-flex flex-column">
       <div class="card-header-dark">Devoluciones</div>
-      <div class="info-card">
+      <div class="info-card" style="flex:1;">
         <div class="kv-row">
           <span class="kv-label">Efectivo</span>
           <span class="kv-val">{{ formatted_devoluciones_efectivo }}</span>
@@ -151,9 +151,9 @@
     </div>
 
     <!-- Cuadrante 4: Cuadratura -->
-    <div class="col-md-6 col-lg-3">
+    <div class="col-md-6 col-lg-3 d-flex flex-column">
       <div class="card-header-dark">Cuadratura</div>
-      <div class="info-card">
+      <div class="info-card" style="flex:1;">
         <div class="highlight-total d-flex justify-content-between align-items-center mb-3">
           <span class="kv-label">Total Ventas</span>
           <span class="kv-val">{{ formatted_total_ventas }}</span>
