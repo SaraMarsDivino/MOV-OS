@@ -49,7 +49,7 @@ export default function CatalogPanel({
           <button
             type="button"
             onClick={onSearch}
-            className="min-h-[44px] w-full rounded-lg bg-sky-600 text-white font-black"
+            className="min-h-[44px] w-full rounded-lg bg-sky-600 text-white font-black hover:bg-sky-500 active:scale-[0.97] transition-all duration-100"
           >
             Buscar
           </button>
@@ -65,7 +65,7 @@ export default function CatalogPanel({
               products.map((p) => {
                 const disabled = (!p.inSucursal) || (p.stock <= 0 && !p.allowSaleWithoutStock);
                 return (
-                  <li key={p.id} className="p-3 hover:bg-slate-200">
+                  <li key={p.id} className="p-3 hover:bg-slate-200 transition-colors duration-100">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="text-sm font-semibold truncate" title={p.name}>
@@ -89,7 +89,7 @@ export default function CatalogPanel({
                             'min-h-[44px] min-w-[44px] rounded-lg font-black ' +
                             (disabled
                               ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
-                              : 'bg-emerald-400 text-slate-950')
+                              : 'bg-emerald-400 text-slate-950 hover:bg-emerald-300 active:scale-95 transition-all duration-100')
                           }
                           aria-label={`Agregar ${p.name}`}
                         >

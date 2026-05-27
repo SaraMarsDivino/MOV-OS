@@ -232,3 +232,30 @@ body.light-theme input[type="checkbox"] {
 .btn-cerrar-caja{ background: #FFEB99 !important; color: #111 !important; border: 1px solid rgba(0,0,0,0.06) !important; }
 .btn-cerrar-caja:hover{ background: #E74C3C !important; color: #fff !important; }
 
+/* ── Micro-interactions (system-wide) ───────────────────────── */
+/* Bootstrap buttons */
+.btn { transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 90ms ease, opacity 120ms ease !important; }
+.btn:not(:disabled):not(.disabled):hover { transform: translateY(-1px); }
+.btn:not(:disabled):not(.disabled):active { transform: translateY(0) scale(0.97) !important; }
+
+/* Nav links */
+.nav-link, .navbar-nav .nav-link { transition: color 120ms ease, opacity 120ms ease; }
+
+/* React-shell cards get a subtle lift on hover */
+.react-card { transition: box-shadow 150ms ease, transform 150ms ease; }
+.react-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,0.14) !important; transform: translateY(-2px); }
+
+/* Table rows in light shell pages */
+.table-hover > tbody > tr { transition: background-color 100ms ease; }
+
+/* Input / select focus ring */
+.form-control, .form-select { transition: border-color 120ms ease, box-shadow 120ms ease; }
+.form-control:focus, .form-select:focus { box-shadow: 0 0 0 3px rgba(15,23,42,0.1) !important; }
+
+/* Links */
+a { transition: color 120ms ease, opacity 120ms ease; }
+
+/* Pagination links */
+.page-link { transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease; }
+.page-link:hover { transform: none; }
+

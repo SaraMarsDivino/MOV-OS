@@ -66,7 +66,7 @@ export default function CartPanel({ items, barcodeQuery, onBarcodeQueryChange, o
               </tr>
             ) : (
               items.map((it) => (
-                <tr key={it.id} className="hover:bg-slate-200">
+                <tr key={it.id} className="hover:bg-slate-200 transition-colors duration-100">
                   <td className="px-3 py-2 align-middle">
                     <input
                       type="number"
@@ -90,14 +90,14 @@ export default function CartPanel({ items, barcodeQuery, onBarcodeQueryChange, o
                         type="button"
                         onClick={() => onInc(it.id)}
                         disabled={!it.allowSaleWithoutStock && it.qty >= it.stock}
-                        className="min-h-[36px] min-w-[44px] rounded-md bg-emerald-400 text-slate-950 font-black"
+                        className="min-h-[36px] min-w-[44px] rounded-md bg-emerald-400 text-slate-950 font-black hover:bg-emerald-300 active:scale-95 transition-all duration-100"
                       >
                         +1
                       </button>
                       <button
                         type="button"
                         onClick={() => onDec(it.id)}
-                        className="min-h-[36px] min-w-[44px] rounded-md bg-rose-500 text-white font-black"
+                        className="min-h-[36px] min-w-[44px] rounded-md bg-rose-500 text-white font-black hover:bg-rose-400 active:scale-95 transition-all duration-100"
                       >
                         -1
                       </button>
@@ -119,7 +119,7 @@ export default function CartPanel({ items, barcodeQuery, onBarcodeQueryChange, o
           <button
             type="button"
             onClick={onConfirmPurchase}
-            className="inline-flex min-h-[44px] px-4 rounded-lg bg-emerald-400 text-slate-950 font-black items-center justify-center text-center"
+            className="inline-flex min-h-[44px] px-4 rounded-lg bg-emerald-400 text-slate-950 font-black items-center justify-center text-center hover:bg-emerald-300 active:scale-[0.97] transition-all duration-150"
           >
             Confirmar Compra
           </button>

@@ -163,6 +163,10 @@
 .react-forms .btn:focus{
   background: var(--bs-gray-200) !important;
   color: #0f172a !important;
+  transform: translateY(-1px);
+}
+.react-forms .btn:active{
+  transform: translateY(0) scale(0.97) !important;
 }
 
 .react-forms .btn:disabled,

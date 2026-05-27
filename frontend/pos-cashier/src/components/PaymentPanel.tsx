@@ -153,10 +153,10 @@ export default function PaymentPanel({
               type="button"
               onClick={() => onSaleTypeChange('boleta')}
               className={
-                'min-h-[44px] rounded-lg border text-sm font-extrabold ' +
+                'min-h-[44px] rounded-lg border text-sm font-extrabold transition-all duration-100 active:scale-[0.97] ' +
                 (saleType === 'boleta'
-                  ? 'bg-sky-600 text-white border-sky-600'
-                  : 'bg-white text-slate-900 border-slate-300')
+                  ? 'bg-sky-600 text-white border-sky-600 hover:bg-sky-500'
+                  : 'bg-white text-slate-900 border-slate-300 hover:bg-slate-100')
               }
             >
               Boleta Electrónica
@@ -165,10 +165,10 @@ export default function PaymentPanel({
               type="button"
               onClick={() => onSaleTypeChange('factura')}
               className={
-                'min-h-[44px] rounded-lg border text-sm font-extrabold ' +
+                'min-h-[44px] rounded-lg border text-sm font-extrabold transition-all duration-100 active:scale-[0.97] ' +
                 (saleType === 'factura'
-                  ? 'bg-sky-600 text-white border-sky-600'
-                  : 'bg-white text-slate-900 border-slate-300')
+                  ? 'bg-sky-600 text-white border-sky-600 hover:bg-sky-500'
+                  : 'bg-white text-slate-900 border-slate-300 hover:bg-slate-100')
               }
             >
               Factura Electrónica
@@ -191,12 +191,12 @@ export default function PaymentPanel({
                       type="button"
                       onClick={() => !disabled && onPaymentMethodChange(m.id)}
                       className={
-                        'min-h-[56px] rounded-lg border text-sm font-extrabold ' +
+                        'min-h-[56px] rounded-lg border text-sm font-extrabold transition-all duration-100 ' +
                         (disabled
-                          ? 'bg-slate-100 text-slate-400 border-slate-200'
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
                           : active
-                            ? 'bg-sky-600 text-white border-sky-600'
-                            : 'bg-white text-slate-900 border-slate-300')
+                            ? 'bg-sky-600 text-white border-sky-600 hover:bg-sky-500 active:scale-[0.97]'
+                            : 'bg-white text-slate-900 border-slate-300 hover:bg-slate-100 active:scale-[0.97]')
                       }
                       disabled={disabled}
                     >
@@ -309,7 +309,7 @@ export default function PaymentPanel({
                         <button
                           type="button"
                           onClick={() => removeRow(idx)}
-                          className="min-h-[36px] px-3 rounded-lg border border-slate-300 bg-white text-slate-700 font-extrabold"
+                          className="min-h-[36px] px-3 rounded-lg border border-slate-300 bg-white text-slate-700 font-extrabold hover:bg-red-50 hover:border-red-300 hover:text-red-600 active:scale-95 transition-all duration-100"
                         >
                           Quitar
                         </button>
@@ -325,10 +325,10 @@ export default function PaymentPanel({
                   onClick={addRow}
                   disabled={amountDue <= 0 || availableMethods.length === 0}
                   className={
-                    'min-h-[40px] px-3 rounded-lg font-black ' +
+                    'min-h-[40px] px-3 rounded-lg font-black transition-all duration-100 ' +
                     (amountDue <= 0 || availableMethods.length === 0
-                      ? 'bg-slate-100 text-slate-400'
-                      : 'bg-sky-600 text-white')
+                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                      : 'bg-sky-600 text-white hover:bg-sky-500 active:scale-[0.97]')
                   }
                 >
                   Agregar método
@@ -357,7 +357,7 @@ export default function PaymentPanel({
                   <button
                     type="button"
                     onClick={onClearNoteCredit}
-                    className="min-h-[40px] px-3 rounded-lg border border-slate-300 bg-white text-slate-700 font-extrabold"
+                    className="min-h-[40px] px-3 rounded-lg border border-slate-300 bg-white text-slate-700 font-extrabold hover:bg-red-50 hover:border-red-300 hover:text-red-600 active:scale-95 transition-all duration-100"
                   >
                     Quitar
                   </button>
@@ -365,7 +365,7 @@ export default function PaymentPanel({
                   <button
                     type="button"
                     onClick={onApplyNoteCredit}
-                    className="min-h-[40px] px-3 rounded-lg bg-sky-600 text-white font-black"
+                    className="min-h-[40px] px-3 rounded-lg bg-sky-600 text-white font-black hover:bg-sky-500 active:scale-[0.97] transition-all duration-100"
                   >
                     Aplicar
                   </button>
