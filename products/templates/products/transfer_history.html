@@ -1,37 +1,47 @@
 {% extends 'base.html' %}
-{% load static %}
-
 {% block site_theme_styles %}
 <link rel="stylesheet" href="/static/css/theme_react_shell.css">
 {% endblock %}
-
 {% block extra_styles %}
 <style>
   body { background: #e2e8f0; color: #0f172a; }
+  footer { display: none !important; }
 </style>
 {% endblock %}
-
 {% block page_wrapper_start %}{% endblock %}
 {% block page_wrapper_end %}{% endblock %}
 
 {% block content %}
-<div class="py-5 px-4">
-  <div class="container react-shell-wide" style="max-width:900px;">
+<div class="product-form-page">
+  <div class="container react-shell-wide react-forms mt-4">
 
     <!-- Header -->
-    <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
-      <a href="{% url 'transfer_stock' %}" class="text-sm fw-semibold text-secondary text-decoration-none">← Nueva transferencia</a>
-      <span class="text-secondary">|</span>
-      <h1 class="h5 fw-bold mb-0">Historial de Transferencias</h1>
+    <div class="react-card mb-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <h2 class="mb-0">Historial de transferencias</h2>
+          <div class="small text-muted">Registro de movimientos de stock entre sucursales</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{% url 'transfer_stock' %}{% if request.GET.from_product %}?from_product={{ request.GET.from_product }}{% endif %}" class="btn btn-sm">Nueva transferencia</a>
+          {% if request.GET.from_product %}
+            <a href="{% url 'edit_product' request.GET.from_product %}#stock-section" class="btn">← Volver al producto</a>
+          {% else %}
+            <a href="{% url 'product_management' %}" class="btn">← Volver a productos</a>
+          {% endif %}
+        </div>
+      </div>
     </div>
 
-    <!-- Filter card -->
-    <div class="react-card mb-4">
-      <p class="text-muted small fw-bold text-uppercase mb-2" style="letter-spacing:.07em;">Filtros</p>
-      <form class="row g-2 align-items-end" method="get">
+    <!-- Filtros -->
+    <div class="react-card mb-3">
+      <form class="row gx-3 gy-2 align-items-end" method="get">
+        {% if request.GET.from_product %}
+          <input type="hidden" name="from_product" value="{{ request.GET.from_product }}">
+        {% endif %}
         <div class="col-md-5">
-          <label class="form-label small fw-semibold text-secondary mb-1">Producto</label>
-          <select name="producto" class="form-select form-select-sm">
+          <label class="form-label">Producto</label>
+          <select name="producto" class="form-select">
             <option value="">Todos los productos</option>
             {% for p in productos %}
               <option value="{{ p.id }}" {% if producto_sel == p.id|stringformat:"s" %}selected{% endif %}>{{ p.nombre }}</option>
@@ -39,85 +49,78 @@
           </select>
         </div>
         <div class="col-md-5">
-          <label class="form-label small fw-semibold text-secondary mb-1">Sucursal</label>
-          <select name="sucursal" class="form-select form-select-sm">
+          <label class="form-label">Sucursal</label>
+          <select name="sucursal" class="form-select">
             <option value="">Todas las sucursales</option>
             {% for s in sucursales %}
               <option value="{{ s.id }}" {% if sucursal_sel == s.id|stringformat:"s" %}selected{% endif %}>{{ s.nombre }}</option>
             {% endfor %}
           </select>
         </div>
-        <div class="col-md-2">
-          <button class="btn btn-dark btn-sm w-100" type="submit">Filtrar</button>
+        <div class="col-md-2 d-grid">
+          <button class="btn" type="submit">Filtrar</button>
         </div>
       </form>
     </div>
 
-    <!-- Results card -->
+    <!-- Tabla -->
     <div class="react-card p-0 overflow-hidden">
-      <!-- Table header bar -->
-      <div class="d-flex align-items-center justify-content-between px-4 py-3"
+      <div class="px-4 py-3 d-flex justify-content-between align-items-center"
            style="background:#0f172a; border-radius:14px 14px 0 0;">
-        <span class="text-white fw-bold small">Registros</span>
-        <span class="text-white opacity-75 small">{{ page_obj.paginator.count }} transferencia{% if page_obj.paginator.count != 1 %}s{% endif %}</span>
+        <span class="text-white fw-black small">Transferencias</span>
+        <span class="text-white opacity-75 small">{{ page_obj.paginator.count }} registro{% if page_obj.paginator.count != 1 %}s{% endif %}</span>
       </div>
-
       {% if page_obj.object_list %}
-      <div class="table-responsive">
-        <table class="table table-sm mb-0" style="font-size:.85rem;">
-          <thead style="background:#f8fafc;">
-            <tr>
-              <th class="px-4 py-2 text-muted fw-semibold border-0" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Fecha</th>
-              <th class="px-4 py-2 text-muted fw-semibold border-0" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Producto</th>
-              <th class="px-4 py-2 text-muted fw-semibold border-0" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Ruta</th>
-              <th class="px-4 py-2 text-muted fw-semibold border-0 text-center" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Cantidad</th>
-              <th class="px-4 py-2 text-muted fw-semibold border-0" style="font-size:.75rem; text-transform:uppercase; letter-spacing:.05em;">Usuario</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for t in page_obj.object_list %}
-            <tr class="border-top">
-              <td class="px-4 py-2 text-muted small">{{ t.fecha|date:"d M H:i" }}</td>
-              <td class="px-4 py-2 fw-semibold">{{ t.producto.nombre }}</td>
-              <td class="px-4 py-2 text-muted small">{{ t.origen.nombre }} → {{ t.destino.nombre }}</td>
-              <td class="px-4 py-2 text-center">
-                <span class="badge rounded-pill" style="background:#0f172a; font-size:.8rem;">{{ t.cantidad }} u.</span>
-              </td>
-              <td class="px-4 py-2 text-muted small">
-                {% if t.usuario %}{{ t.usuario.username }}{% else %}—{% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+        <div class="table-responsive">
+          <table class="table admin-table align-middle mb-0" style="font-size:.85rem;">
+            <thead>
+              <tr>
+                <th class="px-4 py-2">Fecha</th>
+                <th class="px-4 py-2">Producto</th>
+                <th class="px-4 py-2">Origen → Destino</th>
+                <th class="px-4 py-2 text-end">Cantidad</th>
+                <th class="px-4 py-2">Usuario</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for t in page_obj.object_list %}
+                <tr>
+                  <td class="px-4 py-2 text-muted">{{ t.fecha|date:"d M Y H:i" }}</td>
+                  <td class="px-4 py-2 fw-bold">{{ t.producto.nombre }}</td>
+                  <td class="px-4 py-2 text-muted">{{ t.origen.nombre }} → {{ t.destino.nombre }}</td>
+                  <td class="px-4 py-2 text-end">
+                    <span class="badge rounded-pill" style="background:#0f172a;">{{ t.cantidad }} u.</span>
+                  </td>
+                  <td class="px-4 py-2 text-muted">{% if t.usuario %}{{ t.usuario.username }}{% else %}—{% endif %}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% else %}
-      <div class="text-center py-5 text-muted">
-        <div style="font-size:2rem;">📦</div>
-        <p class="mt-2 mb-0">Sin transferencias para los filtros seleccionados</p>
-      </div>
+        <div class="text-center py-5 text-muted">Sin transferencias para los filtros seleccionados.</div>
       {% endif %}
     </div>
 
-    <!-- Pagination -->
+    <!-- Paginación -->
     {% if page_obj.paginator.num_pages > 1 %}
-    <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
-      <span class="text-muted small">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
-      <div class="d-flex gap-2">
-        {% if page_obj.has_previous %}
-          <a class="btn btn-sm btn-outline-dark"
-             href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}&producto={{ producto_sel }}&sucursal={{ sucursal_sel }}">
-            ← Anterior
-          </a>
-        {% endif %}
-        {% if page_obj.has_next %}
-          <a class="btn btn-sm btn-dark"
-             href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}&producto={{ producto_sel }}&sucursal={{ sucursal_sel }}">
-            Siguiente →
-          </a>
-        {% endif %}
+      <div class="d-flex align-items-center justify-content-between mt-3 flex-wrap gap-2">
+        <span class="text-muted small">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        <div class="d-flex gap-2">
+          {% if page_obj.has_previous %}
+            <a class="btn btn-sm"
+               href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}&producto={{ producto_sel }}&sucursal={{ sucursal_sel }}{% if request.GET.from_product %}&from_product={{ request.GET.from_product }}{% endif %}">
+              ← Anterior
+            </a>
+          {% endif %}
+          {% if page_obj.has_next %}
+            <a class="btn btn-sm"
+               href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}&producto={{ producto_sel }}&sucursal={{ sucursal_sel }}{% if request.GET.from_product %}&from_product={{ request.GET.from_product }}{% endif %}">
+              Siguiente →
+            </a>
+          {% endif %}
+        </div>
       </div>
-    </div>
     {% endif %}
 
   </div>

@@ -157,8 +157,8 @@
                         <div class="small text-muted">Stock actual y ajuste por sucursal.</div>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
-                        <a href="{% url 'transfer_stock' %}" class="btn btn-sm">Transferir stock</a>
-                        <a href="{% url 'adjust_history' %}" class="btn btn-sm">Historial de ajustes</a>
+                        <a href="{% url 'transfer_stock' %}?from_product={{ product.id }}" class="btn btn-sm">Transferir stock</a>
+                        <a href="{% url 'adjust_history' %}?from_product={{ product.id }}" class="btn btn-sm">Historial de ajustes</a>
                         <a href="{% url 'bulk_assign_products' %}" class="btn btn-sm">Asignar stock</a>
                     </div>
                 </div>

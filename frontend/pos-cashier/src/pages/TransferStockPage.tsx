@@ -85,6 +85,13 @@ export default function TransferStockPage() {
   const products: Product[] = ctx.products ?? [];
   const sucursales: Sucursal[] = ctx.sucursales ?? [];
 
+  const fromProduct = new URLSearchParams(window.location.search).get('from_product');
+  const backHref = fromProduct ? `/products/edit/${fromProduct}/` : '/products/management/';
+  const backLabel = fromProduct ? '← Volver al producto' : '← Volver a productos';
+  const historyHref = fromProduct
+    ? `/products/transfer/history/?from_product=${fromProduct}`
+    : '/products/transfer/history/';
+
   const [productoId, setProductoId] = useState('');
   const [origenId, setOrigenId] = useState('');
   const [destinoId, setDestinoId] = useState('');
@@ -184,17 +191,16 @@ export default function TransferStockPage() {
   return (
     <div className="min-h-[calc(100dvh-56px)] bg-slate-200 p-4 md:p-6">
       {/* Page header */}
-      <div className="mx-auto max-w-5xl mb-5 flex items-center gap-3 flex-wrap">
-        <a
-          href="/products/management/"
-          className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
-        >
-          ← Volver
-        </a>
-        <span className="text-slate-300">|</span>
+      <div className="mx-auto max-w-5xl mb-5 flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">
           Transferir Stock entre Sucursales
         </h1>
+        <a
+          href={backHref}
+          className="inline-flex items-center justify-center rounded-xl border-2 border-black bg-white px-4 py-2 text-sm font-black text-slate-900 shadow hover:bg-slate-100 transition-colors"
+        >
+          {backLabel}
+        </a>
       </div>
 
       {/* Two-column grid — equal widths, cards stretch to same height */}
@@ -329,7 +335,7 @@ export default function TransferStockPage() {
           <div className="bg-slate-900 px-5 py-3 flex items-center justify-between">
             <h2 className="text-sm font-bold text-white">Historial reciente</h2>
             <a
-              href="/products/transfer/history/"
+              href={historyHref}
               className="text-xs text-slate-300 hover:text-white font-medium transition-colors"
             >
               Ver todo →
