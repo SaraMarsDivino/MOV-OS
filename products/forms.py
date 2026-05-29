@@ -13,7 +13,7 @@ class ProductForm(forms.ModelForm):
         fields = [
             'nombre', 'descripcion', 'producto_id', 'codigo_alternativo',
             'fecha_ingreso_producto', 'precio_compra', 'precio_venta',
-            'cantidad', 'stock', 'codigo_barras', 'permitir_venta_sin_stock', 'sucursal'
+            'codigo_barras', 'permitir_venta_sin_stock', 'sucursal'
         ]
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
@@ -23,8 +23,6 @@ class ProductForm(forms.ModelForm):
             'fecha_ingreso_producto': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'precio_compra': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 2.500'}),
             'precio_venta': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 3.990'}),
-            'cantidad': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '1'}),
-            'stock': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '1'}),
             'codigo_barras': forms.TextInput(attrs={'class': 'form-control'}),
             'permitir_venta_sin_stock': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }

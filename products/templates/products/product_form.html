@@ -118,22 +118,10 @@
                     </div>
                 </div>
 
-                <!-- ④ Stock y configuración -->
+                <!-- ④ Configuración -->
                 <div class="col-lg-6 mb-3">
                     <div class="react-card h-100">
-                        <div class="pf-section-label">Stock y configuración</div>
-                        <div class="row gx-2">
-                            <div class="col-6 mb-3">
-                                {{ form.cantidad.label_tag }}
-                                {{ form.cantidad }}
-                                {% if form.cantidad.errors %}<div class="text-danger small">{{ form.cantidad.errors.0 }}</div>{% endif %}
-                            </div>
-                            <div class="col-6 mb-3">
-                                {{ form.stock.label_tag }}
-                                {{ form.stock }}
-                                {% if form.stock.errors %}<div class="text-danger small">{{ form.stock.errors.0 }}</div>{% endif %}
-                            </div>
-                        </div>
+                        <div class="pf-section-label">Configuración</div>
                         <div class="mb-3">
                             {{ form.sucursal.label_tag }}
                             {{ form.sucursal }}
