@@ -19,6 +19,8 @@ export default function UserEditPage() {
   const [error, setError] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
   const [isSuper, setIsSuper] = useState(false);
   const [canAdd, setCanAdd] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
@@ -55,17 +57,23 @@ export default function UserEditPage() {
     setSelected((cur) => (cur.includes(sid) ? cur.filter((x) => x !== sid) : [...cur, sid]));
 
   const submit = async () => {
+    if (password && password !== password2) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
     try {
       setSaving(true);
       setError('');
-      await apiPost(`/users/api/users/${id}/update/`, {
+      const payload: Record<string, unknown> = {
         email,
         is_superuser: isSuper,
         can_add_products: canAdd,
         can_edit_products: canEdit,
         can_view_analytics: canView,
         sucursales_autorizadas: selected,
-      });
+      };
+      if (password) payload.password = password;
+      await apiPost(`/users/api/users/${id}/update/`, payload);
       window.location.href = '/users/management/';
     } catch (e: any) {
       setError(e?.message || 'Error al guardar cambios');
@@ -111,7 +119,7 @@ export default function UserEditPage() {
               />
               <p className="mt-1 text-xs text-slate-600">El nombre de usuario no puede modificarse.</p>
             </div>
-            <div>
+            <div className="mb-3">
               <label className={labelCls}>Correo electrónico</label>
               <input
                 type="email"
@@ -119,6 +127,28 @@ export default function UserEditPage() {
                 placeholder="correo@ejemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="mb-3">
+              <label className={labelCls}>Nueva contraseña</label>
+              <input
+                type="password"
+                className={inputCls}
+                placeholder="Dejar en blanco para no cambiar"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Confirmar nueva contraseña</label>
+              <input
+                type="password"
+                className={inputCls}
+                placeholder="Repetir nueva contraseña"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                autoComplete="new-password"
               />
             </div>
           </div>

@@ -276,8 +276,6 @@ def api_user_update(request, user_id):
     # Prevent non-superuser from editing superuser
     if getattr(target, 'is_superuser', False) and not getattr(request.user, 'is_superuser', False):
         return JsonResponse({'error': 'No tienes permisos para modificar un superusuario.'}, status=403)
-    # Update allowed fields
-    allowed_fields = ['email', 'is_superuser', 'can_add_products', 'can_edit_products', 'can_view_analytics', 'sucursales_autorizadas']
     changed = False
     if 'email' in payload:
         target.email = payload.get('email') or ''
@@ -290,6 +288,14 @@ def api_user_update(request, user_id):
         if flag in payload:
             setattr(target, flag, bool(payload.get(flag)))
             changed = True
+    new_password = payload.get('password') or ''
+    if new_password:
+        try:
+            validate_password(new_password, target)
+        except PasswordValidationError as e:
+            return JsonResponse({'error': ' '.join(e.messages)}, status=400)
+        target.set_password(new_password)
+        changed = True
     if changed:
         target.save()
     if 'sucursales_autorizadas' in payload:

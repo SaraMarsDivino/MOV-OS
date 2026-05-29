@@ -14,7 +14,11 @@ type Overview = {
     ventas_count: number;
     articulos_por_ticket: number;
   };
-  periods: { day: { total_monto: number }; week: { total_monto: number }; month: { total_monto: number } };
+  periods: {
+    day: { total_monto: number; start?: string; end?: string };
+    week: { total_monto: number; start?: string; end?: string };
+    month: { total_monto: number; start?: string; end?: string };
+  };
   top_product: { nombre: string; total_monto: number } | null;
   payment_methods: { forma_pago: string; total_monto: number; ventas_count: number }[];
 };
@@ -34,8 +38,9 @@ type Data = {
   overview?: Overview;
   monthly?: MonthlyRow[];
   branches?: BranchRow[];
-  topByAmount?: ProductRow[];
+  topByQuantity?: ProductRow[];
   topByGain?: ProductRow[];
+  topByAmount?: ProductRow[];
   pareto?: ParetoRow[];
   zombies?: ZombieRow[];
   heatmap?: HeatmapData;
@@ -85,6 +90,15 @@ function Spinner() {
 const DAY_LABELS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const HOUR_LABELS = Array.from({ length: 24 }, (_, i) => (i < 10 ? '0' + i : '' + i));
 
+function heatColor(intensity: number, count: number): string {
+  if (count === 0) return '#f1f5f9';
+  // green (120) → yellow (60) → red (0)
+  const hue = Math.round(120 - intensity * 120);
+  const sat = Math.round(72 + intensity * 18);
+  const lit = Math.round(58 - intensity * 22);
+  return `hsl(${hue},${sat}%,${lit}%)`;
+}
+
 function Heatmap({ data }: { data: HeatmapData }) {
   const matrix = data.matrix_count;
   const max = Math.max(1, ...matrix.flat());
@@ -101,27 +115,24 @@ function Heatmap({ data }: { data: HeatmapData }) {
             <div className="w-7 shrink-0 text-right text-[10px] font-bold text-slate-600 pr-1">{day}</div>
             {matrix[di]?.map((count, hi) => {
               const intensity = count / max;
-              const bg = count === 0
-                ? 'rgba(226,232,240,1)'
-                : `rgba(15,23,42,${0.15 + intensity * 0.85})`;
               return (
                 <div
                   key={hi}
                   title={`${day} ${HOUR_LABELS[hi]}h: ${count} ventas`}
                   className="w-5 h-5 shrink-0 rounded-sm border border-black/10 cursor-default"
-                  style={{ backgroundColor: bg }}
+                  style={{ backgroundColor: heatColor(intensity, count) }}
                 />
               );
             })}
           </div>
         ))}
         <div className="flex items-center gap-2 mt-2 ml-8">
-          <span className="text-[10px] text-slate-500">Menos ventas</span>
+          <span className="text-[10px] text-slate-500">Sin ventas</span>
           {[0, 0.25, 0.5, 0.75, 1].map((v) => (
             <div key={v} className="w-4 h-4 rounded-sm border border-black/10"
-              style={{ backgroundColor: v === 0 ? 'rgba(226,232,240,1)' : `rgba(15,23,42,${0.15 + v * 0.85})` }} />
+              style={{ backgroundColor: v === 0 ? '#f1f5f9' : heatColor(v, 1) }} />
           ))}
-          <span className="text-[10px] text-slate-500">Más ventas</span>
+          <span className="text-[10px] text-slate-500">Hora pico</span>
         </div>
       </div>
     </div>
@@ -159,12 +170,14 @@ export default function MarketAnalysisPage() {
         apiGet<any>(`/reports/market/heatmap/${q}`),
         apiGet<any>(`/reports/market/weekend-vs-weekday/${q}`),
       ]);
+      const rawTop: ProductRow[] = topRes.top_by_amount || [];
       setData({
         overview: overviewRes,
         monthly: monthlyRes.monthly || [],
         branches: branchRes.branches || [],
-        topByAmount: topRes.top_by_amount || [],
-        topByGain: topRes.top_by_amount?.slice().sort((a: ProductRow, b: ProductRow) => b.ganancia_total - a.ganancia_total) || [],
+        topByQuantity: rawTop.slice().sort((a, b) => b.cantidad - a.cantidad),
+        topByGain: rawTop.slice().sort((a, b) => b.ganancia_total - a.ganancia_total),
+        topByAmount: rawTop.slice().sort((a, b) => b.monto_total - a.monto_total),
         pareto: paretoRes.series || [],
         zombies: zombieRes.zombies || [],
         heatmap: heatmapRes,
@@ -400,23 +413,33 @@ export default function MarketAnalysisPage() {
                       <div className="text-xs font-black uppercase tracking-wide text-slate-600">Ticket promedio</div>
                       <div className="mt-1 text-2xl font-black leading-tight text-slate-900">{fmt(kpis.ticket_promedio)}</div>
                       <div className="mt-1 text-[11px] text-slate-500">{kpis.articulos_por_ticket.toFixed(1)} artículos/ticket</div>
+                      <div className="mt-0.5 text-[11px] font-bold text-slate-700">{kpis.ventas_count.toLocaleString('es-CL')} tickets vendidos</div>
                     </div>
                   </div>
 
                   {/* ── Períodos rápidos */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-2xl border-2 border-black bg-slate-300 p-4 shadow-lg">
-                      <div className="mb-1 text-xs font-black uppercase tracking-wide text-slate-600">Hoy</div>
+                      <div className="mb-0.5 text-xs font-black uppercase tracking-wide text-slate-600">
+                        {data.overview!.periods.day.end
+                          ? new Date(data.overview!.periods.day.end + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+                          : 'Último día'}
+                      </div>
                       <div className="text-xl font-black text-slate-900">{fmt(todaySales)}</div>
+                      <div className="mt-0.5 text-[10px] text-slate-500">ventas brutas · día final del rango</div>
                       <div className="mt-1">{badge(todayDelta)}</div>
                     </div>
                     <div className="rounded-2xl border-2 border-black bg-slate-300 p-4 shadow-lg">
-                      <div className="mb-1 text-xs font-black uppercase tracking-wide text-slate-600">Últimos 7 días</div>
+                      <div className="mb-0.5 text-xs font-black uppercase tracking-wide text-slate-600">Últimos 7 días</div>
                       <div className="text-xl font-black text-slate-900">{fmt(data.overview!.periods.week.total_monto)}</div>
+                      <div className="mt-0.5 text-[10px] text-slate-500">ventas brutas · desde {data.overview!.periods.week.start
+                        ? new Date(data.overview!.periods.week.start + 'T12:00:00').toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+                        : '—'}</div>
                     </div>
                     <div className="rounded-2xl border-2 border-black bg-slate-300 p-4 shadow-lg">
-                      <div className="mb-1 text-xs font-black uppercase tracking-wide text-slate-600">Este mes</div>
+                      <div className="mb-0.5 text-xs font-black uppercase tracking-wide text-slate-600">Este mes</div>
                       <div className="text-xl font-black text-slate-900">{fmt(data.overview!.periods.month.total_monto)}</div>
+                      <div className="mt-0.5 text-[10px] text-slate-500">ventas brutas · desde el día 1 del mes</div>
                     </div>
                   </div>
 
@@ -523,36 +546,38 @@ export default function MarketAnalysisPage() {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  {/* Top por ingresos */}
-                  {data.topByAmount && data.topByAmount.length > 0 && (
-                    <SectionCard title={`Top ${prodLimit} — Mayor ingreso`}>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-xs">
-                          <thead>
-                            <tr className="border-b-2 border-black">
-                              <th className="pb-1 text-left font-black text-slate-900">Producto</th>
-                              <th className="pb-1 text-right font-black text-slate-900">Ingresos</th>
-                              <th className="pb-1 text-right font-black text-slate-900">Margen</th>
+                {/* 1 — Top más vendidos (por unidades) */}
+                {data.topByQuantity && data.topByQuantity.length > 0 && (
+                  <SectionCard title={`Top ${prodLimit} — Más vendidos`}>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b-2 border-black">
+                            <th className="pb-1 text-left font-black text-slate-900">Producto</th>
+                            <th className="pb-1 text-right font-black text-slate-900">Unidades</th>
+                            <th className="pb-1 text-right font-black text-slate-900">Ingresos</th>
+                            <th className="pb-1 text-right font-black text-slate-900">Margen</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {data.topByQuantity.slice(0, prodLimit).map((p, i) => (
+                            <tr key={i} className="border-b border-black/10">
+                              <td className="py-1 font-bold text-slate-900 truncate" style={{ maxWidth: 200 }} title={p.producto_nombre}>{p.producto_nombre}</td>
+                              <td className="py-1 text-right font-black text-slate-900">{p.cantidad}</td>
+                              <td className="py-1 text-right text-slate-700">{fmt(p.monto_total)}</td>
+                              <td className={`py-1 text-right font-bold ${p.margen_pct >= 20 ? 'text-green-700' : p.margen_pct >= 0 ? 'text-slate-700' : 'text-red-600'}`}>
+                                {p.margen_pct.toFixed(1)}%
+                              </td>
                             </tr>
-                          </thead>
-                          <tbody>
-                            {data.topByAmount.slice(0, prodLimit).map((p, i) => (
-                              <tr key={i} className="border-b border-black/10">
-                                <td className="py-1 font-bold text-slate-900 max-w-0 truncate" style={{ maxWidth: 160 }} title={p.producto_nombre}>{p.producto_nombre}</td>
-                                <td className="py-1 text-right text-slate-900">{fmt(p.monto_total)}</td>
-                                <td className={`py-1 text-right font-bold ${p.margen_pct >= 20 ? 'text-green-700' : p.margen_pct >= 0 ? 'text-slate-700' : 'text-red-600'}`}>
-                                  {p.margen_pct.toFixed(1)}%
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </SectionCard>
-                  )}
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </SectionCard>
+                )}
 
-                  {/* Top por ganancia */}
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {/* 2 — Mayor ganancia */}
                   {data.topByGain && data.topByGain.length > 0 && (
                     <SectionCard title={`Top ${prodLimit} — Mayor ganancia`}>
                       <div className="overflow-x-auto">
@@ -579,11 +604,42 @@ export default function MarketAnalysisPage() {
                       </div>
                     </SectionCard>
                   )}
+
+                  {/* 3 — Mayor ingreso */}
+                  {data.topByAmount && data.topByAmount.length > 0 && (
+                    <SectionCard title={`Top ${prodLimit} — Mayor ingreso`}>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="border-b-2 border-black">
+                              <th className="pb-1 text-left font-black text-slate-900">Producto</th>
+                              <th className="pb-1 text-right font-black text-slate-900">Ingresos</th>
+                              <th className="pb-1 text-right font-black text-slate-900">Margen</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {data.topByAmount.slice(0, prodLimit).map((p, i) => (
+                              <tr key={i} className="border-b border-black/10">
+                                <td className="py-1 font-bold text-slate-900 truncate" style={{ maxWidth: 160 }} title={p.producto_nombre}>{p.producto_nombre}</td>
+                                <td className="py-1 text-right text-slate-900">{fmt(p.monto_total)}</td>
+                                <td className={`py-1 text-right font-bold ${p.margen_pct >= 20 ? 'text-green-700' : p.margen_pct >= 0 ? 'text-slate-700' : 'text-red-600'}`}>
+                                  {p.margen_pct.toFixed(1)}%
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </SectionCard>
+                  )}
                 </div>
 
                 {/* Pareto */}
                 {data.pareto && data.pareto.length > 0 && (
                   <SectionCard title={`Análisis Pareto — top ${prodLimit} productos por ingreso`}>
+                    <p className="mb-3 text-xs text-slate-600 leading-relaxed">
+                      El <strong>principio de Pareto</strong> (regla 80/20) dice que aproximadamente el <strong>20% de los productos genera el 80% de los ingresos</strong>. Las filas sombreadas son los productos que conforman ese 80% acumulado — son tu núcleo de negocio. Los no sombreados aportan el 20% restante.
+                    </p>
                     <div className="overflow-x-auto">
                       <table className="w-full text-xs">
                         <thead>
@@ -607,12 +663,11 @@ export default function MarketAnalysisPage() {
                           ))}
                         </tbody>
                       </table>
-                      <div className="mt-2 text-xs text-slate-500">Las filas sombreadas componen el 80% del ingreso total.</div>
                     </div>
                   </SectionCard>
                 )}
 
-                {/* Zombie products */}
+                {/* 4 — Productos sin movimiento */}
                 {data.zombies !== undefined && (
                   <SectionCard title={`Productos sin movimiento (últimos 30 días) — ${data.zombies.length} encontrados`}>
                     {data.zombies.length === 0 ? (

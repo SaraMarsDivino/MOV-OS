@@ -14,6 +14,16 @@
     body { background: #e2e8f0; color:#111827; }
     footer { display: none !important; }
     .product-form-page{ width: 100%; }
+    .pf-section-label {
+        font-size: 0.7rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #475569;
+        margin-bottom: 0.85rem;
+        padding-bottom: 0.45rem;
+        border-bottom: 2px solid #cbd5e1;
+    }
 </style>
 {% endblock %}
 
@@ -34,101 +44,129 @@
 
         <div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1050; width: 350px;"></div>
 
-        <div class="react-card">
-            <form method="post">
-                {% csrf_token %}
-                {% if form.non_field_errors %}
-                <div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>
-                {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>
+            {% endif %}
 
-                <div class="row gx-3">
-                    <div class="col-lg-6 mb-3">
-                        {{ form.nombre.label_tag }}
-                        {{ form.nombre }}
-                        {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="col-lg-6 mb-3">
-                        {{ form.descripcion.label_tag }}
-                        {{ form.descripcion }}
-                        {% if form.descripcion.errors %}<div class="text-danger small">{{ form.descripcion.errors.0 }}</div>{% endif %}
+            <!-- Grilla 2×2 de cuadrantes -->
+            <div class="row gx-3">
+
+                <!-- ① Información básica -->
+                <div class="col-lg-6 mb-3">
+                    <div class="react-card h-100">
+                        <div class="pf-section-label">Información básica</div>
+                        <div class="mb-3">
+                            {{ form.nombre.label_tag }}
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-0">
+                            {{ form.descripcion.label_tag }}
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}<div class="text-danger small">{{ form.descripcion.errors.0 }}</div>{% endif %}
+                        </div>
                     </div>
                 </div>
 
-                <div class="row gx-3">
-                    <div class="col-md-4 mb-3">
-                        {{ form.producto_id.label_tag }}
-                        {{ form.producto_id }}
-                        {% if form.producto_id.errors %}<div class="text-danger small">{{ form.producto_id.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        {{ form.codigo_alternativo.label_tag }}
-                        {{ form.codigo_alternativo }}
-                        {% if form.codigo_alternativo.errors %}<div class="text-danger small">{{ form.codigo_alternativo.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        {{ form.codigo_barras.label_tag }}
-                        {{ form.codigo_barras }}
-                        {% if form.codigo_barras.errors %}<div class="text-danger small">{{ form.codigo_barras.errors.0 }}</div>{% endif %}
-                    </div>
-                </div>
-
-                <div class="row gx-3">
-                    <div class="col-md-4 mb-3">
-                        {{ form.fecha_ingreso_producto.label_tag }}
-                        {{ form.fecha_ingreso_producto }}
-                        {% if form.fecha_ingreso_producto.errors %}<div class="text-danger small">{{ form.fecha_ingreso_producto.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        {{ form.precio_compra.label_tag }}
-                        {{ form.precio_compra }}
-                        {% if form.precio_compra.errors %}<div class="text-danger small">{{ form.precio_compra.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        {{ form.precio_venta.label_tag }}
-                        {{ form.precio_venta }}
-                        {% if form.precio_venta.errors %}<div class="text-danger small">{{ form.precio_venta.errors.0 }}</div>{% endif %}
+                <!-- ② Códigos -->
+                <div class="col-lg-6 mb-3">
+                    <div class="react-card h-100">
+                        <div class="pf-section-label">Códigos</div>
+                        <div class="row gx-2">
+                            <div class="col-6 mb-3">
+                                {{ form.producto_id.label_tag }}
+                                {{ form.producto_id }}
+                                {% if form.producto_id.errors %}<div class="text-danger small">{{ form.producto_id.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-6 mb-3">
+                                {{ form.codigo_barras.label_tag }}
+                                {{ form.codigo_barras }}
+                                {% if form.codigo_barras.errors %}<div class="text-danger small">{{ form.codigo_barras.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-0">
+                            {{ form.codigo_alternativo.label_tag }}
+                            {{ form.codigo_alternativo }}
+                            {% if form.codigo_alternativo.errors %}<div class="text-danger small">{{ form.codigo_alternativo.errors.0 }}</div>{% endif %}
+                        </div>
                     </div>
                 </div>
 
-                <div class="row gx-3 align-items-end">
-                    <div class="col-md-3 mb-3">
-                        {{ form.cantidad.label_tag }}
-                        {{ form.cantidad }}
-                        {% if form.cantidad.errors %}<div class="text-danger small">{{ form.cantidad.errors.0 }}</div>{% endif %}
+                <!-- ③ Precios -->
+                <div class="col-lg-6 mb-3">
+                    <div class="react-card h-100">
+                        <div class="pf-section-label">Precios</div>
+                        <div class="row gx-2">
+                            <div class="col-6 mb-3">
+                                {{ form.precio_compra.label_tag }}
+                                {{ form.precio_compra }}
+                                {% if form.precio_compra.errors %}<div class="text-danger small">{{ form.precio_compra.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-6 mb-3">
+                                {{ form.precio_venta.label_tag }}
+                                {{ form.precio_venta }}
+                                {% if form.precio_venta.errors %}<div class="text-danger small">{{ form.precio_venta.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-0">
+                            {{ form.fecha_ingreso_producto.label_tag }}
+                            {{ form.fecha_ingreso_producto }}
+                            {% if form.fecha_ingreso_producto.errors %}<div class="text-danger small">{{ form.fecha_ingreso_producto.errors.0 }}</div>{% endif %}
+                        </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        {{ form.stock.label_tag }}
-                        {{ form.stock }}
-                        {% if form.stock.errors %}<div class="text-danger small">{{ form.stock.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        {{ form.sucursal.label_tag }}
-                        {{ form.sucursal }}
-                        {% if form.sucursal.errors %}<div class="text-danger small">{{ form.sucursal.errors.0 }}</div>{% endif %}
-                    </div>
-                    <div class="col-md-2 mb-3 d-flex align-items-center">
+                </div>
+
+                <!-- ④ Stock y configuración -->
+                <div class="col-lg-6 mb-3">
+                    <div class="react-card h-100">
+                        <div class="pf-section-label">Stock y configuración</div>
+                        <div class="row gx-2">
+                            <div class="col-6 mb-3">
+                                {{ form.cantidad.label_tag }}
+                                {{ form.cantidad }}
+                                {% if form.cantidad.errors %}<div class="text-danger small">{{ form.cantidad.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div class="col-6 mb-3">
+                                {{ form.stock.label_tag }}
+                                {{ form.stock }}
+                                {% if form.stock.errors %}<div class="text-danger small">{{ form.stock.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            {{ form.sucursal.label_tag }}
+                            {{ form.sucursal }}
+                            {% if form.sucursal.errors %}<div class="text-danger small">{{ form.sucursal.errors.0 }}</div>{% endif %}
+                        </div>
                         <div class="form-check mb-0">
                             {{ form.permitir_venta_sin_stock }}
                             {{ form.permitir_venta_sin_stock.label_tag }}
+                            {% if form.permitir_venta_sin_stock.errors %}<div class="text-danger small">{{ form.permitir_venta_sin_stock.errors.0 }}</div>{% endif %}
                         </div>
-                        {% if form.permitir_venta_sin_stock.errors %}<div class="text-danger small">{{ form.permitir_venta_sin_stock.errors.0 }}</div>{% endif %}
                     </div>
                 </div>
 
+            </div>{# /grilla 2×2 #}
+
+            <div class="react-card mb-0">
                 <div class="d-flex flex-wrap gap-2">
                     <button type="submit" name="save_only" class="btn">Guardar</button>
                     <button type="submit" name="save_and_list" class="btn">Guardar y Volver a la Lista</button>
                     <a href="{% url 'product_management' %}" class="btn">Cancelar</a>
                 </div>
-            </form>
-        </div>
+            </div>
+        </form>
 
-        <div class="mt-3">
+        <div class="mt-3" id="stock-section">
             <div class="react-card">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                {% if request.GET.stock_ok %}
+                <div class="alert alert-success py-2 mb-3">Stock actualizado con éxito.</div>
+                {% endif %}
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                     <div>
                         <h3 class="mb-0">Stock por sucursal</h3>
-                        <div class="small text-muted">Resumen del stock distribuido por sucursal.</div>
+                        <div class="small text-muted">Stock actual y ajuste por sucursal.</div>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{% url 'transfer_stock' %}" class="btn btn-sm">Transferir stock</a>
@@ -136,99 +174,60 @@
                         <a href="{% url 'bulk_assign_products' %}" class="btn btn-sm">Asignar stock</a>
                     </div>
                 </div>
-                <div class="react-table-shell">
+
+                <!-- Tabla de stock (sin columna Acción) -->
+                <div class="react-table-shell mb-3">
                     <div class="table-responsive">
-                    <table class="table admin-table align-middle mb-0">
-                        <colgroup>
-                            <col style="width:55%">
-                            <col style="width:20%">
-                            <col style="width:25%">
-                        </colgroup>
-                        <thead>
-                            <tr><th>Sucursal</th><th class="text-end">Stock</th><th class="text-end">Acción</th></tr>
-                        </thead>
-                        <tbody>
-                            {% if stocks_sucursal %}
-                                {% for s in stocks_sucursal %}
-                                    <tr data-sucursal-id="{{ s.sucursal.id }}">
-                                        <td>{{ s.sucursal.nombre }}</td>
-                                        <td class="text-end"><span class="stock-val">{{ s.cantidad }}</span></td>
-                                        <td class="text-end">
-                                            <button type="button" class="btn btn-sm btn-ajustar" data-sucursal-id="{{ s.sucursal.id }}" data-sucursal-nombre="{{ s.sucursal.nombre }}">Ajustar</button>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr><td colspan="3" class="text-center">No hay stock por sucursal asignado.</td></tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+                        <table class="table admin-table align-middle mb-0">
+                            <colgroup>
+                                <col style="width:70%">
+                                <col style="width:30%">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Sucursal</th>
+                                    <th class="text-end">Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockTbody">
+                                {% if stocks_sucursal %}
+                                    {% for s in stocks_sucursal %}
+                                        <tr data-sucursal-id="{{ s.sucursal.id }}">
+                                            <td>{{ s.sucursal.nombre }}</td>
+                                            <td class="text-end"><span class="stock-val">{{ s.cantidad }}</span></td>
+                                        </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr id="emptyStockRow"><td colspan="2" class="text-center">No hay stock por sucursal asignado.</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="mt-3">
-            <div class="react-card">
-                <h3 class="mb-2">Agregar o ajustar stock en otra sucursal</h3>
-                <form id="stockBranchForm" class="row gx-3 gy-3 align-items-end">
-                    <input type="hidden" name="producto_id" value="{{ product.id }}">
-                    <div class="col-md-5">
-                        <label class="form-label">Sucursal</label>
-                        <select class="form-select" id="newStockSucursal" required>
-                            <option value="" disabled selected>Seleccione una sucursal</option>
-                            {% for suc in sucursales %}
-                                <option value="{{ suc.id }}">{{ suc.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Cantidad</label>
-                        <input type="number" class="form-control" id="newStockCantidad" min="0" value="0" required>
-                    </div>
-                    <div class="col-md-3 d-grid">
-                        <button type="button" class="btn" id="btnAddStockBranch">Guardar stock</button>
+                <!-- Ajustar / agregar stock — POST a la misma página -->
+                <div class="pf-section-label">Ajustar stock en sucursal</div>
+                <form method="post" action="">
+                    {% csrf_token %}
+                    <div class="row gx-2 gy-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label mb-1 small fw-bold">Sucursal</label>
+                            <select class="form-select" name="sucursal_id" required>
+                                <option value="" disabled selected>Seleccione una sucursal</option>
+                                {% for suc in sucursales %}
+                                    <option value="{{ suc.id }}">{{ suc.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label mb-1 small fw-bold">Cantidad <small class="text-muted fw-normal">(negativo para descontar)</small></label>
+                            <input type="number" class="form-control" name="delta" value="0" placeholder="Ej: 5 o -3" required>
+                        </div>
+                        <div class="col-md-3 d-grid">
+                            <button type="submit" name="_stock_adjust" value="1" class="btn">Guardar</button>
+                        </div>
                     </div>
                 </form>
-                <div class="form-text mt-2">Si la sucursal ya tiene stock registrado para este producto, el valor se ajustará a la cantidad indicada.</div>
-                <div class="alert alert-warning d-none mt-3" id="addStockBranchWarning"></div>
-                <div class="alert alert-success d-none mt-3" id="addStockBranchSuccess"></div>
-            </div>
-        </div>
-
-        <!-- Modal de ajuste de stock -->
-        <div class="modal fade" id="ajusteStockModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Ajustar stock</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="ajusteStockForm">
-                            <input type="hidden" name="producto_id" value="{{ product.id }}">
-                            <input type="hidden" name="sucursal_id" id="ajusteSucursalId" value="">
-                            <div class="mb-3">
-                                <label class="form-label">Sucursal</label>
-                                <input type="text" class="form-control" id="ajusteSucursalNombre" disabled>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Variación</label>
-                                <input type="number" class="form-control" name="delta" id="ajusteDelta" value="0">
-                                <div class="form-text">Usa valores positivos para ingresar stock y negativos para descontar.</div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Motivo (opcional)</label>
-                                <input type="text" class="form-control" name="motivo" id="ajusteMotivo" placeholder="Ej: Ajuste inventario">
-                            </div>
-                        </form>
-                        <div class="alert alert-warning d-none" id="ajusteWarning"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn" id="btnGuardarAjuste">Guardar</button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -238,128 +237,12 @@
 {% block extra_scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const modalEl = document.getElementById('ajusteStockModal');
-    if (!modalEl) return;
-    const modal = new bootstrap.Modal(modalEl);
-    const ajusteForm = document.getElementById('ajusteStockForm');
-    const btnGuardar = document.getElementById('btnGuardarAjuste');
-    const warning = document.getElementById('ajusteWarning');
-    function getCSRFToken() {
-        const meta = document.querySelector('meta[name="csrf-token"], meta[name="csrfmiddlewaretoken"], input[name="csrfmiddlewaretoken"]');
-        if (meta && (meta.content || meta.value)) return meta.content || meta.value;
-        const cookies = document.cookie ? document.cookie.split(';') : [];
-        let lastToken = null;
-        for (const part of cookies) {
-            const [rawName, ...rest] = part.trim().split('=');
-            if (rawName === 'csrftoken') lastToken = decodeURIComponent(rest.join('='));
-        }
-        return lastToken || '';
-    }
-    document.querySelectorAll('.btn-ajustar').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.getElementById('ajusteSucursalId').value = btn.dataset.sucursalId;
-            document.getElementById('ajusteSucursalNombre').value = btn.dataset.sucursalNombre;
-            document.getElementById('ajusteDelta').value = 0;
-            document.getElementById('ajusteMotivo').value = '';
-            warning.classList.add('d-none');
-            modal.show();
-        });
-    });
-    btnGuardar.addEventListener('click', async () => {
-        const formData = new FormData(ajusteForm);
-        try {
-            const res = await fetch('{% url "ajustar_stock" %}', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'X-CSRFToken': getCSRFToken() },
-                body: formData
-            });
-            const data = await res.json();
-            if (!res.ok || !data.success) throw new Error(data.error || 'Error al ajustar stock');
-            const sucId = formData.get('sucursal_id');
-            const row = document.querySelector(`tr[data-sucursal-id="${sucId}"]`);
-            if (row) {
-                row.querySelector('.stock-val').textContent = data.nueva_cantidad;
-            }
-            modal.hide();
-        } catch (e) {
-            warning.textContent = e.message;
-            warning.classList.remove('d-none');
-        }
-    });
-
-    const branchForm = document.getElementById('stockBranchForm');
-    const addButton = document.getElementById('btnAddStockBranch');
-    const addWarning = document.getElementById('addStockBranchWarning');
-    const addSuccess = document.getElementById('addStockBranchSuccess');
-
-    function updateOrCreateRow(sucursalId, sucursalName, cantidad) {
-        let row = document.querySelector(`tr[data-sucursal-id="${sucursalId}"]`);
-        if (row) {
-            row.querySelector('.stock-val').textContent = cantidad;
-        } else {
-            const tbody = document.querySelector('.table-responsive tbody');
-            if (tbody) {
-                const newRow = document.createElement('tr');
-                newRow.setAttribute('data-sucursal-id', sucursalId);
-                newRow.innerHTML = `
-                    <td>${sucursalName}</td>
-                    <td class="text-end"><span class="stock-val">${cantidad}</span></td>
-                    <td class="text-end">
-                        <button type="button" class="btn btn-sm btn-ajustar" data-sucursal-id="${sucursalId}" data-sucursal-nombre="${sucursalName}">Ajustar</button>
-                    </td>
-                `;
-                tbody.appendChild(newRow);
-                newRow.querySelector('.btn-ajustar').addEventListener('click', () => {
-                    document.getElementById('ajusteSucursalId').value = sucursalId;
-                    document.getElementById('ajusteSucursalNombre').value = sucursalName;
-                    document.getElementById('ajusteDelta').value = 0;
-                    document.getElementById('ajusteMotivo').value = '';
-                    addWarning.classList.add('d-none');
-                    modal.show();
-                });
-            }
-        }
-    }
-
-    addButton.addEventListener('click', async () => {
-        addWarning.classList.add('d-none');
-        addSuccess.classList.add('d-none');
-        const sucursalId = document.getElementById('newStockSucursal').value;
-        const cantidad = document.getElementById('newStockCantidad').value;
-        const productoId = '{{ product.id }}';
-        if (!sucursalId) {
-            addWarning.textContent = 'Selecciona una sucursal.';
-            addWarning.classList.remove('d-none');
-            return;
-        }
-        if (cantidad === '' || isNaN(cantidad) || Number(cantidad) < 0) {
-            addWarning.textContent = 'Ingresa una cantidad válida.';
-            addWarning.classList.remove('d-none');
-            return;
-        }
-        const payload = new FormData();
-        payload.append('producto_id', productoId);
-        payload.append('sucursal_id', sucursalId);
-        payload.append('delta', cantidad);
-        payload.append('motivo', 'Asignación directa desde ficha de producto');
-
-        try {
-            const res = await fetch('{% url "ajustar_stock" %}', {
-                method: 'POST',
-                credentials: 'same-origin',
-                headers: { 'X-CSRFToken': getCSRFToken() },
-                body: payload
-            });
-            const data = await res.json();
-            if (!res.ok || !data.success) throw new Error(data.error || 'Error al asignar stock.');
-            const sucursalName = document.querySelector(`#newStockSucursal option[value="${sucursalId}"]`).textContent;
-            updateOrCreateRow(sucursalId, sucursalName, data.nueva_cantidad);
-            addSuccess.textContent = 'Stock asignado correctamente.';
-            addSuccess.classList.remove('d-none');
-        } catch (e) {
-            addWarning.textContent = e.message;
-            addWarning.classList.remove('d-none');
+    // Quitar decimales de los campos de precio (muestran 2500.00 → 2500)
+    ['id_precio_compra', 'id_precio_venta'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.value) {
+            const n = parseFloat(el.value);
+            if (!isNaN(n)) el.value = Math.round(n);
         }
     });
 });

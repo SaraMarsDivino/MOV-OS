@@ -45,13 +45,11 @@ class ProductForm(forms.ModelForm):
         self.fields['descripcion'].label = 'DESCRIPCIÓN (opcional)'
         self.fields['producto_id'].label = 'CÓDIGO 1'
         self.fields['codigo_alternativo'].label = 'CÓDIGO 2 (opcional)'
-        # Ajustes de etiquetas
         self.fields['fecha_ingreso_producto'].label = 'FECHA DE INGRESO (opcional)'
         self.fields['precio_compra'].label = 'PRECIO DE COMPRA'
         self.fields['precio_venta'].label = 'PRECIO DE VENTA'
         self.fields['codigo_barras'].label = 'CÓDIGO DE BARRAS (opcional)'
         self.fields['sucursal'].label = 'SUCURSAL (opcional)'
-        # ✅ Establecer el valor inicial a True si no es una instancia existente
         if self.instance is None or not self.instance.pk:
             self.fields['permitir_venta_sin_stock'].initial = True
 

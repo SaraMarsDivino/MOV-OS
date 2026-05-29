@@ -151,31 +151,66 @@ def create_or_edit_product(request, product_id=None):
     Vista para crear un nuevo producto o editar uno existente.
     """
     product = get_object_or_404(Product, id=product_id) if product_id else None
-    form = ProductForm(request.POST or None, instance=product, user=request.user)
     title = 'Editar Producto' if product_id else 'Crear Producto'
 
-    if request.method == 'POST' and form.is_valid():
-        product_instance = form.save() 
-        messages.success(request, 'Los cambios se guardaron con éxito.')
-        if 'save_and_list' in request.POST:
-            return redirect('product_management')
-        return redirect('edit_product', product_instance.id)
-    # Construir resumen de stock por sucursal (si existe el producto)
+    if request.method == 'POST':
+        # Ajuste de stock inline — no toca el formulario de producto
+        if '_stock_adjust' in request.POST:
+            try:
+                sucursal_id = int(request.POST.get('sucursal_id'))
+                delta = int(request.POST.get('delta', 0))
+                sucursal = get_object_or_404(Sucursal, id=sucursal_id)
+                ss, _ = StockSucursal.objects.get_or_create(
+                    producto=product, sucursal=sucursal, defaults={'cantidad': 0}
+                )
+                ss.cantidad = max(0, (ss.cantidad or 0) + delta)
+                ss.save()
+                AjusteStock.objects.create(
+                    producto=product, sucursal=sucursal, cantidad_delta=delta,
+                    motivo='Ajuste desde ficha de producto',
+                    usuario=request.user if request.user.is_authenticated else None
+                )
+                stock_msg = f'Stock actualizado: {sucursal.nombre} → {ss.cantidad} unidades.'
+            except Exception as e:
+                stock_msg = None
+                messages.error(request, f'Error al ajustar stock: {e}')
+            from django.http import HttpResponseRedirect
+            from django.urls import reverse
+            ok = '?stock_ok=1' if stock_msg else ''
+            return HttpResponseRedirect(reverse('edit_product', args=[product_id]) + ok + '#stock-section')
+
+        form = ProductForm(request.POST, instance=product, user=request.user)
+        if form.is_valid():
+            product_instance = form.save()
+            messages.success(request, 'Los cambios se guardaron con éxito.')
+            if 'save_and_list' in request.POST:
+                return redirect('product_management')
+            return redirect('edit_product', product_instance.id)
+    else:
+        # Pasar precios como enteros en initial para evitar que se muestren con decimales
+        initial = {}
+        if product and product.pk:
+            if product.precio_compra is not None:
+                initial['precio_compra'] = str(int(product.precio_compra))
+            if product.precio_venta is not None:
+                initial['precio_venta'] = str(int(product.precio_venta))
+        form = ProductForm(instance=product, user=request.user, initial=initial or None)
+
+    # Construir resumen de stock por sucursal
     stocks = []
     if product and product.id:
         registros = StockSucursal.objects.select_related('sucursal').filter(producto=product)
         for r in registros:
-            stocks.append({ 'sucursal': r.sucursal, 'cantidad': r.cantidad })
-        # Fallback al stock legado si no hay registros por sucursal
+            stocks.append({'sucursal': r.sucursal, 'cantidad': r.cantidad})
         if not registros.exists() and product.sucursal_id:
             try:
                 suc = Sucursal.objects.get(id=product.sucursal_id)
-                stocks.append({ 'sucursal': suc, 'cantidad': product.stock })
+                stocks.append({'sucursal': suc, 'cantidad': product.stock})
             except Sucursal.DoesNotExist:
                 pass
     return render(request, 'products/product_form.html', {
-        'form': form, 
-        'title': title, 
+        'form': form,
+        'title': title,
         'product': product,
         'stocks_sucursal': stocks,
         'sucursales': Sucursal.objects.all() if product and product.id else Sucursal.objects.none()
@@ -1051,9 +1086,19 @@ def transfer_history(request):
 @user_passes_test(_can_manage_products, login_url='cashier_dashboard')
 @login_required
 def ajustar_stock(request):
-    """Endpoint POST para ajustar stock por sucursal (incremento o decremento)."""
+    """Endpoint POST para ajustar stock por sucursal.
+    Si la petición viene de un navegador (Accept incluye text/html), redirige al
+    formulario de edición del producto. Si es una llamada AJAX (Accept: application/json
+    o Content-Type: application/json), devuelve JSON.
+    """
     if request.method != 'POST':
         return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    wants_json = (
+        'application/json' in (request.content_type or '')
+        or 'application/json' in (request.META.get('HTTP_ACCEPT') or '')
+    )
+
     try:
         producto_id = int(request.POST.get('producto_id'))
         sucursal_id = int(request.POST.get('sucursal_id'))
@@ -1071,9 +1116,18 @@ def ajustar_stock(request):
             motivo=motivo or None,
             usuario=request.user if request.user.is_authenticated else None
         )
-        return JsonResponse({'success': True, 'nueva_cantidad': ss.cantidad})
+        if wants_json:
+            return JsonResponse({'success': True, 'nueva_cantidad': ss.cantidad})
+        messages.success(request, f'Stock actualizado: {sucursal.nombre} → {ss.cantidad} unidades.')
+        return redirect('edit_product', producto_id)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        if wants_json:
+            return JsonResponse({'error': str(e)}, status=400)
+        messages.error(request, f'Error al ajustar stock: {e}')
+        producto_id_raw = request.POST.get('producto_id')
+        if producto_id_raw:
+            return redirect('edit_product', int(producto_id_raw))
+        return redirect('product_management')
 
 def adjust_history(request):
     """Historial de ajustes de stock con filtros por producto y sucursal."""
