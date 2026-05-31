@@ -63,7 +63,7 @@ export default function UsersManagementPage() {
           <div className="mb-3 rounded-2xl border-2 border-black bg-white p-3 text-sm text-red-700 shadow">{error}</div>
         ) : null}
 
-        <div className="rounded-2xl border-2 border-black bg-slate-300 shadow-lg">
+        <div className="rounded-2xl border-2 border-black bg-slate-300 shadow-lg overflow-hidden">
           <div className="overflow-auto">
             <table className="min-w-full border-collapse text-sm text-slate-900">
               <thead className="bg-slate-200">

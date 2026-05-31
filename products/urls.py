@@ -23,4 +23,5 @@ urlpatterns = [
     path('transfer/history/', views.transfer_history, name='transfer_history'),
     path('stock/adjust/', views.ajustar_stock, name='ajustar_stock'),
     path('stock/adjust/history/', views.adjust_history, name='adjust_history'),
+    path('api/low-stock/', views.api_low_stock, name='api_low_stock'),
 ]

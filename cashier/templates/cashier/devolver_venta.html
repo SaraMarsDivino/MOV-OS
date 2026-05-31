@@ -1,136 +1,212 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block app_styles %}{% endblock %}
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_reports.css">
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+{% block extra_styles %}
+<style>
+  body { background: #e2e8f0; color: #0f172a; }
+  footer { display: none !important; }
+  .pf-section-label {
+    font-size: .7rem; font-weight: 900; text-transform: uppercase;
+    letter-spacing: .08em; color: #475569;
+    margin-bottom: .75rem; padding-bottom: .4rem;
+    border-bottom: 2px solid #cbd5e1;
+  }
+</style>
+{% endblock %}
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-  <div class="card shadow-sm">
-    <div class="card-body">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+<div class="product-form-page">
+  <div class="container react-shell-wide react-forms mt-4">
+
+    <!-- Header -->
+    <div class="react-card mb-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
-          <h3 class="m-0" style="font-weight:900;">Devolución</h3>
-          <div class="text-muted mt-1">Venta #{{ venta.id }} · {{ venta.fecha|date:"d/m/Y H:i" }}</div>
+          <h2 class="mb-0">Devolución — Venta #{{ venta.id }}</h2>
+          <div class="small text-muted">{{ venta.fecha|date:"d \d\e F Y, H:i" }}{% if sucursal_devolucion %} · {{ sucursal_devolucion.nombre }}{% endif %}</div>
         </div>
-        <div class="d-flex gap-2">
-          <a class="btn btn-sm btn-outline-secondary" href="{% url 'reports:sales_report' venta.id %}">Ver reporte venta</a>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{% url 'reports:sales_report' venta.id %}" class="btn btn-sm">Ver reporte</a>
+          {% if next_url %}
+            <a href="{{ next_url }}" class="btn">← Volver</a>
+          {% else %}
+            <a href="{% url 'reports:sales_history' %}" class="btn">← Historial</a>
+          {% endif %}
         </div>
       </div>
+    </div>
 
-      <hr />
+    <!-- Aviso admin sin caja -->
+    {% if admin_sin_caja %}
+    <div class="react-card mb-3" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
+      <div class="d-flex align-items-start gap-2">
+        <span style="font-size:1.1rem;">⚠</span>
+        <div>
+          <div class="fw-black small">Devolución administrativa sin caja abierta</div>
+          <div class="small text-muted mt-1">Operando como administrador. La devolución se registrará en la sucursal <strong>{{ sucursal_devolucion.nombre }}</strong> pero no afectará métricas de ninguna caja. El stock se ajustará normalmente.</div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
-      <form method="post" class="mt-3" id="refund_form">
-        {% csrf_token %}
-        {% if next_url %}
-          <input type="hidden" name="next" value="{{ next_url }}" />
-        {% endif %}
+    <form method="post" id="refund_form">
+      {% csrf_token %}
+      {% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}" />
+      {% endif %}
 
-        <div class="row g-3">
-          <div class="col-12 col-lg-4">
-            <label class="form-label">Método de devolución</label>
-            <select name="metodo_pago" id="metodo_pago" class="form-select">
-              <option value="efectivo">Efectivo</option>
-              <option value="debito">Tarjeta de Débito</option>
-              <option value="credito">Tarjeta de Crédito</option>
-              <option value="transferencia">Transferencia</option>
-              <option value="nota_credito">Nota de crédito (saldo)</option>
-            </select>
-          </div>
+      <!-- Cuadrantes -->
+      <div class="row gx-3 mb-3">
 
-          <div class="col-12 col-lg-4" id="transaccion_wrap" style="display:none;">
-            <label class="form-label">Nº transacción (devolución)</label>
-            <input name="numero_transaccion" class="form-control" placeholder="Ej: 123456" />
-          </div>
-
-          <div class="col-12 col-lg-4" id="banco_wrap" style="display:none;">
-            <label class="form-label">Banco</label>
-            <input name="banco" class="form-control" placeholder="Ej: Banco Estado" />
+        <!-- ① Método de devolución -->
+        <div class="col-lg-5 mb-3">
+          <div class="react-card h-100">
+            <div class="pf-section-label">Método de devolución</div>
+            <div class="mb-3">
+              <label class="form-label mb-1 small fw-bold">Método</label>
+              <select name="metodo_pago" id="metodo_pago" class="form-select">
+                <option value="efectivo">Efectivo</option>
+                <option value="debito">Tarjeta de Débito</option>
+                <option value="credito">Tarjeta de Crédito</option>
+                <option value="transferencia">Transferencia</option>
+                <option value="nota_credito">Nota de crédito (saldo en tienda)</option>
+              </select>
+            </div>
+            <div class="mb-3" id="transaccion_wrap" style="display:none;">
+              <label class="form-label mb-1 small fw-bold">N° transacción</label>
+              <input name="numero_transaccion" class="form-control" placeholder="Ej: 123456" />
+            </div>
+            <div id="banco_wrap" style="display:none;">
+              <label class="form-label mb-1 small fw-bold">Banco</label>
+              <input name="banco" class="form-control" placeholder="Ej: Banco Estado" />
+            </div>
           </div>
         </div>
 
-        <div class="table-responsive mt-4">
-          <table class="table table-sm align-middle">
+        <!-- ② Resumen de la venta original -->
+        <div class="col-lg-7 mb-3">
+          <div class="react-card h-100">
+            <div class="pf-section-label">Venta original</div>
+            <div class="row gx-2 gy-1" style="font-size:.9rem;">
+              <div class="col-6">
+                <div class="text-muted small">Empleado</div>
+                <div class="fw-bold">{{ venta.empleado.username }}</div>
+              </div>
+              <div class="col-6">
+                <div class="text-muted small">Forma de pago</div>
+                <div class="fw-bold">{{ venta.get_forma_pago_display }}</div>
+              </div>
+              <div class="col-6 mt-2">
+                <div class="text-muted small">Total venta</div>
+                <div class="fw-bold">${{ venta.total|clp }}</div>
+              </div>
+              {% if sucursal_devolucion %}
+              <div class="col-6 mt-2">
+                <div class="text-muted small">Sucursal</div>
+                <div class="fw-bold">{{ sucursal_devolucion.nombre }}</div>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tabla de ítems -->
+      <div class="react-card p-0 overflow-hidden mb-3">
+        <div class="px-4 py-3 d-flex justify-content-between align-items-center"
+             style="background:#0f172a; border-radius:14px 14px 0 0;">
+          <span class="text-white fw-black small">Productos a devolver</span>
+          <span class="text-white opacity-75 small">Ingresa 0 para no devolver un ítem</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table admin-table align-middle mb-0" style="font-size:.875rem;">
             <thead>
               <tr>
-                <th>Producto</th>
-                <th class="text-end">Comprado</th>
-                <th class="text-end">Devuelto</th>
-                <th class="text-end">Disponible</th>
-                <th style="min-width:160px;">Cantidad a devolver</th>
-                <th style="min-width:160px;">Destino</th>
+                <th class="px-4 py-2">Producto</th>
+                <th class="px-4 py-2 text-center">Comprado</th>
+                <th class="px-4 py-2 text-center">Ya devuelto</th>
+                <th class="px-4 py-2 text-center">Disponible</th>
+                <th class="px-4 py-2" style="min-width:140px;">Cant. a devolver</th>
+                <th class="px-4 py-2" style="min-width:130px;">Destino</th>
               </tr>
             </thead>
             <tbody>
               {% for row in lineas %}
-                <tr>
-                  <td>
-                    <div style="font-weight:700;">{{ row.detalle.producto.nombre }}</div>
-                    <div class="text-muted" style="font-size:12px;">Precio: ${{ row.detalle.precio_unitario|clp }}</div>
-                  </td>
-                  <td class="text-end">{{ row.detalle.cantidad }}</td>
-                  <td class="text-end">{{ row.ya_devuelto }}</td>
-                  <td class="text-end">{{ row.max_returnable }}</td>
-                  <td>
-                    <input
-                      type="number"
-                      name="qty_{{ row.detalle.id }}"
-                      min="0"
-                      max="{{ row.max_returnable }}"
-                      value="0"
-                      class="form-control"
-                      {% if row.max_returnable == 0 %}disabled{% endif %}
-                    />
-                    {% if row.max_returnable == 0 %}
-                      <div class="text-muted" style="font-size:12px; opacity:0.9;">Ya devuelto</div>
-                    {% endif %}
-                  </td>
-                  <td>
-                    <select name="destino_{{ row.detalle.id }}" class="form-select" {% if row.max_returnable == 0 %}disabled{% endif %}>
-                      <option value="stock">Vuelve a stock</option>
-                      <option value="merma">Merma</option>
-                    </select>
-                  </td>
-                </tr>
+              <tr {% if row.max_returnable == 0 %}style="opacity:.5;"{% endif %}>
+                <td class="px-4 py-2">
+                  <div class="fw-bold">{{ row.detalle.producto.nombre }}</div>
+                  <div class="text-muted small">${{ row.detalle.precio_unitario|clp }} c/u</div>
+                </td>
+                <td class="px-4 py-2 text-center">{{ row.detalle.cantidad }}</td>
+                <td class="px-4 py-2 text-center">{{ row.ya_devuelto }}</td>
+                <td class="px-4 py-2 text-center fw-bold">{{ row.max_returnable }}</td>
+                <td class="px-4 py-2">
+                  <input type="number" name="qty_{{ row.detalle.id }}"
+                    min="0" max="{{ row.max_returnable }}" value="0"
+                    class="form-control form-control-sm"
+                    {% if row.max_returnable == 0 %}disabled{% endif %} />
+                  {% if row.max_returnable == 0 %}
+                    <div class="text-muted small mt-1">Ya devuelto</div>
+                  {% endif %}
+                </td>
+                <td class="px-4 py-2">
+                  <select name="destino_{{ row.detalle.id }}" class="form-select form-select-sm"
+                    {% if row.max_returnable == 0 %}disabled{% endif %}>
+                    <option value="stock">Vuelve a stock</option>
+                    <option value="merma">Merma</option>
+                  </select>
+                </td>
+              </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
+      </div>
 
-        <div class="d-flex flex-wrap gap-2 justify-content-end mt-3">
+      <!-- Botones -->
+      <div class="react-card">
+        <div class="d-flex flex-wrap gap-2">
+          <button type="submit" class="btn">Registrar devolución</button>
           {% if next_url %}
-            <a class="btn btn-outline-secondary" href="{{ next_url }}">Volver</a>
+            <a href="{{ next_url }}" class="btn btn-sm">Cancelar</a>
           {% else %}
-            <a class="btn btn-outline-secondary" href="{% url 'reports:sales_history' %}">Volver al historial</a>
+            <a href="{% url 'reports:sales_history' %}" class="btn btn-sm">Cancelar</a>
           {% endif %}
-          <button type="submit" class="btn btn-primary">Registrar devolución</button>
         </div>
-      </form>
-    </div>
+      </div>
+
+    </form>
   </div>
 </div>
 
 <script>
-  (function() {
-    const metodo = document.getElementById('metodo_pago');
-    const txWrap = document.getElementById('transaccion_wrap');
-    const bankWrap = document.getElementById('banco_wrap');
+(function() {
+  const metodo = document.getElementById('metodo_pago');
+  const txWrap = document.getElementById('transaccion_wrap');
+  const bankWrap = document.getElementById('banco_wrap');
+  function refresh() {
+    const v = metodo.value;
+    txWrap.style.display = (v === 'debito' || v === 'credito' || v === 'transferencia') ? '' : 'none';
+    bankWrap.style.display = (v === 'transferencia') ? '' : 'none';
+  }
+  metodo.addEventListener('change', refresh);
+  refresh();
+})();
 
-    function refresh() {
-      const v = metodo.value;
-      const showTx = (v === 'debito' || v === 'credito' || v === 'transferencia');
-      const showBank = (v === 'transferencia');
-      txWrap.style.display = showTx ? '' : 'none';
-      bankWrap.style.display = showBank ? '' : 'none';
-    }
-
-    metodo.addEventListener('change', refresh);
-    refresh();
-  })();
-
-  (function() {
-    const form = document.getElementById('refund_form');
-    if (!form) return;
-    form.addEventListener('submit', function(e) {
-      const ok = window.confirm('¿Está seguro de registrar esta devolución?');
-      if (!ok) e.preventDefault();
-    });
-  })();
+(function() {
+  const form = document.getElementById('refund_form');
+  if (!form) return;
+  form.addEventListener('submit', function(e) {
+    const ok = window.confirm('¿Está seguro de registrar esta devolución?');
+    if (!ok) e.preventDefault();
+  });
+})();
 </script>
 {% endblock %}

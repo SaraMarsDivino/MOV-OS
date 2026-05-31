@@ -127,6 +127,12 @@
                             {{ form.sucursal }}
                             {% if form.sucursal.errors %}<div class="text-danger small">{{ form.sucursal.errors.0 }}</div>{% endif %}
                         </div>
+                        <div class="mb-3">
+                            {{ form.stock_minimo.label_tag }}
+                            {{ form.stock_minimo }}
+                            <div class="form-text text-muted">Recibirás alerta cuando alguna sucursal baje de este número.</div>
+                            {% if form.stock_minimo.errors %}<div class="text-danger small">{{ form.stock_minimo.errors.0 }}</div>{% endif %}
+                        </div>
                         <div class="form-check mb-0">
                             {{ form.permitir_venta_sin_stock }}
                             {{ form.permitir_venta_sin_stock.label_tag }}
@@ -194,13 +200,13 @@
                 </div>
 
                 <!-- Ajustar / agregar stock — POST a la misma página -->
-                <div class="pf-section-label">Ajustar stock en sucursal</div>
-                <form method="post" action="">
+                <div class="pf-section-label">Actualizar stock en sucursal</div>
+                <form method="post" action="" id="stockAdjustForm">
                     {% csrf_token %}
                     <div class="row gx-2 gy-2 align-items-end">
                         <div class="col-md-5">
                             <label class="form-label mb-1 small fw-bold">Sucursal</label>
-                            <select class="form-select" name="sucursal_id" required>
+                            <select class="form-select" name="sucursal_id" id="stockSucursalSelect" required>
                                 <option value="" disabled selected>Seleccione una sucursal</option>
                                 {% for suc in sucursales %}
                                     <option value="{{ suc.id }}">{{ suc.nombre }}</option>
@@ -208,8 +214,8 @@
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label mb-1 small fw-bold">Cantidad <small class="text-muted fw-normal">(negativo para descontar)</small></label>
-                            <input type="number" class="form-control" name="delta" value="0" placeholder="Ej: 5 o -3" required>
+                            <label class="form-label mb-1 small fw-bold">Nueva cantidad</label>
+                            <input type="number" class="form-control" name="nueva_cantidad" id="stockNuevaCantidad" min="0" placeholder="Ej: 25" required>
                         </div>
                         <div class="col-md-3 d-grid">
                             <button type="submit" name="_stock_adjust" value="1" class="btn">Guardar</button>
@@ -233,6 +239,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isNaN(n)) el.value = Math.round(n);
         }
     });
+
+    // Confirmación antes de actualizar stock
+    const stockForm = document.getElementById('stockAdjustForm');
+    if (stockForm) {
+        stockForm.addEventListener('submit', function (e) {
+            const sucursalSelect = document.getElementById('stockSucursalSelect');
+            const cantidadInput = document.getElementById('stockNuevaCantidad');
+            const sucursalNombre = sucursalSelect.options[sucursalSelect.selectedIndex]?.text || '';
+            const nuevaCantidad = cantidadInput.value;
+            const ok = window.confirm(
+                `¿Está seguro de actualizar el stock?\n\nSucursal: ${sucursalNombre}\nNueva cantidad: ${nuevaCantidad} unidades`
+            );
+            if (!ok) e.preventDefault();
+        });
+    }
 });
 </script>
 {% endblock %}

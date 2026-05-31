@@ -1,140 +1,195 @@
 {% extends 'base.html' %}
 {% load static %}
+{% block app_styles %}{% endblock %}
 {% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_reports.css">
 <link rel="stylesheet" href="/static/css/theme_react_shell.css">
 {% endblock %}
 {% block extra_styles %}
-  <link rel="stylesheet" href="{% static 'css/print.css' %}" media="print">
-  <style>
-    body { background: var(--bs-gray-200); color: #0f172a; }
-  </style>
+<link rel="stylesheet" href="{% static 'css/print.css' %}" media="print">
+<style>
+  body { background: #e2e8f0; color: #0f172a; }
+  footer { display: none !important; }
+  .pf-section-label {
+    font-size: .7rem; font-weight: 900; text-transform: uppercase;
+    letter-spacing: .08em; color: #475569;
+    margin-bottom: .75rem; padding-bottom: .4rem;
+    border-bottom: 2px solid #cbd5e1;
+  }
+</style>
 {% endblock %}
-
 {% block page_wrapper_start %}{% endblock %}
 {% block page_wrapper_end %}{% endblock %}
 
 {% block content %}
-<div class="py-4">
-        <div class="container react-shell-wide react-compact react-forms">
-                <div class="react-card">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
-                                <div>
-                                        <h2 class="m-0" style="font-weight:900;">Detalle de Venta #{{ venta.id }}</h2>
-                                        <div class="mt-1 text-muted" style="opacity:0.92;">{{ venta.fecha|date:"d M Y, H:i" }}</div>
-                                </div>
-                        </div>
+<div class="product-form-page">
+  <div class="container react-shell-wide react-forms mt-4">
 
-                        <div class="row g-3 mt-2">
-                                <div class="col-md-6">
-                                        <div class="react-card h-100">
-                                                <h3 class="m-0" style="font-weight:900;">Informacion</h3>
-                                                <div class="mt-2">
-                                                        <p><strong>Empleado:</strong> {{ venta.empleado.username }}</p>
-                                                        {% if sucursal %}<p><strong>Sucursal:</strong> {{ sucursal.nombre }}</p>{% endif %}
-                                                        {% if venta.caja %}<p><strong>Caja:</strong> <a href="{% url 'detalle_caja' venta.caja.id %}">#{{ venta.caja.id }}</a></p>{% endif %}
-                                                        <p><strong>Tipo de Venta:</strong> {{ venta.get_tipo_venta_display }}</p>
-                                                        <p><strong>Forma de Pago:</strong> {{ forma_pago_label|default:venta.get_forma_pago_display }}</p>
-                                                        {% if formatted_nota_credito and not show_payment_breakdown %}
-                                                                <p><strong>Nota de credito aplicada:</strong> {{ formatted_nota_credito }}{% if venta.nota_credito_usada %} ({{ venta.nota_credito_usada.codigo }}){% endif %}</p>
-                                                                <p><strong>Total a pagar:</strong> {{ formatted_total_a_pagar }}</p>
-                                                        {% endif %}
-                                                        {% if venta.forma_pago == "debito" or venta.forma_pago == "credito" or venta.forma_pago == "transferencia" or venta.forma_pago == "nota_credito" %}
-                                                                <p><strong>Numero de Transaccion:</strong> {{ venta.numero_transaccion }}</p>
-                                                        {% endif %}
-                                                        {% if venta.forma_pago == "transferencia" %}
-                                                                <p><strong>Banco:</strong> {{ venta.banco }}</p>
-                                                        {% endif %}
-                                                        <p><strong>Total:</strong> {{ formatted_total }}</p>
-                                                        {% if venta.forma_pago == "efectivo" %}
-                                                                <p><strong>Cliente Pago:</strong> {{ formatted_cliente_paga }}</p>
-                                                                <p><strong>Vuelto Entregado:</strong> {{ formatted_vuelto_entregado }}</p>
-                                                        {% endif %}
-                                                </div>
-                                        </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                        <div class="react-card h-100">
-                                                <h3 class="m-0" style="font-weight:900;">Detalle de pago</h3>
-                                                <div class="mt-2">
-                                                        {% if show_payment_breakdown and payment_breakdown %}
-                                                                <div class="table-responsive">
-                                                                        <table class="table table-hover align-middle mb-0 admin-table">
-                                                                                <colgroup>
-                                                                                        <col style="width:30%" />
-                                                                                        <col style="width:20%" />
-                                                                                        <col style="width:25%" />
-                                                                                        <col style="width:25%" />
-                                                                                </colgroup>
-                                                                                <thead>
-                                                                                        <tr>
-                                                                                                <th>Metodo</th>
-                                                                                                <th class="text-end">Monto</th>
-                                                                                                <th>Transaccion</th>
-                                                                                                <th>Banco</th>
-                                                                                        </tr>
-                                                                                </thead>
-                                                                                <tbody>
-                                                                                        {% for p in payment_breakdown %}
-                                                                                        <tr>
-                                                                                                <td class="wrap">
-                                                                                                        {{ p.metodo_display }}
-                                                                                                        {% if p.nota_credito_codigo %}<div class="text-muted" style="font-size:12px; opacity:0.9;">({{ p.nota_credito_codigo }})</div>{% endif %}
-                                                                                                </td>
-                                                                                                <td class="text-end">{{ p.formatted_monto }}</td>
-                                                                                                <td>{{ p.numero_transaccion|default:"-" }}</td>
-                                                                                                <td>{{ p.banco|default:"-" }}</td>
-                                                                                        </tr>
-                                                                                        {% endfor %}
-                                                                                </tbody>
-                                                                        </table>
-                                                                </div>
-                                                        {% else %}
-                                                                <div class="text-muted">Sin detalle de pago.</div>
-                                                        {% endif %}
-                                                </div>
-                                        </div>
-                                </div>
-                        </div>
-
-                        <div class="react-table-shell mt-3">
-                                <div class="table-responsive">
-                                        <table class="table table-hover align-middle mb-0 admin-table">
-                                                <colgroup>
-                                                        <col style="width:42%" />
-                                                        <col style="width:16%" />
-                                                        <col style="width:21%" />
-                                                        <col style="width:21%" />
-                                                </colgroup>
-                                                <thead>
-                                                        <tr>
-                                                                <th class="text-start wrap">Producto</th>
-                                                                <th class="text-start">Cantidad</th>
-                                                                <th class="text-start">Precio Unitario</th>
-                                                                <th class="text-start">Subtotal</th>
-                                                        </tr>
-                                                </thead>
-                                                <tbody>
-                                                        {% for item in detalles %}
-                                                        <tr>
-                                                                <td class="text-start wrap">{{ item.producto.nombre }}</td>
-                                                                <td class="text-start">{{ item.cantidad }}</td>
-                                                                <td class="text-start">${{ item.precio_unitario|clp }}</td>
-                                                                <td class="text-start">{{ item.formatted_subtotal }}</td>
-                                                        </tr>
-                                                        {% endfor %}
-                                                </tbody>
-                                        </table>
-                                </div>
-                        </div>
-
-                        <div class="d-flex flex-wrap gap-2 mt-3">
-                                <a href="{% url 'print_venta' venta.id %}" target="_blank" class="btn">Imprimir Detalle</a>
-                                <a href="{% url 'devolver_venta' venta.id %}?next={{ request.get_full_path|urlencode }}" class="btn">Devolver</a>
-                                {% url 'reports:sales_history' as back_href %}
-                                {% include 'partials/back_button.html' with href=back_href text='Volver al Historial de Ventas' %}
-                        </div>
-                </div>
+    <!-- Header -->
+    <div class="react-card mb-3">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <h2 class="mb-0">Venta #{{ venta.id }}</h2>
+          <div class="small text-muted">{{ venta.fecha|date:"d \d\e F Y, H:i" }}</div>
         </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{% url 'print_venta' venta.id %}" target="_blank" class="btn btn-sm">Imprimir</a>
+          <a href="{% url 'devolver_venta' venta.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm">Devolver</a>
+          {% url 'reports:sales_history' as back_href %}
+          <a href="{{ back_href }}" class="btn">← Volver al historial</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cuadrantes -->
+    <div class="row gx-3 mb-3">
+
+      <!-- ① Información de la venta -->
+      <div class="col-lg-6 mb-3">
+        <div class="react-card h-100">
+          <div class="pf-section-label">Información</div>
+          <div class="row gx-2 gy-1" style="font-size:.9rem;">
+            <div class="col-6">
+              <div class="text-muted small">Empleado</div>
+              <div class="fw-bold">{{ venta.empleado.username }}</div>
+            </div>
+            {% if sucursal %}
+            <div class="col-6">
+              <div class="text-muted small">Sucursal</div>
+              <div class="fw-bold">{{ sucursal.nombre }}</div>
+            </div>
+            {% endif %}
+            {% if venta.caja %}
+            <div class="col-6 mt-2">
+              <div class="text-muted small">Caja</div>
+              <div class="fw-bold"><a href="{% url 'detalle_caja' venta.caja.id %}">#{{ venta.caja.id }}</a></div>
+            </div>
+            {% endif %}
+            <div class="col-6 mt-2">
+              <div class="text-muted small">Tipo de venta</div>
+              <div class="fw-bold">{{ venta.get_tipo_venta_display }}</div>
+            </div>
+            <div class="col-6 mt-2">
+              <div class="text-muted small">Forma de pago</div>
+              <div class="fw-bold">{{ forma_pago_label|default:venta.get_forma_pago_display }}</div>
+            </div>
+            {% if venta.forma_pago == "debito" or venta.forma_pago == "credito" or venta.forma_pago == "transferencia" or venta.forma_pago == "nota_credito" %}
+            <div class="col-6 mt-2">
+              <div class="text-muted small">N° transacción</div>
+              <div class="fw-bold">{{ venta.numero_transaccion|default:"—" }}</div>
+            </div>
+            {% endif %}
+            {% if venta.forma_pago == "transferencia" %}
+            <div class="col-6 mt-2">
+              <div class="text-muted small">Banco</div>
+              <div class="fw-bold">{{ venta.banco|default:"—" }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ② Resumen financiero -->
+      <div class="col-lg-6 mb-3">
+        <div class="react-card h-100">
+          <div class="pf-section-label">Resumen financiero</div>
+
+          <!-- Total destacado -->
+          <div class="d-flex align-items-baseline gap-2 mb-3">
+            <span class="text-muted small">Total</span>
+            <span style="font-size:1.6rem; font-weight:900; line-height:1;">{{ formatted_total }}</span>
+          </div>
+
+          {% if venta.forma_pago == "efectivo" %}
+          <div class="row gx-2 gy-1" style="font-size:.9rem;">
+            <div class="col-6">
+              <div class="text-muted small">Cliente pagó</div>
+              <div class="fw-bold">{{ formatted_cliente_paga }}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted small">Vuelto</div>
+              <div class="fw-bold">{{ formatted_vuelto_entregado }}</div>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if formatted_nota_credito and not show_payment_breakdown %}
+          <div class="row gx-2 gy-1 mt-1" style="font-size:.9rem;">
+            <div class="col-6">
+              <div class="text-muted small">NC aplicada</div>
+              <div class="fw-bold">{{ formatted_nota_credito }}{% if venta.nota_credito_usada %} ({{ venta.nota_credito_usada.codigo }}){% endif %}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted small">Total a pagar</div>
+              <div class="fw-bold">{{ formatted_total_a_pagar }}</div>
+            </div>
+          </div>
+          {% endif %}
+
+          {% if show_payment_breakdown and payment_breakdown %}
+          <div class="pf-section-label mt-3">Detalle de pagos</div>
+          <div class="table-responsive">
+            <table class="table admin-table align-middle mb-0" style="font-size:.85rem;">
+              <thead>
+                <tr>
+                  <th class="px-3 py-2">Método</th>
+                  <th class="px-3 py-2 text-end">Monto</th>
+                  <th class="px-3 py-2">Transacción</th>
+                  <th class="px-3 py-2">Banco</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in payment_breakdown %}
+                <tr>
+                  <td class="px-3 py-2">
+                    {{ p.metodo_display }}
+                    {% if p.nota_credito_codigo %}<div class="text-muted" style="font-size:.75rem;">({{ p.nota_credito_codigo }})</div>{% endif %}
+                  </td>
+                  <td class="px-3 py-2 text-end fw-bold">{{ p.formatted_monto }}</td>
+                  <td class="px-3 py-2 text-muted">{{ p.numero_transaccion|default:"—" }}</td>
+                  <td class="px-3 py-2 text-muted">{{ p.banco|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Productos vendidos -->
+    <div class="react-card p-0 overflow-hidden mb-3">
+      <div class="px-4 py-3 d-flex justify-content-between align-items-center"
+           style="background:#0f172a; border-radius:14px 14px 0 0;">
+        <span class="text-white fw-black small">Productos vendidos</span>
+        <span class="text-white opacity-75 small">{{ detalles|length }} ítem{% if detalles|length != 1 %}s{% endif %}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table admin-table align-middle mb-0" style="font-size:.875rem;">
+          <thead>
+            <tr>
+              <th class="px-4 py-2">Producto</th>
+              <th class="px-4 py-2 text-center">Cant.</th>
+              <th class="px-4 py-2 text-end">Precio unit.</th>
+              <th class="px-4 py-2 text-end">Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in detalles %}
+            <tr>
+              <td class="px-4 py-2 fw-bold">{{ item.producto.nombre }}</td>
+              <td class="px-4 py-2 text-center">{{ item.cantidad }}</td>
+              <td class="px-4 py-2 text-end">${{ item.precio_unitario|clp }}</td>
+              <td class="px-4 py-2 text-end fw-bold">{{ item.formatted_subtotal }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

@@ -13,7 +13,7 @@ class ProductForm(forms.ModelForm):
         fields = [
             'nombre', 'descripcion', 'producto_id', 'codigo_alternativo',
             'fecha_ingreso_producto', 'precio_compra', 'precio_venta',
-            'codigo_barras', 'permitir_venta_sin_stock', 'sucursal'
+            'codigo_barras', 'stock_minimo', 'permitir_venta_sin_stock', 'sucursal'
         ]
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
@@ -24,6 +24,7 @@ class ProductForm(forms.ModelForm):
             'precio_compra': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 2.500'}),
             'precio_venta': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 3.990'}),
             'codigo_barras': forms.TextInput(attrs={'class': 'form-control'}),
+            'stock_minimo': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'permitir_venta_sin_stock': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
@@ -47,6 +48,7 @@ class ProductForm(forms.ModelForm):
         self.fields['precio_compra'].label = 'PRECIO DE COMPRA'
         self.fields['precio_venta'].label = 'PRECIO DE VENTA'
         self.fields['codigo_barras'].label = 'CÓDIGO DE BARRAS (opcional)'
+        self.fields['stock_minimo'].label = 'STOCK MÍNIMO (alerta)'
         self.fields['sucursal'].label = 'SUCURSAL (opcional)'
         if self.instance is None or not self.instance.pk:
             self.fields['permitir_venta_sin_stock'].initial = True

@@ -944,14 +944,25 @@ def devolver_venta(request, venta_id):
     next_url = _safe_next_url('cashier_dashboard')
 
     caja_abierta = get_current_caja(request)
-    if not caja_abierta:
-        messages.error(request, 'Debes tener una caja abierta para procesar devoluciones.')
-        return redirect('cashier_dashboard')
+    is_admin = request.user.is_staff or request.user.is_superuser
 
-    # Regla mínima: la devolución debe ser en la misma sucursal de la venta
-    if venta.sucursal_id and caja_abierta.sucursal_id != venta.sucursal_id:
-        messages.warning(request, 'La devolución debe realizarse en la misma sucursal de la venta.')
-        return redirect(_safe_next_url('cashier_dashboard'))
+    if not caja_abierta:
+        if not is_admin:
+            messages.error(request, 'Debes tener una caja abierta para procesar devoluciones.')
+            return redirect('cashier_dashboard')
+        # Admin sin caja: usar la sucursal de la venta directamente
+        if not venta.sucursal:
+            messages.error(request, 'Esta venta no tiene sucursal asignada y no se puede procesar la devolución sin caja abierta.')
+            return redirect(_safe_next_url('reports:sales_history'))
+        sucursal_devolucion = venta.sucursal
+        admin_sin_caja = True
+    else:
+        # Con caja abierta: verificar misma sucursal
+        if venta.sucursal_id and caja_abierta.sucursal_id != venta.sucursal_id:
+            messages.warning(request, 'La devolución debe realizarse en la misma sucursal de la venta.')
+            return redirect(_safe_next_url('cashier_dashboard'))
+        sucursal_devolucion = caja_abierta.sucursal
+        admin_sin_caja = False
 
     detalles = list(venta.detalles.all())
     devueltos_por_producto = {
@@ -976,6 +987,8 @@ def devolver_venta(request, venta_id):
             'venta': venta,
             'lineas': lineas,
             'caja_abierta': caja_abierta,
+            'sucursal_devolucion': sucursal_devolucion,
+            'admin_sin_caja': admin_sin_caja,
             'next_url': next_url,
         })
 
@@ -1033,7 +1046,7 @@ def devolver_venta(request, venta_id):
     devolucion = Devolucion.objects.create(
         venta_original=venta,
         empleado=request.user,
-        sucursal=caja_abierta.sucursal,
+        sucursal=sucursal_devolucion,
         caja=caja_abierta,
         total=total,
         metodo_pago=metodo_pago,
@@ -1056,7 +1069,7 @@ def devolver_venta(request, venta_id):
         )
         if it['destino'] == 'stock':
             try:
-                it['producto'].incrementar_stock_en(caja_abierta.sucursal, int(it['cantidad']))
+                it['producto'].incrementar_stock_en(sucursal_devolucion, int(it['cantidad']))
             except Exception:
                 pass
 
@@ -1074,7 +1087,7 @@ def devolver_venta(request, venta_id):
 
         nc = NotaCredito.objects.create(
             codigo=codigo,
-            sucursal=caja_abierta.sucursal,
+            sucursal=sucursal_devolucion,
             monto_emitido=total,
             saldo=total,
             activa=True,
@@ -1083,21 +1096,21 @@ def devolver_venta(request, venta_id):
         devolucion.nota_credito = nc
         devolucion.save(update_fields=['nota_credito'])
 
-    # Actualizar métricas de caja (netas) para reflejar salida por devolución
-    try:
-        caja_locked = AperturaCierreCaja.objects.select_for_update().get(id=caja_abierta.id)
-        caja_locked.ventas_totales = _to_clp_pesos((caja_locked.ventas_totales or Decimal('0.00')) - total)
-        if metodo_pago == 'efectivo':
-            caja_locked.total_ventas_efectivo = _to_clp_pesos((caja_locked.total_ventas_efectivo or Decimal('0.00')) - total)
-        elif metodo_pago == 'debito':
-            caja_locked.total_ventas_debito = _to_clp_pesos((caja_locked.total_ventas_debito or Decimal('0.00')) - total)
-        elif metodo_pago == 'credito':
-            caja_locked.total_ventas_credito = _to_clp_pesos((caja_locked.total_ventas_credito or Decimal('0.00')) - total)
-        # Recalcular efectivo_final (efectivo inicial + neto efectivo)
-        caja_locked.efectivo_final = _to_clp_pesos((caja_locked.efectivo_inicial or Decimal('0.00')) + (caja_locked.total_ventas_efectivo or Decimal('0.00')))
-        caja_locked.save(update_fields=['ventas_totales', 'total_ventas_efectivo', 'total_ventas_debito', 'total_ventas_credito', 'efectivo_final'])
-    except Exception:
-        pass
+    # Actualizar métricas de caja (netas) solo si hay caja abierta
+    if caja_abierta:
+        try:
+            caja_locked = AperturaCierreCaja.objects.select_for_update().get(id=caja_abierta.id)
+            caja_locked.ventas_totales = _to_clp_pesos((caja_locked.ventas_totales or Decimal('0.00')) - total)
+            if metodo_pago == 'efectivo':
+                caja_locked.total_ventas_efectivo = _to_clp_pesos((caja_locked.total_ventas_efectivo or Decimal('0.00')) - total)
+            elif metodo_pago == 'debito':
+                caja_locked.total_ventas_debito = _to_clp_pesos((caja_locked.total_ventas_debito or Decimal('0.00')) - total)
+            elif metodo_pago == 'credito':
+                caja_locked.total_ventas_credito = _to_clp_pesos((caja_locked.total_ventas_credito or Decimal('0.00')) - total)
+            caja_locked.efectivo_final = _to_clp_pesos((caja_locked.efectivo_inicial or Decimal('0.00')) + (caja_locked.total_ventas_efectivo or Decimal('0.00')))
+            caja_locked.save(update_fields=['ventas_totales', 'total_ventas_efectivo', 'total_ventas_debito', 'total_ventas_credito', 'efectivo_final'])
+        except Exception:
+            pass
 
     messages.success(request, 'Devolución registrada correctamente.')
     # Redirect to the reporte_devolucion view, preserving the caller's `next` if present

@@ -4,6 +4,8 @@ import UploadReportBanner from '../components/UploadReportBanner';
 import AssignStockModal from '../components/AssignStockModal';
 import { formatCLP } from '../components/utils';
 
+type SucursalStock = { sucursal: string; cantidad: number };
+
 type ProductItem = {
   id: number;
   nombre: string;
@@ -13,6 +15,8 @@ type ProductItem = {
   precio_venta: string;
   stock: number;
   cantidad: number;
+  stock_minimo: number;
+  stocks_por_sucursal: SucursalStock[];
   permitir_venta_sin_stock: boolean;
   activo: boolean;
 };
@@ -31,6 +35,68 @@ function getReactContext() {
   return (window as any).__MOVOS_REACT_CONTEXT__ || {};
 }
 
+function stockStatus(stocks: SucursalStock[], minimo: number) {
+  if (!stocks.length) return null;
+  const min = Math.min(...stocks.map((s) => s.cantidad));
+  if (min === 0) return { label: 'Sin stock', cls: 'bg-red-100 text-red-700' };
+  if (minimo > 0 && min < minimo) return { label: 'Bajo', cls: 'bg-amber-100 text-amber-700' };
+  return { label: 'Normal', cls: 'bg-emerald-100 text-emerald-700' };
+}
+
+function StockCell({ stocks, minimo }: { stocks: SucursalStock[]; minimo: number }) {
+  const [pos, setPos] = useState<{ x: number; y: number; above: boolean } | null>(null);
+  const status = stockStatus(stocks, minimo);
+  if (!status) return <span className="text-slate-400 text-xs">—</span>;
+
+  const handleEnter = (e: React.MouseEvent<HTMLSpanElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const above = rect.bottom > window.innerHeight - 160;
+    setPos({
+      x: rect.right,
+      y: above ? rect.top : rect.bottom,
+      above,
+    });
+  };
+
+  return (
+    <>
+      <span
+        className={`cursor-default rounded-md px-2 py-0.5 text-xs font-black ${status.cls}`}
+        onMouseEnter={handleEnter}
+        onMouseLeave={() => setPos(null)}
+      >
+        {status.label}
+      </span>
+      {pos && (
+        <div
+          className="fixed z-[9999] min-w-[170px] rounded-xl border-2 border-black bg-white shadow-2xl text-xs overflow-hidden"
+          style={{
+            right: `${window.innerWidth - pos.x}px`,
+            ...(pos.above
+              ? { bottom: `${window.innerHeight - pos.y}px` }
+              : { top: `${pos.y + 4}px` }),
+          }}
+          onMouseEnter={() => {/* mantener visible si el cursor pasa al tooltip */}}
+        >
+          {stocks.map((s, i) => (
+            <div
+              key={i}
+              className={`flex items-center justify-between gap-4 px-3 py-2 ${i === 0 ? 'bg-slate-50' : ''} ${i < stocks.length - 1 ? 'border-b border-slate-100' : ''}`}
+            >
+              <span className={`truncate ${i === 0 ? 'font-black text-slate-800' : 'text-slate-500'}`}>{s.sucursal}</span>
+              <span className={`font-black tabular-nums shrink-0 ${
+                s.cantidad === 0 ? 'text-red-600' :
+                minimo > 0 && s.cantidad < minimo ? 'text-amber-600' :
+                'text-emerald-600'
+              }`}>{s.cantidad} u.</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function ProductsManagementPage() {
   const ctx = getReactContext();
   const user = ctx.user || {};
@@ -47,6 +113,9 @@ export default function ProductsManagementPage() {
   const [perPage, setPerPage] = useState(10);
   const [sortBy, setSortBy] = useState<string>('nombre');
   const [orderBy, setOrderBy] = useState<'asc'|'desc'>('asc');
+  const [hideInactive, setHideInactive] = useState<boolean>(
+    () => localStorage.getItem('products_hide_inactive') === '1'
+  );
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const selectAllRef = useRef<HTMLInputElement | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -60,7 +129,7 @@ export default function ProductsManagementPage() {
     last: 0,
   });
 
-  const load = async (nextPage: number, nextSearch: string, nextPerPage = perPage, nextSortBy = sortBy, nextOrder = orderBy) => {
+  const load = async (nextPage: number, nextSearch: string, nextPerPage = perPage, nextSortBy = sortBy, nextOrder = orderBy, nextHideInactive = hideInactive) => {
     try {
       setLoading(true);
       setError('');
@@ -70,6 +139,7 @@ export default function ProductsManagementPage() {
         search: nextSearch,
         sort_by: String(nextSortBy || 'nombre'),
         order: String(nextOrder || 'asc'),
+        hide_inactive: nextHideInactive ? '1' : '0',
       });
       const data = await apiGet<ProductsResponse>(`/products/api/products/?${qs.toString()}`);
       setItems(data.items || []);
@@ -84,7 +154,7 @@ export default function ProductsManagementPage() {
   };
 
   useEffect(() => {
-    load(1, '');
+    load(1, '', perPage, sortBy, orderBy, hideInactive);
   }, []);
 
   useEffect(() => {
@@ -110,7 +180,19 @@ export default function ProductsManagementPage() {
     const nextOrder = sortBy === field && orderBy === 'asc' ? 'desc' : 'asc';
     setSortBy(field);
     setOrderBy(nextOrder);
-    load(1, search, perPage, field, nextOrder);
+    load(1, search, perPage, field, nextOrder, hideInactive);
+  };
+
+  const sortIcon = (field: string) => {
+    if (sortBy !== field) return <span className="ml-1 opacity-30">↕</span>;
+    return <span className="ml-1">{orderBy === 'asc' ? '↑' : '↓'}</span>;
+  };
+
+  const toggleHideInactive = () => {
+    const next = !hideInactive;
+    setHideInactive(next);
+    localStorage.setItem('products_hide_inactive', next ? '1' : '0');
+    load(1, search, perPage, sortBy, orderBy, next);
   };
 
   const allSelected = useMemo(() => !!items.length && items.every((p) => selectedIds.has(p.id)), [items, selectedIds]);
@@ -286,6 +368,20 @@ export default function ProductsManagementPage() {
             >
               Buscar
             </button>
+
+            <button
+              type="button"
+              onClick={toggleHideInactive}
+              className={
+                'inline-flex items-center justify-center rounded-xl border-2 border-black px-4 py-2 text-sm font-black shadow ' +
+                (hideInactive
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-white text-slate-900')
+              }
+              title={hideInactive ? 'Mostrando solo activos — clic para mostrar todos' : 'Clic para ocultar deshabilitados'}
+            >
+              {hideInactive ? 'Solo activos' : 'Mostrar todos'}
+            </button>
           </div>
         </div>
 
@@ -305,7 +401,7 @@ export default function ProductsManagementPage() {
           </div>
         ) : null}
 
-        <div className="rounded-2xl border-2 border-black bg-slate-300 shadow-lg">
+        <div className="rounded-2xl border-2 border-black bg-slate-300 shadow-lg overflow-hidden">
           <div className="overflow-auto">
             <table className="min-w-full border-collapse text-sm text-slate-900">
               <thead className="bg-slate-200">
@@ -326,10 +422,10 @@ export default function ProductsManagementPage() {
                       aria-label="Seleccionar todo"
                     />
                   </th>
-                  <th onClick={() => changeSort('nombre') } className="border-b-2 border-black px-3 py-2 text-left font-black cursor-pointer">Nombre</th>
-                  <th onClick={() => changeSort('codigo1') } className="border-b-2 border-black px-3 py-2 text-left font-black cursor-pointer">Código</th>
+                  <th onClick={() => changeSort('nombre')} className="border-b-2 border-black px-3 py-2 text-left font-black cursor-pointer select-none">Nombre{sortIcon('nombre')}</th>
+                  <th onClick={() => changeSort('codigo1')} className="border-b-2 border-black px-3 py-2 text-left font-black cursor-pointer select-none">Código{sortIcon('codigo1')}</th>
+                  <th className="border-b-2 border-black px-3 py-2 text-right font-black">Stock</th>
                   <th className="border-b-2 border-black px-3 py-2 text-right font-black">Valor</th>
-                  <th onClick={() => changeSort('stock') } className="border-b-2 border-black px-3 py-2 text-right font-black cursor-pointer">Stock</th>
                   <th className="border-b-2 border-black px-3 py-2 text-left font-black">Estado</th>
                   <th className="border-b-2 border-black px-3 py-2 text-left font-black">Acciones</th>
                 </tr>
@@ -362,8 +458,10 @@ export default function ProductsManagementPage() {
                       </td>
                       <td className="border-b border-black/20 px-3 py-2">{p.nombre || '-'}</td>
                       <td className="border-b border-black/20 px-3 py-2">{p.producto_id}</td>
+                      <td className="border-b border-black/20 px-3 py-2 text-right">
+                        <StockCell stocks={p.stocks_por_sucursal ?? []} minimo={p.stock_minimo ?? 0} />
+                      </td>
                       <td className="border-b border-black/20 px-3 py-2 text-right">{renderClp(p.precio_venta)}</td>
-                      <td className="border-b border-black/20 px-3 py-2 text-right">{p.stock}</td>
                       <td className="border-b border-black/20 px-3 py-2">{p.activo ? 'Activo' : 'Deshabilitado'}</td>
                       <td className="border-b border-black/20 px-3 py-2">
                         <div className="flex flex-wrap gap-2">

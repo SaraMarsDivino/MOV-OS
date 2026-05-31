@@ -158,12 +158,13 @@ def create_or_edit_product(request, product_id=None):
         if '_stock_adjust' in request.POST:
             try:
                 sucursal_id = int(request.POST.get('sucursal_id'))
-                delta = int(request.POST.get('delta', 0))
+                nueva_cantidad = int(request.POST.get('nueva_cantidad', 0))
                 sucursal = get_object_or_404(Sucursal, id=sucursal_id)
                 ss, _ = StockSucursal.objects.get_or_create(
                     producto=product, sucursal=sucursal, defaults={'cantidad': 0}
                 )
-                ss.cantidad = max(0, (ss.cantidad or 0) + delta)
+                delta = nueva_cantidad - (ss.cantidad or 0)
+                ss.cantidad = max(0, nueva_cantidad)
                 ss.save()
                 AjusteStock.objects.create(
                     producto=product, sucursal=sucursal, cantidad_delta=delta,
@@ -1240,6 +1241,7 @@ def api_products_list(request):
     query = request.GET.get('search', '')
     sort_by = request.GET.get('sort_by', 'nombre')
     order = request.GET.get('order', 'asc')
+    hide_inactive = request.GET.get('hide_inactive', '0') == '1'
 
     allowed_sort_fields = {
         'nombre': 'nombre',
@@ -1254,6 +1256,8 @@ def api_products_list(request):
     }
 
     products = Product.objects.filter(build_product_search_q(query))
+    if hide_inactive:
+        products = products.filter(activo=True)
     if sort_by in allowed_sort_fields:
         field_to_sort = allowed_sort_fields[sort_by]
         if order == 'desc':
@@ -1278,8 +1282,22 @@ def api_products_list(request):
     except EmptyPage:
         products_page = paginator.page(paginator.num_pages)
 
+    # Prefetch stocks por sucursal para evitar N+1
+    from django.db.models import Prefetch
+    products_ids = [p.id for p in products_page.object_list]
+    stocks_qs = StockSucursal.objects.filter(
+        producto_id__in=products_ids
+    ).select_related('sucursal').order_by('cantidad')
+    stocks_by_product: dict = {}
+    for ss in stocks_qs:
+        stocks_by_product.setdefault(ss.producto_id, []).append({
+            'sucursal': ss.sucursal.nombre,
+            'cantidad': ss.cantidad or 0,
+        })
+
     items = []
     for p in products_page.object_list:
+        sucursal_stocks = stocks_by_product.get(p.id, [])
         items.append({
             'id': p.id,
             'nombre': p.nombre or '',
@@ -1289,6 +1307,8 @@ def api_products_list(request):
             'precio_venta': str(p.precio_venta or '0'),
             'stock': int(p.stock or 0),
             'cantidad': int(p.cantidad or 0),
+            'stock_minimo': int(p.stock_minimo or 0),
+            'stocks_por_sucursal': sucursal_stocks,
             'permitir_venta_sin_stock': bool(p.permitir_venta_sin_stock),
             'activo': bool(getattr(p, 'activo', True)),
         })
@@ -1303,3 +1323,29 @@ def api_products_list(request):
         'sort_by': sort_by,
         'order': order,
     })
+
+
+@login_required
+@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@require_http_methods(["GET"])
+def api_low_stock(request):
+    """Productos activos con al menos una sucursal por debajo de su stock_minimo."""
+    alerts = []
+    stocks = (
+        StockSucursal.objects
+        .select_related('producto', 'sucursal')
+        .filter(producto__activo=True)
+    )
+    for ss in stocks:
+        minimo = ss.producto.stock_minimo or 0
+        if minimo > 0 and (ss.cantidad or 0) < minimo:
+            alerts.append({
+                'producto_id': ss.producto.id,
+                'nombre': ss.producto.nombre or ss.producto.producto_id,
+                'sucursal': ss.sucursal.nombre,
+                'cantidad': ss.cantidad or 0,
+                'stock_minimo': minimo,
+                'edit_url': f'/products/edit/{ss.producto.id}/',
+            })
+    alerts.sort(key=lambda x: x['cantidad'])
+    return JsonResponse({'alerts': alerts})
