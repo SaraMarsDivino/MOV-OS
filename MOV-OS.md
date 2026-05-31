@@ -345,6 +345,10 @@ Hacer hard refresh en el navegador: **Ctrl + Shift + R**
 
 ## Historial de versiones
 
+### v0.8.1 (Mayo 2026) — Hotfix producción
+- **Migración faltante**: `0019_product_stock_minimo.py` — el campo `stock_minimo` existía en el modelo pero nunca tuvo migración. En producción causaba `OperationalError 500` en cualquier query a `Product`.
+- **Loop infinito frontend corregido**: `looksLikeSessionExpired` / `isSessionExpired` en `App.tsx` y `lib/api.ts` trataban CUALQUIER respuesta HTML como sesión expirada (incluyendo errores 500), lo que causaba el ciclo `admin_dashboard → /login/ → admin_dashboard`. Ahora solo se redirige al login cuando `status === 200` con HTML (redirect seguido por fetch). Los errores 500 muestran un mensaje en pantalla.
+
 ### v0.8 (Mayo 2026)
 - Stock mínimo por producto: campo `stock_minimo` + alerta en Admin Dashboard (panel ámbar con lista de productos críticos)
 - Lista de productos: columna Stock con estado semántico (Normal/Bajo/Sin stock) + tooltip hover por sucursal; filtro "Solo activos" persistente; ordenamiento con indicadores ↑↓; esquinas redondeadas corregidas
