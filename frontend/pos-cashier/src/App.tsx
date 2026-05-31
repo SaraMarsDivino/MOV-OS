@@ -306,7 +306,7 @@ export default function App() {
       }
       if (!res.ok || !ct.includes('application/json')) {
         // eslint-disable-next-line no-alert
-        alert('Sesion expirada o respuesta invalida. Recarga la pagina.');
+        alert(`Error al buscar productos (${res.status}). Recarga la página.`);
         return;
       }
       const data = (await res.json().catch(() => null)) as null | { productos: BackendProduct[] };
@@ -340,7 +340,7 @@ export default function App() {
         }
         if (!res.ok || !ct.includes('application/json')) {
           // eslint-disable-next-line no-alert
-          alert('Sesion expirada o respuesta invalida. Recarga la pagina.');
+          alert(`Error al buscar productos (${res.status}). Recarga la página.`);
           return;
         }
         const data = (await res.json().catch(() => null)) as null | { productos: BackendProduct[] };
@@ -924,8 +924,9 @@ function getCookie(name: string): string {
 
 function looksLikeSessionExpired(status: number, ct: string): boolean {
   if (status === 401 || status === 403) return true;
-  // Django often serves login/forbidden pages as HTML when auth/session is gone.
-  return ct.includes('text/html');
+  // status 200 with HTML = fetch followed a redirect to the login page
+  // status 5xx with HTML = server error, NOT a session issue
+  return status === 200 && ct.includes('text/html');
 }
 
 async function csrfFetchJson(
