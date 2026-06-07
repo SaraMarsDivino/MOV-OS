@@ -696,16 +696,7 @@ def cashier_dashboard(request):
                         pid = int(item.get('producto_id'))
                         producto = products_map[pid]
                         cantidad = int(item.get('cantidad', 1))
-                        if producto.sucursal_id:
-                            producto.decrementar_stock_en(caja_abierta.sucursal, cantidad)
-                        else:
-                            try:
-                                nuevo_stock = max(0, (producto.stock or 0) - cantidad)
-                                if nuevo_stock != (producto.stock or 0):
-                                    producto.stock = nuevo_stock
-                                    producto.save(update_fields=['stock'])
-                            except Exception:
-                                pass
+                        producto.decrementar_stock_en(caja_abierta.sucursal, cantidad)
                         VentaDetalle.objects.create(
                             venta=venta,
                             producto=producto,
@@ -812,17 +803,7 @@ def cashier_dashboard(request):
                     pid = int(item.get('producto_id'))
                     producto = products_map[pid]
                     cantidad = int(item.get('cantidad', 1))
-                    if producto.sucursal_id:
-                        producto.decrementar_stock_en(caja_abierta.sucursal, cantidad)
-                    else:
-                        # Legacy stock field: hemos bloqueado la fila con select_for_update, así que el decremento es seguro
-                        try:
-                            nuevo_stock = max(0, (producto.stock or 0) - cantidad)
-                            if nuevo_stock != (producto.stock or 0):
-                                producto.stock = nuevo_stock
-                                producto.save(update_fields=['stock'])
-                        except Exception:
-                            pass
+                    producto.decrementar_stock_en(caja_abierta.sucursal, cantidad)
                     VentaDetalle.objects.create(
                         venta=venta,
                         producto=producto,
@@ -1730,6 +1711,15 @@ def agregar_al_carrito(request):
 @login_required
 def listar_carrito(request):
     carrito = request.session.get('carrito', [])
+    caja_abierta = get_current_caja(request)
+    if caja_abierta and caja_abierta.sucursal_id and carrito:
+        product_ids = [item['producto_id'] for item in carrito if 'producto_id' in item]
+        products = {p.id: p for p in Product.objects.filter(id__in=product_ids, activo=True)}
+        for item in carrito:
+            pid = item.get('producto_id')
+            if pid and pid in products:
+                item['stock'] = products[pid].stock_en(caja_abierta.sucursal)
+                item['permitir_venta_sin_stock'] = products[pid].permitir_venta_sin_stock_en(caja_abierta.sucursal)
     return JsonResponse({'carrito': carrito})
 
 @login_required
