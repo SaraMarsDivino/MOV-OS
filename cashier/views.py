@@ -1686,11 +1686,12 @@ def agregar_al_carrito(request):
         found = False
         for item in carrito:
             if item['producto_id'] == producto.id:
-                # Si ya existe en el carrito, incrementar en 1
-                try:
-                    item['cantidad'] = int(item.get('cantidad', 0)) + 1
-                except Exception:
-                    item['cantidad'] = 1
+                nueva_cantidad = int(item.get('cantidad', 0)) + 1
+                if not allow_without_stock and nueva_cantidad > disponible:
+                    return JsonResponse({"error": f"Stock insuficiente. Disponible: {disponible}."}, status=400)
+                item['cantidad'] = nueva_cantidad
+                item['stock'] = disponible
+                item['permitir_venta_sin_stock'] = allow_without_stock
                 found = True
                 break
         if not found:
