@@ -2,7 +2,7 @@
 
 Repositorio: `D:\PROYECTOS PROGRAMADOR\MOV-OS-main`  
 Stack: Django 5 · Python 3.12 · React 18 · TypeScript · Tailwind CSS · Bootstrap 5 · PostgreSQL (prod) / SQLite (dev)  
-Versión actual: **0.8**
+Versión actual: **0.8.2**
 
 ---
 
@@ -95,7 +95,9 @@ Todos los montos son pesos chilenos (enteros, sin centavos).
 - **Fallback legacy**: `Product.stock` (cuando no existe StockSucursal y `product.sucursal == current_sucursal`)
 - **SIEMPRE** usar: `product.stock_en(sucursal)`, `product.decrementar_stock_en()`, `product.incrementar_stock_en()`
 - **NUNCA** manipular campos raw directamente
-- `Product.stock_minimo` — umbral de alerta por producto (default 5). El endpoint `/products/api/low-stock/` devuelve todos los `StockSucursal` donde `cantidad < stock_minimo`. Se muestra en el Admin Dashboard.
+- `Product.stock_minimo` — umbral de alerta por producto (default 5).
+- `Product.permitir_venta_sin_stock` — **default `False`**. Cuando es `True` omite el chequeo de stock al agregar al carrito y al confirmar venta. Cambiar solo para productos sin stock físico (servicios, etc.).
+- El endpoint `/products/api/low-stock/` existe pero las alertas fueron **eliminadas del Admin Dashboard** en v0.8.2.
 
 ### Ajuste de stock (ficha de producto)
 - El formulario inline en `product_form.html` usa `name="nueva_cantidad"` (valor absoluto, no delta).
@@ -344,6 +346,14 @@ Hacer hard refresh en el navegador: **Ctrl + Shift + R**
 ---
 
 ## Historial de versiones
+
+### v0.8.2 (Junio 2026) — Corrección stock y carrito
+- **Bug crítico corregido**: el decremento de stock al vender no funcionaba para productos asignados via `StockSucursal` sin FK legacy (`producto.sucursal_id = None`). El cashier usaba `if producto.sucursal_id:` antes de llamar `decrementar_stock_en()`, cayendo al path legacy que no tocaba `StockSucursal`. Ahora siempre se llama `decrementar_stock_en()` directamente.
+- **Stock inconsistente en carrito corregido**: `listar_carrito` devolvía el stock guardado en sesión al momento de agregar (stale). Ahora refresca desde DB antes de responder.
+- **Límite de stock en carrito corregido**: `agregar_al_carrito` no chequeaba la cantidad acumulada al re-agregar un producto ya existente en el carrito. Ahora aplica el mismo control que `ajustar_cantidad`.
+- **`permitir_venta_sin_stock` cambiado a `False` por defecto**: todos los productos tenían este flag en `True` (default anterior), lo que desactivaba silenciosamente todos los controles de stock. Migración `0020` cambia el default y actualiza todos los registros existentes.
+- **Alertas de stock bajo eliminadas** del panel de administración (Admin Dashboard).
+- **Fix migración duplicada**: `0019_product_stock_minimo` conflictuaba con `0019_add_stock_minimo` ya aplicada. Se resuelve con `--fake` en el deploy.
 
 ### v0.8.1 (Mayo 2026) — Hotfix producción
 - **Migración faltante**: `0019_product_stock_minimo.py` — el campo `stock_minimo` existía en el modelo pero nunca tuvo migración. En producción causaba `OperationalError 500` en cualquier query a `Product`.
