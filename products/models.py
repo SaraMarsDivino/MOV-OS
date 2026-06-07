@@ -92,7 +92,7 @@ class Product(models.Model):
         verbose_name="Stock mínimo (alerta)",
         help_text="Cantidad por sucursal por debajo de la cual se genera alerta de stock bajo"
     )
-    permitir_venta_sin_stock = models.BooleanField(default=True, verbose_name="Permitir Venta sin Stock")
+    permitir_venta_sin_stock = models.BooleanField(default=False, verbose_name="Permitir Venta sin Stock")
     activo = models.BooleanField(default=True, db_index=True, verbose_name="Activo")
     sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE, related_name='productos', blank=True, null=True)
 
