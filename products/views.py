@@ -1236,6 +1236,22 @@ def sucursal_products(request, sucursal_id):
 @user_passes_test(_can_manage_products, login_url='cashier_dashboard')
 @login_required
 @require_http_methods(["GET"])
+def api_product_search(request):
+    """Lightweight product autocomplete — max 10 active results."""
+    q = request.GET.get('q', '').strip()
+    if not q:
+        return JsonResponse({'items': []})
+    items = list(
+        Product.objects.filter(build_product_search_q(q), activo=True)
+        .order_by('nombre')
+        .values('id', 'nombre', 'producto_id', 'codigo_barras')[:10]
+    )
+    return JsonResponse({'items': items})
+
+
+@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@login_required
+@require_http_methods(["GET"])
 def api_products_list(request):
     """JSON API for React products management (search + paging + sorting)."""
     query = request.GET.get('search', '')

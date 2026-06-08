@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
-interface Product {
+interface ProductResult {
   id: number;
   nombre: string;
   producto_id: string;
+  codigo_barras: string | null;
 }
 
 interface Sucursal {
@@ -76,13 +77,149 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ProductSearchBox({
+  selectedProduct,
+  onSelect,
+  onClear,
+}: {
+  selectedProduct: ProductResult | null;
+  onSelect: (p: ProductResult) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<ProductResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const search = useCallback(async (q: string) => {
+    if (!q.trim()) {
+      setResults([]);
+      setOpen(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const r = await fetch(`/products/api/product-search/?q=${encodeURIComponent(q)}`);
+      const d = await r.json();
+      const items: ProductResult[] = d.items ?? [];
+      setResults(items);
+      setOpen(items.length > 0);
+    } catch {
+      setResults([]);
+      setOpen(false);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setQuery(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => search(val), 300);
+  };
+
+  const handleSelect = (p: ProductResult) => {
+    onSelect(p);
+    setQuery('');
+    setResults([]);
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    onClear();
+    setQuery('');
+    setResults([]);
+    setOpen(false);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  if (selectedProduct) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border-2 border-slate-900 bg-slate-50 px-3 py-2.5">
+        <span className="flex-1 text-sm font-semibold text-slate-800 truncate">
+          {selectedProduct.nombre}
+          <span className="ml-2 text-xs font-normal text-slate-500">
+            {selectedProduct.producto_id}
+            {selectedProduct.codigo_barras ? ` · ${selectedProduct.codigo_barras}` : ''}
+          </span>
+        </span>
+        <button
+          type="button"
+          onClick={handleClear}
+          className="text-slate-400 hover:text-red-500 text-xl leading-none shrink-0 transition-colors"
+          aria-label="Cambiar producto"
+          title="Cambiar producto"
+        >
+          ×
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        ref={inputRef}
+        type="text"
+        autoComplete="off"
+        className="w-full rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm focus:border-slate-900 outline-none"
+        placeholder="Buscar por nombre, código o código de barras…"
+        value={query}
+        onChange={handleInput}
+        onFocus={() => results.length > 0 && setOpen(true)}
+      />
+      {loading && (
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none">
+          Buscando…
+        </span>
+      )}
+      {open && !loading && (
+        <div className="absolute z-50 mt-1 w-full rounded-xl border-2 border-slate-200 bg-white shadow-lg overflow-hidden">
+          {results.length === 0 ? (
+            <p className="text-xs text-slate-400 px-3 py-2.5">Sin resultados</p>
+          ) : (
+            results.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 transition-colors flex items-center gap-2 border-b border-slate-100 last:border-b-0"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => handleSelect(p)}
+              >
+                <span className="font-medium text-slate-800 truncate flex-1">{p.nombre}</span>
+                <span className="text-xs text-slate-400 shrink-0 tabular-nums">
+                  {p.producto_id}
+                  {p.codigo_barras ? ` · ${p.codigo_barras}` : ''}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function TransferStockPage() {
   const ctx = (
     window as unknown as {
-      __MOVOS_REACT_CONTEXT__?: { products?: Product[]; sucursales?: Sucursal[] };
+      __MOVOS_REACT_CONTEXT__?: { sucursales?: Sucursal[] };
     }
   ).__MOVOS_REACT_CONTEXT__ ?? {};
-  const products: Product[] = ctx.products ?? [];
   const sucursales: Sucursal[] = ctx.sucursales ?? [];
 
   const fromProduct = new URLSearchParams(window.location.search).get('from_product');
@@ -92,7 +229,7 @@ export default function TransferStockPage() {
     ? `/products/transfer/history/?from_product=${fromProduct}`
     : '/products/transfer/history/';
 
-  const [productoId, setProductoId] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState<ProductResult | null>(null);
   const [origenId, setOrigenId] = useState('');
   const [destinoId, setDestinoId] = useState('');
   const [cantidad, setCantidad] = useState('');
@@ -100,11 +237,14 @@ export default function TransferStockPage() {
   const [stockDestino, setStockDestino] = useState<number | null>(null);
   const [loadingOrigen, setLoadingOrigen] = useState(false);
   const [loadingDestino, setLoadingDestino] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [history, setHistory] = useState<Transfer[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+
+  const productoId = selectedProduct ? String(selectedProduct.id) : '';
 
   const fetchStock = useCallback(
     async (type: 'origen' | 'destino', pId: string, sId: string) => {
@@ -153,6 +293,11 @@ export default function TransferStockPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
+    setConfirming(false);
     setError('');
     setSuccess('');
     setSubmitting(true);
@@ -203,12 +348,11 @@ export default function TransferStockPage() {
         </a>
       </div>
 
-      {/* Two-column grid — equal widths, cards stretch to same height */}
+      {/* Two-column grid */}
       <div className="mx-auto max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
 
         {/* ── LEFT: form card ── */}
         <div className="rounded-2xl border-2 border-black bg-white shadow-sm overflow-hidden">
-          {/* Card header strip */}
           <div className="bg-slate-900 px-5 py-3">
             <h2 className="text-sm font-bold text-white">Nueva Transferencia</h2>
           </div>
@@ -217,19 +361,23 @@ export default function TransferStockPage() {
             {/* ── Section 1: Producto ── */}
             <div>
               <SectionLabel>Producto</SectionLabel>
-              <select
-                required
-                className="w-full rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm focus:border-slate-900 outline-none bg-white"
-                value={productoId}
-                onChange={(e) => setProductoId(e.target.value)}
-              >
-                <option value="">Seleccione un producto…</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre} — {p.producto_id}
-                  </option>
-                ))}
-              </select>
+              <ProductSearchBox
+                selectedProduct={selectedProduct}
+                onSelect={(p) => {
+                  setSelectedProduct(p);
+                  setError('');
+                  setSuccess('');
+                  setCantidad('');
+                }}
+                onClear={() => {
+                  setSelectedProduct(null);
+                  setStockOrigen(null);
+                  setStockDestino(null);
+                  setCantidad('');
+                  setError('');
+                  setSuccess('');
+                }}
+              />
             </div>
 
             <hr className="border-slate-100" />
@@ -289,19 +437,25 @@ export default function TransferStockPage() {
               <input
                 type="number"
                 min="1"
+                max={stockOrigen !== null ? stockOrigen : undefined}
                 required
                 className={`w-full rounded-xl border-2 px-3 py-2.5 text-sm outline-none ${
                   exceedsStock
-                    ? 'border-amber-400 focus:border-amber-500'
+                    ? 'border-red-400 focus:border-red-500'
                     : 'border-slate-200 focus:border-slate-900'
                 }`}
-                placeholder="Ej: 10"
+                placeholder={stockOrigen !== null ? `Máx. ${stockOrigen}` : 'Ej: 10'}
                 value={cantidad}
                 onChange={(e) => setCantidad(e.target.value)}
               />
+              {stockOrigen !== null && !exceedsStock && cantidadNum === 0 && (
+                <p className="text-xs text-slate-400 mt-1.5">
+                  Stock disponible en origen: {stockOrigen} u.
+                </p>
+              )}
               {exceedsStock && (
-                <p className="text-xs text-amber-600 mt-1.5 font-medium">
-                  ⚠ Supera el stock disponible en origen ({stockOrigen} u.)
+                <p className="text-xs text-red-600 mt-1.5 font-medium">
+                  ✕ Supera el stock disponible en origen ({stockOrigen} u.)
                 </p>
               )}
             </div>
@@ -318,20 +472,45 @@ export default function TransferStockPage() {
               </div>
             )}
 
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full rounded-xl bg-slate-900 text-white font-bold py-3 text-sm hover:bg-slate-700 disabled:opacity-50 transition-colors"
-            >
-              {submitting ? 'Transfiriendo…' : 'Transferir'}
-            </button>
+            {/* Submit / Confirm */}
+            {confirming ? (
+              <div className="rounded-xl border-2 border-amber-400 bg-amber-50 p-4 flex flex-col gap-3">
+                <p className="text-sm font-semibold text-amber-800 text-center">
+                  ¿Está seguro que desea transferir{' '}
+                  <span className="font-black">{cantidad} u.</span> de{' '}
+                  <span className="font-black">{selectedProduct?.nombre}</span>?
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 rounded-xl bg-slate-900 text-white font-bold py-2.5 text-sm hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                  >
+                    {submitting ? 'Transfiriendo…' : 'Sí, transferir'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(false)}
+                    className="flex-1 rounded-xl border-2 border-slate-300 bg-white text-slate-700 font-bold py-2.5 text-sm hover:bg-slate-100 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="submit"
+                disabled={submitting || exceedsStock || !selectedProduct}
+                className="w-full rounded-xl bg-slate-900 text-white font-bold py-3 text-sm hover:bg-slate-700 disabled:opacity-50 transition-colors"
+              >
+                Transferir
+              </button>
+            )}
           </form>
         </div>
 
         {/* ── RIGHT: history card ── */}
         <div className="rounded-2xl border-2 border-black bg-white shadow-sm overflow-hidden flex flex-col">
-          {/* Card header strip */}
           <div className="bg-slate-900 px-5 py-3 flex items-center justify-between">
             <h2 className="text-sm font-bold text-white">Historial reciente</h2>
             <a
@@ -356,11 +535,9 @@ export default function TransferStockPage() {
                   key={t.id}
                   className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex gap-3 items-start"
                 >
-                  {/* Quantity badge */}
                   <div className="rounded-lg bg-slate-900 text-white text-xs font-bold px-2.5 py-1.5 shrink-0 tabular-nums">
                     {t.cantidad} u.
                   </div>
-                  {/* Details */}
                   <div className="flex flex-col gap-0.5 min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate leading-snug">
                       {t.producto}
