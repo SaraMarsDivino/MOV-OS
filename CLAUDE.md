@@ -34,6 +34,14 @@ docker compose up          # Postgres + gunicorn, port 8000
 docker compose -f docker-compose.local.yml up   # local variant
 ```
 
+### Deploy a producción (en el servidor)
+```bash
+git pull origin main
+docker compose build --no-cache web
+docker compose up -d
+```
+> Siempre usar `build` y no solo `restart` — los assets estáticos van dentro de la imagen.
+
 ## Architecture
 
 ### Stack overview
