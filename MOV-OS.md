@@ -2,7 +2,7 @@
 
 Repositorio: `D:\PROYECTOS PROGRAMADOR\MOV-OS-main`  
 Stack: Django 5 · Python 3.12 · React 18 · TypeScript · Tailwind CSS · Bootstrap 5 · PostgreSQL (prod) / SQLite (dev)  
-Versión actual: **0.8.2**
+Versión actual: **0.8.3**
 
 ---
 
@@ -102,7 +102,8 @@ Todos los montos son pesos chilenos (enteros, sin centavos).
 ### Ajuste de stock (ficha de producto)
 - El formulario inline en `product_form.html` usa `name="nueva_cantidad"` (valor absoluto, no delta).
 - El view detecta `'_stock_adjust' in request.POST`, calcula `delta = nueva_cantidad - stock_actual` y lo registra en `AjusteStock`.
-- Redirige a `edit_product + ?stock_ok=1#stock-section` tras guardar.
+- Botón "Guardar": redirige a `edit_product + ?stock_ok=1#stock-section` tras guardar.
+- Botón "Guardar y volver a lista": detecta `'stock_save_and_list' in request.POST` y redirige a `product_management`.
 
 ### Permisos de productos
 ```python
@@ -141,10 +142,10 @@ Una `Venta` puede tener múltiples métodos de pago. `VentaPago` guarda cada tra
 ### Inventario / Productos (`/products/`)
 - CRUD de productos con precio compra/venta, IVA automático (19%)
 - Stock por sucursal (`StockSucursal`)
-- Transferencia de stock entre sucursales (UI React 2 columnas, stock en tiempo real, historial)
+- **Transferencia de stock multi-producto**: UI React permite agregar varios productos a una lista (con escaneo de código de barras), ver stock disponible en origen por item, ajustar cantidad de cada uno y transferir todo en un solo POST. La ruta (origen → destino) es fija para toda la transferencia. `api_do_transfer` acepta `{ origen_id, destino_id, items: [{producto_id, cantidad}] }` y valida todos los items antes de ejecutar cualquier cambio.
 - Ajuste manual de stock por valor absoluto (registra delta en `AjusteStock`)
 - `stock_minimo` por producto: define el umbral de alerta de stock bajo
-- Lista de productos: columna Stock con estado (Normal/Bajo/Sin stock) + tooltip por sucursal al hover; filtro "Solo activos" persistente en `localStorage`; ordenamiento por nombre y código con indicadores ↑↓
+- **Lista de productos** (`ProductsManagementPage`): columna Stock con estado (Normal/Bajo/Sin stock) + tooltip por sucursal al hover; filtro "Solo activos" persistente en `localStorage`; ordenamiento con indicadores ↑↓. Toolbar con acceso directo a: Crear producto, Subir Excel, **Transferir stock**, **Historial de ajustes**.
 - Importación masiva desde Excel (template descargable)
 - Exportación a Excel
 - Activar/desactivar productos
@@ -219,7 +220,7 @@ BI completo con los siguientes paneles:
 | Archivo | Uso |
 |---|---|
 | `static/css/pos_design_system.css` | Global — cargado en TODAS las páginas via base.html. Dark theme base + micro-interactions. CUIDADO: regla global `h1` cyan en styles.css |
-| `static/css/theme_react_shell.css` | Admin shell light theme — incluir en `{% block site_theme_styles %}` en páginas tipo admin |
+| `static/css/theme_react_shell.css` | Admin shell light theme — incluir en `{% block site_theme_styles %}` en páginas tipo admin. **OJO**: la regla `.react-forms input` excluye `[type="checkbox"]` y `[type="radio"]` para no romper su apariencia visual |
 | `static/css/styles.css` | Legacy global — tiene regla destructiva `h1-h5 { color: cyan }`. No modificar sin cuidado |
 | `frontend/pos-cashier/src/index.css` | Tailwind base para React |
 
@@ -346,6 +347,15 @@ Hacer hard refresh en el navegador: **Ctrl + Shift + R**
 ---
 
 ## Historial de versiones
+
+### v0.8.3 (Junio 2026) — Transferencia multi-producto y mejoras de gestión
+- **Transferencia de stock multi-producto**: `TransferStockPage` rediseñada para agregar N productos a una lista antes de transferir. Cada item muestra stock disponible en origen y campo de cantidad. Soporte de escaneo de código de barras (auto-add si coincide `codigo_barras` exacto). Confirmación muestra resumen completo. `api_do_transfer` acepta formato `items: [{producto_id, cantidad}]` y valida todos los items antes de tocar stock.
+- **Acceso rápido en gestión de productos**: botones "Transferir stock" e "Historial de ajustes" en la toolbar de `ProductsManagementPage`.
+- **Botón "Transferir stock" eliminado de la ficha de producto** (estaba en sección Stock por sucursal) — ahora el acceso es desde la lista.
+- **Botón "Guardar y volver a lista"** en sección Stock por sucursal de la ficha de producto (`product_form.html`).
+- **Fix checkbox "Permitir venta sin stock"**: `theme_react_shell.css` aplicaba `background: #ffffff !important` a todos los `input`, haciendo invisible el checkmark de Bootstrap (blanco sobre blanco). Corregido excluyendo `[type="checkbox"]` y `[type="radio"]` de esas reglas.
+- **Fix badge cantidad en historial de transferencias**: `color: #fff` en el badge oscuro de la columna Cantidad.
+- **Scroll interno** en lista de productos a transferir (`max-h-72`) e historial reciente (`max-h-[480px]`) para que la página no se estire.
 
 ### v0.8.2 (Junio 2026) — Corrección stock y carrito
 - **Bug crítico corregido**: el decremento de stock al vender no funcionaba para productos asignados via `StockSucursal` sin FK legacy (`producto.sucursal_id = None`). El cashier usaba `if producto.sucursal_id:` antes de llamar `decrementar_stock_en()`, cayendo al path legacy que no tocaba `StockSucursal`. Ahora siempre se llama `decrementar_stock_en()` directamente.
