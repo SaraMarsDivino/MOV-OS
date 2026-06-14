@@ -217,8 +217,10 @@
                             <label class="form-label mb-1 small fw-bold">Nueva cantidad</label>
                             <input type="number" class="form-control" name="nueva_cantidad" id="stockNuevaCantidad" min="0" placeholder="Ej: 25" required>
                         </div>
-                        <div class="col-md-3 d-grid">
-                            <button type="submit" name="_stock_adjust" value="1" class="btn">Guardar</button>
+                        <input type="hidden" name="_stock_adjust" value="1">
+                        <div class="col-md-3 d-grid gap-2">
+                            <button type="submit" class="btn">Guardar</button>
+                            <button type="submit" name="stock_save_and_list" value="1" class="btn">Guardar y volver a lista</button>
                         </div>
                     </div>
                 </form>

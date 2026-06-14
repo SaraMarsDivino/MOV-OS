@@ -80,7 +80,7 @@
 
 .react-forms .form-control,
 .react-forms .form-select,
-.react-forms input,
+.react-forms input:not([type="checkbox"]):not([type="radio"]),
 .react-forms select,
 .react-forms textarea{
   background: #ffffff !important;
@@ -92,7 +92,7 @@
 
 .react-forms .form-control:focus,
 .react-forms .form-select:focus,
-.react-forms input:focus,
+.react-forms input:not([type="checkbox"]):not([type="radio"]):focus,
 .react-forms select:focus,
 .react-forms textarea:focus{
   border-color: #000000 !important;
@@ -108,7 +108,7 @@
 
 .react-compact .react-forms .form-control,
 .react-compact .react-forms .form-select,
-.react-compact .react-forms input,
+.react-compact .react-forms input:not([type="checkbox"]):not([type="radio"]),
 .react-compact .react-forms select,
 .react-compact .react-forms textarea{
   font-size: 0.90rem;

@@ -257,6 +257,20 @@ export default function ProductsManagementPage() {
                 </button>
               )}
 
+              <a
+                href="/products/transfer/"
+                className="inline-flex items-center justify-center rounded-xl border-2 border-black bg-white px-3 py-2 text-sm font-bold text-slate-900 shadow"
+              >
+                Transferir stock
+              </a>
+
+              <a
+                href="/products/stock/adjust/history/"
+                className="inline-flex items-center justify-center rounded-xl border-2 border-black bg-white px-3 py-2 text-sm font-bold text-slate-900 shadow"
+              >
+                Historial de ajustes
+              </a>
+
                 <button
                   type="button"
                   disabled={selectedCount <= 0 || loading}

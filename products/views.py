@@ -175,6 +175,8 @@ def create_or_edit_product(request, product_id=None):
             except Exception as e:
                 stock_msg = None
                 messages.error(request, f'Error al ajustar stock: {e}')
+            if 'stock_save_and_list' in request.POST:
+                return redirect('product_management')
             from django.http import HttpResponseRedirect
             from django.urls import reverse
             ok = '?stock_ok=1' if stock_msg else ''
@@ -938,45 +940,74 @@ def transfer_stock(request):
 @login_required
 @require_http_methods(["POST"])
 def api_do_transfer(request):
-    """JSON endpoint to perform a stock transfer."""
+    """JSON endpoint to perform a stock transfer. Accepts single item or items array."""
     try:
         body = json.loads(request.body)
     except Exception:
         return JsonResponse({'error': 'JSON inválido.'}, status=400)
     try:
-        producto_id = int(body.get('producto_id'))
         origen_id = int(body.get('origen_id'))
         destino_id = int(body.get('destino_id'))
-        cantidad = int(body.get('cantidad'))
     except (TypeError, ValueError):
         return JsonResponse({'error': 'Datos inválidos.'}, status=400)
     if origen_id == destino_id:
         return JsonResponse({'error': 'El origen y destino no pueden ser la misma sucursal.'}, status=400)
-    if cantidad <= 0:
-        return JsonResponse({'error': 'La cantidad debe ser mayor a cero.'}, status=400)
-    producto = get_object_or_404(Product, id=producto_id)
+
+    # Support both multi-item (items array) and legacy single-item formats
+    raw_items = body.get('items')
+    if raw_items is None:
+        try:
+            raw_items = [{'producto_id': int(body.get('producto_id')), 'cantidad': int(body.get('cantidad'))}]
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'Datos inválidos.'}, status=400)
+    if not raw_items:
+        return JsonResponse({'error': 'No hay productos a transferir.'}, status=400)
+
     suc_origen = get_object_or_404(Sucursal, id=origen_id)
     suc_destino = get_object_or_404(Sucursal, id=destino_id)
-    disp = producto.stock_en(suc_origen)
-    allow_without_stock = producto.permitir_venta_sin_stock_en(suc_origen)
-    if disp < cantidad and not allow_without_stock:
-        return JsonResponse({'error': f'Stock insuficiente. Disponible: {disp}.'}, status=400)
-    ss_origen, _ = StockSucursal.objects.get_or_create(producto=producto, sucursal=suc_origen, defaults={'cantidad': 0})
-    ss_origen.cantidad = max(0, (ss_origen.cantidad or 0) - cantidad)
-    ss_origen.save()
-    ss_destino, _ = StockSucursal.objects.get_or_create(producto=producto, sucursal=suc_destino, defaults={'cantidad': 0})
-    ss_destino.cantidad = (ss_destino.cantidad or 0) + cantidad
-    ss_destino.save()
-    TransferenciaStock.objects.create(
-        producto=producto, origen=suc_origen, destino=suc_destino,
-        cantidad=cantidad, usuario=request.user if request.user.is_authenticated else None
-    )
-    return JsonResponse({
-        'ok': True,
-        'message': f'{cantidad} unidades de "{producto.nombre}" transferidas de {suc_origen.nombre} a {suc_destino.nombre}.',
-        'nuevo_stock_origen': ss_origen.cantidad,
-        'nuevo_stock_destino': ss_destino.cantidad,
-    })
+
+    # Validate all items before touching any stock
+    validated = []
+    for item in raw_items:
+        try:
+            producto_id = int(item.get('producto_id'))
+            cantidad = int(item.get('cantidad'))
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'Datos de item inválidos.'}, status=400)
+        if cantidad <= 0:
+            return JsonResponse({'error': 'La cantidad debe ser mayor a cero.'}, status=400)
+        producto = get_object_or_404(Product, id=producto_id)
+        disp = producto.stock_en(suc_origen)
+        if disp < cantidad and not producto.permitir_venta_sin_stock_en(suc_origen):
+            return JsonResponse({'error': f'Stock insuficiente para "{producto.nombre}". Disponible: {disp}.'}, status=400)
+        validated.append((producto, cantidad))
+
+    # Perform all transfers
+    results = []
+    for producto, cantidad in validated:
+        ss_origen, _ = StockSucursal.objects.get_or_create(producto=producto, sucursal=suc_origen, defaults={'cantidad': 0})
+        ss_origen.cantidad = max(0, (ss_origen.cantidad or 0) - cantidad)
+        ss_origen.save()
+        ss_destino, _ = StockSucursal.objects.get_or_create(producto=producto, sucursal=suc_destino, defaults={'cantidad': 0})
+        ss_destino.cantidad = (ss_destino.cantidad or 0) + cantidad
+        ss_destino.save()
+        TransferenciaStock.objects.create(
+            producto=producto, origen=suc_origen, destino=suc_destino,
+            cantidad=cantidad, usuario=request.user if request.user.is_authenticated else None
+        )
+        results.append({
+            'producto_id': producto.id,
+            'nombre': producto.nombre,
+            'nuevo_stock_origen': ss_origen.cantidad,
+            'nuevo_stock_destino': ss_destino.cantidad,
+        })
+
+    n = len(results)
+    if n == 1:
+        msg = f'{validated[0][1]} unidades de "{results[0]["nombre"]}" transferidas de {suc_origen.nombre} a {suc_destino.nombre}.'
+    else:
+        msg = f'{n} productos transferidos de {suc_origen.nombre} a {suc_destino.nombre}.'
+    return JsonResponse({'ok': True, 'message': msg, 'results': results})
 
 
 @user_passes_test(_can_manage_products, login_url='cashier_dashboard')
