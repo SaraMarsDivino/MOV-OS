@@ -20,6 +20,11 @@ class User(AbstractUser):
     # Permisos granulares controlados desde la interfaz de gestión de usuarios
     can_add_products = models.BooleanField(default=False, help_text="Puede agregar productos a sucursales seleccionadas")
     can_edit_products = models.BooleanField(default=False, help_text="Puede editar valores y atributos de productos")
+    can_export_products = models.BooleanField(default=False, help_text="Puede exportar el catálogo de productos a Excel")
+    can_disable_products = models.BooleanField(default=False, help_text="Puede habilitar/deshabilitar productos")
+    can_archive_products = models.BooleanField(default=False, help_text="Puede archivar/restaurar productos y ver la papelera")
+    can_transfer_stock = models.BooleanField(default=False, help_text="Puede transferir stock entre sucursales")
+    can_assign_stock = models.BooleanField(default=False, help_text="Puede asignar stock a productos en masa")
     can_view_analytics = models.BooleanField(default=False, help_text="Puede ver los reportes y analíticas del sistema")
 
     def __str__(self):

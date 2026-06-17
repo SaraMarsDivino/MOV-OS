@@ -24,4 +24,7 @@ urlpatterns = [
     path('devolucion/<int:venta_id>/', views.devolver_venta, name='devolver_venta'),
     path('devolucion/reporte/<int:devolucion_id>/', views.reporte_devolucion, name='reporte_devolucion'),
     path('borrar-historial-caja/', views.delete_all_sales_and_cash_history, name='delete_all_sales_and_cash_history'),
+    path('api/heartbeat/', views.offline_heartbeat, name='offline_heartbeat'),
+    path('api/offline/catalog-snapshot/', views.offline_catalog_snapshot, name='offline_catalog_snapshot'),
+    path('api/offline/sync-sale/', views.offline_sync_sale, name='offline_sync_sale'),
 ]

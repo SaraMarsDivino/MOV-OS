@@ -62,6 +62,19 @@ class AjusteStock(models.Model):
         signo = '+' if (self.cantidad_delta or 0) >= 0 else ''
         return f"{self.producto} @ {self.sucursal}: {signo}{self.cantidad_delta} ({self.fecha:%Y-%m-%d %H:%M})"
 
+class Categoria(models.Model):
+    nombre = models.CharField(max_length=100, unique=True, verbose_name="Nombre")
+    descripcion = models.TextField(blank=True, null=True, verbose_name="Descripción")
+
+    class Meta:
+        verbose_name = "Categoría"
+        verbose_name_plural = "Categorías"
+        ordering = ['nombre']
+
+    def __str__(self):
+        return self.nombre
+
+
 class Product(models.Model):
     """
     Modelo simplificado para un producto.
@@ -94,7 +107,9 @@ class Product(models.Model):
     )
     permitir_venta_sin_stock = models.BooleanField(default=False, verbose_name="Permitir Venta sin Stock")
     activo = models.BooleanField(default=True, db_index=True, verbose_name="Activo")
+    archivado = models.BooleanField(default=False, db_index=True, verbose_name="Archivado")
     sucursal = models.ForeignKey(Sucursal, on_delete=models.CASCADE, related_name='productos', blank=True, null=True)
+    categoria = models.ForeignKey('Categoria', on_delete=models.SET_NULL, null=True, blank=True, related_name='productos', verbose_name="Categoría")
 
     def __str__(self):
         return self.nombre if self.nombre else self.producto_id or f"Producto sin nombre ({self.pk})"

@@ -1,9 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CatalogPanel, { type Product } from './components/CatalogPanel';
 import CartPanel, { type CartItemModel } from './components/CartPanel';
 import PaymentPanel, { type PaymentMethod, type SaleType, type SplitPayment } from './components/PaymentPanel';
 import MobileBottomBar from './components/MobileBottomBar';
 import MobileCheckoutDrawer from './components/MobileCheckoutDrawer';
+import OfflineBanner from './components/OfflineBanner';
+import SyncModal from './components/SyncModal';
+import { useConnectionStatus, type SyncResult } from './hooks/useConnectionStatus';
+import {
+  saveCatalogSnapshot,
+  loadCatalogSnapshot,
+  queueSale,
+  type CatalogProduct,
+} from './lib/offlineDb';
 
 type BootstrapResponse = {
   user: { username: string };
@@ -28,6 +37,8 @@ type BackendProduct = {
   stock: number;
   permitir_venta_sin_stock: boolean;
   en_sucursal: boolean;
+  categoria_id?: number | null;
+  categoria_nombre?: string | null;
 };
 
 type BackendCartItem = {
@@ -65,6 +76,11 @@ export default function App() {
   const [sucursalName, setSucursalName] = useState<string>('');
   const [hasOpenCaja, setHasOpenCaja] = useState<boolean>(true);
   const [bootstrapDone, setBootstrapDone] = useState<boolean>(false);
+
+  const [offlineCatalog, setOfflineCatalog] = useState<CatalogProduct[]>([]);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const [syncResults, setSyncResults] = useState<SyncResult[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [saleReportOpen, setSaleReportOpen] = useState(false);
   const [saleReportVentaId, setSaleReportVentaId] = useState<number | null>(null);
@@ -232,6 +248,42 @@ export default function App() {
     setNoteCreditSaldo(null);
   };
 
+  const refreshCatalog = useCallback(async () => {
+    try {
+      const res = await fetch('/cashier/api/offline/catalog-snapshot/', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = (await res.json()) as { sucursal_id: number; sucursal_nombre: string; products: CatalogProduct[]; timestamp: string };
+      await saveCatalogSnapshot(data);
+      setOfflineCatalog(data.products || []);
+    } catch {
+      // Non-critical — cached catalog remains usable
+    }
+  }, []);
+
+  // Load cached catalog from IndexedDB on mount (available immediately if offline)
+  useEffect(() => {
+    loadCatalogSnapshot()
+      .then((snap) => { if (snap) setOfflineCatalog(snap.products); })
+      .catch(() => {});
+  }, []);
+
+  const { isOffline, pendingCount, syncAll, refreshPendingCount } = useConnectionStatus({
+    onCatalogRefresh: refreshCatalog,
+    onSyncComplete: (results) => {
+      setSyncResults(results);
+      setSyncModalOpen(true);
+    },
+  });
+
+  const handleManualSync = useCallback(async () => {
+    setIsSyncing(true);
+    try {
+      await syncAll();
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [syncAll]);
+
   useEffect(() => {
     // Bootstrap from Django (user/caja/sucursal + CSRF cookie)
     const run = async () => {
@@ -254,6 +306,8 @@ export default function App() {
           return;
         }
 
+        void refreshCatalog();
+
         const cartRes = await fetch('/cashier/listar-carrito/', { credentials: 'include' });
         const cartJson = await cartRes.json().catch(() => null);
         if (cartJson && Array.isArray(cartJson.carrito)) {
@@ -273,6 +327,30 @@ export default function App() {
       alert(`El producto '${product.name}' no tiene suficiente stock. Disponible: ${product.stock}.`);
       return;
     }
+
+    if (isOffline) {
+      setCartItems((prev) => {
+        const existing = prev.find((x) => x.id === product.id);
+        if (existing) {
+          return prev.map((x) =>
+            x.id === product.id ? { ...x, qty: x.qty + 1 } : x,
+          );
+        }
+        return [
+          ...prev,
+          {
+            id: product.id,
+            name: product.name,
+            unitPrice: product.price,
+            qty: 1,
+            stock: product.stock,
+            allowSaleWithoutStock: product.allowSaleWithoutStock,
+          },
+        ];
+      });
+      return;
+    }
+
     const res = await csrfFetchJson('/cashier/agregar-al-carrito/', {
       method: 'POST',
       body: JSON.stringify({ producto_id: product.id }),
@@ -295,6 +373,29 @@ export default function App() {
       setProducts([]);
       return;
     }
+
+    if (isOffline) {
+      const lower = q.toLowerCase();
+      const results = offlineCatalog
+        .filter(
+          (p) =>
+            p.nombre.toLowerCase().includes(lower) ||
+            String(p.id).includes(q),
+        )
+        .map((p) => ({
+          id: p.id,
+          name: p.nombre,
+          price: p.precio_venta,
+          stock: p.stock,
+          allowSaleWithoutStock: p.permitir_venta_sin_stock,
+          inSucursal: p.en_sucursal,
+          categoriaId: p.categoria_id,
+          categoriaNombre: p.categoria_nombre,
+        }));
+      setProducts(results);
+      return;
+    }
+
     void (async () => {
       const res = await fetch(`/cashier/buscar-producto/?q=${encodeURIComponent(q)}`, {
         credentials: 'include',
@@ -322,6 +423,8 @@ export default function App() {
           stock: p.stock,
           allowSaleWithoutStock: Boolean(p.permitir_venta_sin_stock),
           inSucursal: Boolean(p.en_sucursal),
+          categoriaId: p.categoria_id ?? null,
+          categoriaNombre: p.categoria_nombre ?? null,
         })),
       );
     })();
@@ -330,6 +433,26 @@ export default function App() {
   const onBarcodeEnter = () => {
     const q = barcodeQuery.trim();
     if (!q) return;
+
+    if (isOffline) {
+      const lower = q.toLowerCase();
+      const match = offlineCatalog.find(
+        (p) => p.nombre.toLowerCase().includes(lower) || String(p.id) === q,
+      );
+      if (match) {
+        void onAddProduct({
+          id: match.id,
+          name: match.nombre,
+          price: match.precio_venta,
+          stock: match.stock,
+          allowSaleWithoutStock: match.permitir_venta_sin_stock,
+          inSucursal: match.en_sucursal,
+        });
+      }
+      setBarcodeQuery('');
+      return;
+    }
+
     void (async () => {
       try {
         const res = await fetch(`/cashier/buscar-producto/?q=${encodeURIComponent(q)}`, { credentials: 'include' });
@@ -362,6 +485,21 @@ export default function App() {
   };
 
   const adjustQty = async (productId: number, delta: number) => {
+    if (isOffline) {
+      setCartItems((prev) =>
+        prev.reduce<CartItemModel[]>((acc, x) => {
+          if (x.id !== productId) {
+            acc.push(x);
+            return acc;
+          }
+          const newQty = x.qty + delta;
+          if (newQty > 0) acc.push({ ...x, qty: newQty });
+          return acc;
+        }, []),
+      );
+      return;
+    }
+
     const res = await csrfFetchJson('/cashier/ajustar-cantidad/', {
       method: 'POST',
       body: JSON.stringify({ producto_id: productId, cantidad: delta }),
@@ -416,6 +554,12 @@ export default function App() {
     if (cartItems.length === 0) {
       // eslint-disable-next-line no-alert
       alert('No hay productos en el carrito');
+      return;
+    }
+
+    if (isOffline && (noteCreditSaldo !== null || showNoteCreditSection)) {
+      // eslint-disable-next-line no-alert
+      alert('Las notas de crédito no están disponibles sin conexión. Espera a que vuelva la conexión para usar esta función.');
       return;
     }
 
@@ -546,6 +690,21 @@ export default function App() {
       }
     }
 
+    if (isOffline) {
+      const key = crypto.randomUUID();
+      await queueSale({
+        offline_idempotency_key: key,
+        offline_timestamp: new Date().toISOString(),
+        payload: { ...payload, offline_idempotency_key: key },
+      });
+      await refreshPendingCount();
+      setCartItems([]);
+      resetSaleUi();
+      // eslint-disable-next-line no-alert
+      alert('Venta guardada sin conexión. Se sincronizará automáticamente cuando vuelva la conexión.');
+      return;
+    }
+
     const res = await csrfFetchJson('/cashier/', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -601,6 +760,12 @@ export default function App() {
 
   return (
     <div className="h-full min-h-0 overflow-hidden bg-slate-200 text-slate-900 flex flex-col">
+      <OfflineBanner
+        isOffline={isOffline}
+        pendingCount={pendingCount}
+        onSync={handleManualSync}
+        syncing={isSyncing}
+      />
       <header className="px-4 py-2 border-b border-slate-300 bg-slate-200 flex-none">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -841,6 +1006,12 @@ export default function App() {
           </div>
         </div>
       ) : null}
+
+      <SyncModal
+        open={syncModalOpen}
+        results={syncResults}
+        onClose={() => { setSyncModalOpen(false); setSyncResults([]); }}
+      />
 
       {printPromptOpen && printPromptVentaId ? (
         <div className="fixed inset-0 z-50">

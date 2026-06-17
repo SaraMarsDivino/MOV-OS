@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger 
 from django.db import transaction
 from django.db.models import Q 
-from .models import Product, StockSucursal, TransferenciaStock, AjusteStock
+from .models import Product, StockSucursal, TransferenciaStock, AjusteStock, Categoria
 from .utils import build_product_search_q
 from .forms import ProductForm
 from django.contrib import messages
@@ -40,6 +40,36 @@ def _can_manage_products(user):
     return bool(getattr(user, 'can_add_products', False)) or bool(getattr(user, 'can_edit_products', False))
 
 
+def _can_export_products(user):
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    return user.is_staff or user.is_superuser or bool(getattr(user, 'can_export_products', False))
+
+
+def _can_transfer_stock(user):
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    return user.is_staff or user.is_superuser or bool(getattr(user, 'can_transfer_stock', False))
+
+
+def _can_archive_products(user):
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    return user.is_staff or user.is_superuser or bool(getattr(user, 'can_archive_products', False))
+
+
+def _can_disable_products(user):
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    return user.is_staff or user.is_superuser or bool(getattr(user, 'can_disable_products', False))
+
+
+def _can_assign_stock(user):
+    if not getattr(user, 'is_authenticated', False):
+        return False
+    return user.is_staff or user.is_superuser or bool(getattr(user, 'can_assign_stock', False))
+
+
 def _wants_json(request) -> bool:
     ct = (request.content_type or '').lower()
     accept = (request.headers.get('Accept') or '').lower()
@@ -71,7 +101,20 @@ def product_management(request):
                     'is_superuser': bool(getattr(request.user, 'is_superuser', False)),
                     'can_add_products': bool(getattr(request.user, 'can_add_products', False)),
                     'can_edit_products': bool(getattr(request.user, 'can_edit_products', False)),
+                    'can_export_products': bool(getattr(request.user, 'can_export_products', False)),
+                    'can_disable_products': bool(getattr(request.user, 'can_disable_products', False)),
+                    'can_archive_products': bool(getattr(request.user, 'can_archive_products', False)),
+                    'can_transfer_stock': bool(getattr(request.user, 'can_transfer_stock', False)),
+                    'can_assign_stock': bool(getattr(request.user, 'can_assign_stock', False)),
                 },
+                'sucursales': [
+                    {'id': s.id, 'nombre': s.nombre}
+                    for s in Sucursal.objects.all().order_by('nombre')
+                ],
+                'categorias': [
+                    {'id': c.id, 'nombre': c.nombre}
+                    for c in Categoria.objects.all().order_by('nombre')
+                ],
             }
         except Exception:
             ctx['react_context'] = {}
@@ -280,6 +323,24 @@ def set_product_active(request, product_id):
         return JsonResponse({'success': True, 'id': product.id, 'activo': product.activo, 'message': msg})
     messages.success(request, msg)
     return redirect('product_management')
+
+
+@user_passes_test(_can_archive_products, login_url='cashier_dashboard')
+@login_required
+@require_http_methods(["POST"])
+def archivar_producto(request, product_id):
+    """Archiva o restaura un producto. Archivado=True lo oculta de la lista pero conserva historial."""
+    product = get_object_or_404(Product, id=product_id)
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+        archivar = bool(payload.get('archivar', True))
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Payload inválido'}, status=400)
+    product.archivado = archivar
+    product.save(update_fields=['archivado'])
+    msg = 'Producto archivado.' if archivar else 'Producto restaurado.'
+    return JsonResponse({'success': True, 'id': product.id, 'archivado': product.archivado, 'message': msg})
+
 
 @user_passes_test(_is_staff, login_url='cashier_dashboard')
 @login_required
@@ -576,7 +637,7 @@ def delete_all_products(request):
     return render(request, 'products/delete_all_products_confirm.html')
 
 
-@user_passes_test(_is_staff, login_url='cashier_dashboard')
+@user_passes_test(_can_disable_products, login_url='cashier_dashboard')
 @login_required
 def bulk_delete_products(request):
     """
@@ -607,46 +668,80 @@ def bulk_delete_products(request):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     return JsonResponse({'success': False, 'error': 'Método no permitido'}, status=405)
 
-@user_passes_test(_is_staff, login_url='cashier_dashboard')
+@user_passes_test(_can_export_products, login_url='cashier_dashboard')
 @login_required
 def export_products_to_excel(request):
-    """
-    Vista para exportar todos los productos a un archivo Excel.
-    Se utiliza el formateo definido en el modelo, incluyendo los nuevos cálculos.
-    """
-    from openpyxl import Workbook
+    sucursal_id = request.GET.get('sucursal_id')
+    sucursal = None
+    if sucursal_id:
+        try:
+            sucursal = Sucursal.objects.get(pk=sucursal_id)
+        except Sucursal.DoesNotExist:
+            pass
+
+    if sucursal:
+        safe_nombre = re.sub(r'[^\w\-]', '_', sucursal.nombre)
+        filename = f"productos_{safe_nombre}.xlsx"
+        sheet_title = f"Productos de {sucursal.nombre}"[:31]
+        stock_header = f"STOCK {sucursal.nombre.upper()}"
+        sucursal_stock_ids = StockSucursal.objects.filter(sucursal=sucursal).values_list('producto_id', flat=True)
+        products = Product.objects.select_related('categoria').filter(
+            Q(id__in=sucursal_stock_ids) | Q(sucursal=sucursal)
+        ).order_by('nombre')
+    else:
+        filename = "export_productos.xlsx"
+        sheet_title = "Productos"
+        stock_header = "STOCK TOTAL"
+        products = Product.objects.select_related('categoria').all().order_by('nombre')
+
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="export_productos.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     workbook = Workbook()
     sheet = workbook.active
-    sheet.title = 'Productos'
+    sheet.title = sheet_title
 
-    # Encabezados actualizados
     headers = [
-        'NOMBRE', 'DESCRIPCION', 'CODIGO 1', 'CODIGO DE BARRAS',
-        'FECHA DE INGRESO', 'PRECIO DE COMPRA', 'PRECIO DE VENTA',
+        'NOMBRE', 'DESCRIPCION', 'CODIGO 1', 'CODIGO 2', 'CODIGO DE BARRAS',
+        'CATEGORÍA', 'FECHA DE INGRESO', 'PRECIO DE COMPRA', 'PRECIO DE VENTA',
         'PRECIO COMPRA SIN IVA', 'PRECIO VENTA SIN IVA',
-        'GANANCIA NETA', 'PORCENTAJE DE GANANCIA'
+        'GANANCIA NETA', '% GANANCIA',
+        stock_header, 'STOCK MÍNIMO',
+        'ACTIVO', 'PERMITE VENTA SIN STOCK',
     ]
-    sheet.append(headers)
 
-    products = Product.objects.all().order_by('nombre')
+    header_row = sheet.append(headers)
+    # Bold headers
+    bold = Font(bold=True)
+    for cell in sheet[1]:
+        cell.font = bold
+
     for product in products:
-        row_data = [
+        if sucursal:
+            stock_val = product.stock_en(sucursal)
+        else:
+            ss_total = sum(ss.cantidad for ss in product.stocksucursal_set.all())
+            stock_val = ss_total if ss_total else product.stock
+
+        sheet.append([
             product.nombre,
-            product.descripcion,
+            product.descripcion or '',
             product.producto_id,
-            product.codigo_barras,
+            getattr(product, 'codigo_alternativo', '') or '',
+            product.codigo_barras or '',
+            product.categoria.nombre if product.categoria_id else '',
             product.fecha_ingreso_producto,
             product.formatted_precio_compra,
             product.formatted_precio_venta,
             product.formatted_precio_compra_sin_iva,
             product.formatted_precio_venta_sin_iva,
             product.formatted_ganancia_neta,
-            product.porcentaje_ganancia  # O, si se tiene formateado: product.formatted_porcentaje_ganancia
-        ]
-        sheet.append(row_data)
+            product.porcentaje_ganancia,
+            stock_val,
+            product.stock_minimo,
+            'Sí' if product.activo else 'No',
+            'Sí' if product.permitir_venta_sin_stock else 'No',
+        ])
 
     workbook.save(response)
     return response
@@ -659,7 +754,7 @@ def get_page_range(page_obj, block_size=20):
     end = min(start + block_size - 1, total_pages)
     return range(start, end + 1)
 
-@user_passes_test(_is_staff, login_url='cashier_dashboard')
+@user_passes_test(_can_assign_stock, login_url='cashier_dashboard')
 @login_required
 def bulk_assign_products(request):
     """
@@ -874,7 +969,7 @@ def bulk_assign_products(request):
     }
     return render(request, 'products/bulk_assign_products.html', context)
 
-@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@user_passes_test(_can_transfer_stock, login_url='cashier_dashboard')
 @login_required
 def transfer_stock(request):
     """Transferir cantidad de un producto desde una sucursal origen a una sucursal destino."""
@@ -936,7 +1031,7 @@ def transfer_stock(request):
     return render(request, 'products/transfer_stock.html', context)
 
 
-@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@user_passes_test(_can_transfer_stock, login_url='cashier_dashboard')
 @login_required
 @require_http_methods(["POST"])
 def api_do_transfer(request):
@@ -1289,6 +1384,10 @@ def api_products_list(request):
     sort_by = request.GET.get('sort_by', 'nombre')
     order = request.GET.get('order', 'asc')
     hide_inactive = request.GET.get('hide_inactive', '0') == '1'
+    show_archivados = request.GET.get('show_archivados', '0') == '1'
+    filter_year = request.GET.get('year', '')
+    filter_month = request.GET.get('month', '')
+    filter_categoria = request.GET.get('categoria', '')
 
     allowed_sort_fields = {
         'nombre': 'nombre',
@@ -1302,9 +1401,30 @@ def api_products_list(request):
         'stock': 'stock',
     }
 
-    products = Product.objects.filter(build_product_search_q(query))
+    products = Product.objects.select_related('categoria').filter(build_product_search_q(query))
+    if show_archivados:
+        products = products.filter(archivado=True)
+    else:
+        products = products.filter(archivado=False)
     if hide_inactive:
         products = products.filter(activo=True)
+    if filter_year:
+        try:
+            products = products.filter(fecha_ingreso_producto__year=int(filter_year))
+        except (ValueError, TypeError):
+            pass
+    if filter_month:
+        try:
+            products = products.filter(fecha_ingreso_producto__month=int(filter_month))
+        except (ValueError, TypeError):
+            pass
+    if filter_categoria == 'sin_categoria':
+        products = products.filter(categoria__isnull=True)
+    elif filter_categoria:
+        try:
+            products = products.filter(categoria_id=int(filter_categoria))
+        except (ValueError, TypeError):
+            pass
     if sort_by in allowed_sort_fields:
         field_to_sort = allowed_sort_fields[sort_by]
         if order == 'desc':
@@ -1345,6 +1465,9 @@ def api_products_list(request):
     items = []
     for p in products_page.object_list:
         sucursal_stocks = stocks_by_product.get(p.id, [])
+        fecha_str = None
+        if p.fecha_ingreso_producto:
+            fecha_str = p.fecha_ingreso_producto.strftime('%d/%m/%Y')
         items.append({
             'id': p.id,
             'nombre': p.nombre or '',
@@ -1358,6 +1481,10 @@ def api_products_list(request):
             'stocks_por_sucursal': sucursal_stocks,
             'permitir_venta_sin_stock': bool(p.permitir_venta_sin_stock),
             'activo': bool(getattr(p, 'activo', True)),
+            'archivado': bool(getattr(p, 'archivado', False)),
+            'fecha_ingreso': fecha_str,
+            'categoria_id': p.categoria_id,
+            'categoria_nombre': p.categoria.nombre if p.categoria_id else None,
         })
 
     return JsonResponse({
@@ -1396,3 +1523,75 @@ def api_low_stock(request):
             })
     alerts.sort(key=lambda x: x['cantidad'])
     return JsonResponse({'alerts': alerts})
+
+
+@user_passes_test(_is_staff, login_url='cashier_dashboard')
+@login_required
+def categories_management(request):
+    ctx = {}
+    if getattr(settings, 'DEBUG', False):
+        vite_url = vite_dev_server_url_if_up()
+        if vite_url:
+            ctx['vite_dev_server_url'] = vite_url
+    return render(request, 'products/react_categories.html', ctx)
+
+
+@login_required
+@user_passes_test(_can_manage_products, login_url='cashier_dashboard')
+@require_http_methods(["GET"])
+def api_categorias_list(request):
+    cats = list(Categoria.objects.values('id', 'nombre', 'descripcion').order_by('nombre'))
+    for cat in cats:
+        cat['product_count'] = Product.objects.filter(categoria_id=cat['id']).count()
+    return JsonResponse({'items': cats})
+
+
+@login_required
+@user_passes_test(_is_staff, login_url='cashier_dashboard')
+@require_http_methods(["POST"])
+def api_categoria_create(request):
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+        nombre = (payload.get('nombre') or '').strip()
+        descripcion = (payload.get('descripcion') or '').strip() or None
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Payload inválido'}, status=400)
+    if not nombre:
+        return JsonResponse({'success': False, 'error': 'El nombre es requerido.'}, status=400)
+    if Categoria.objects.filter(nombre__iexact=nombre).exists():
+        return JsonResponse({'success': False, 'error': 'Ya existe una categoría con ese nombre.'}, status=400)
+    cat = Categoria.objects.create(nombre=nombre, descripcion=descripcion)
+    return JsonResponse({'success': True, 'item': {'id': cat.id, 'nombre': cat.nombre, 'descripcion': cat.descripcion or '', 'product_count': 0}})
+
+
+@login_required
+@user_passes_test(_is_staff, login_url='cashier_dashboard')
+@require_http_methods(["POST"])
+def api_categoria_update(request, cat_id):
+    cat = get_object_or_404(Categoria, id=cat_id)
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+        nombre = (payload.get('nombre') or '').strip()
+        descripcion = (payload.get('descripcion') or '').strip() or None
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Payload inválido'}, status=400)
+    if not nombre:
+        return JsonResponse({'success': False, 'error': 'El nombre es requerido.'}, status=400)
+    if Categoria.objects.filter(nombre__iexact=nombre).exclude(id=cat_id).exists():
+        return JsonResponse({'success': False, 'error': 'Ya existe una categoría con ese nombre.'}, status=400)
+    cat.nombre = nombre
+    cat.descripcion = descripcion
+    cat.save()
+    return JsonResponse({'success': True, 'item': {'id': cat.id, 'nombre': cat.nombre, 'descripcion': cat.descripcion or ''}})
+
+
+@login_required
+@user_passes_test(_is_staff, login_url='cashier_dashboard')
+@require_http_methods(["POST"])
+def api_categoria_delete(request, cat_id):
+    cat = get_object_or_404(Categoria, id=cat_id)
+    count = Product.objects.filter(categoria=cat).count()
+    if count > 0:
+        Product.objects.filter(categoria=cat).update(categoria=None)
+    cat.delete()
+    return JsonResponse({'success': True, 'unlinked': count})

@@ -1,5 +1,5 @@
 from django import forms
-from products.models import Product
+from products.models import Product, Categoria
 from sucursales.models import Sucursal
 from users.models import Vendedor
 from MOVOS.money import parse_clp_pesos
@@ -13,7 +13,7 @@ class ProductForm(forms.ModelForm):
         fields = [
             'nombre', 'descripcion', 'producto_id', 'codigo_alternativo',
             'fecha_ingreso_producto', 'precio_compra', 'precio_venta',
-            'codigo_barras', 'stock_minimo', 'permitir_venta_sin_stock', 'sucursal'
+            'codigo_barras', 'stock_minimo', 'permitir_venta_sin_stock', 'sucursal', 'categoria'
         ]
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
@@ -26,6 +26,7 @@ class ProductForm(forms.ModelForm):
             'codigo_barras': forms.TextInput(attrs={'class': 'form-control'}),
             'stock_minimo': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'permitir_venta_sin_stock': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'categoria': forms.Select(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -50,6 +51,9 @@ class ProductForm(forms.ModelForm):
         self.fields['codigo_barras'].label = 'CÓDIGO DE BARRAS (opcional)'
         self.fields['stock_minimo'].label = 'STOCK MÍNIMO (alerta)'
         self.fields['sucursal'].label = 'SUCURSAL (opcional)'
+        self.fields['categoria'].label = 'CATEGORÍA (opcional)'
+        self.fields['categoria'].queryset = Categoria.objects.all()
+        self.fields['categoria'].empty_label = '— Sin categoría —'
         if self.instance is None or not self.instance.pk:
             self.fields['permitir_venta_sin_stock'].initial = True
 

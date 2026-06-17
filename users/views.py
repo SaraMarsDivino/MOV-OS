@@ -257,6 +257,11 @@ def api_user_detail(request, user_id):
         'is_active': bool(getattr(u, 'is_active', True)),
         'can_add_products': bool(getattr(u, 'can_add_products', False)),
         'can_edit_products': bool(getattr(u, 'can_edit_products', False)),
+        'can_export_products': bool(getattr(u, 'can_export_products', False)),
+        'can_disable_products': bool(getattr(u, 'can_disable_products', False)),
+        'can_archive_products': bool(getattr(u, 'can_archive_products', False)),
+        'can_transfer_stock': bool(getattr(u, 'can_transfer_stock', False)),
+        'can_assign_stock': bool(getattr(u, 'can_assign_stock', False)),
         'can_view_analytics': bool(getattr(u, 'can_view_analytics', False)),
         'sucursales_autorizadas': _user_sucursal_ids(u),
     }
@@ -284,7 +289,11 @@ def api_user_update(request, user_id):
         target.is_superuser = bool(payload.get('is_superuser'))
         target.is_staff = bool(payload.get('is_superuser'))
         changed = True
-    for flag in ('can_add_products', 'can_edit_products', 'can_view_analytics'):
+    for flag in (
+        'can_add_products', 'can_edit_products', 'can_export_products',
+        'can_disable_products', 'can_archive_products', 'can_transfer_stock',
+        'can_assign_stock', 'can_view_analytics',
+    ):
         if flag in payload:
             setattr(target, flag, bool(payload.get(flag)))
             changed = True
@@ -329,6 +338,11 @@ def api_user_create(request):
     # flags
     user.can_add_products = bool(payload.get('can_add_products', False))
     user.can_edit_products = bool(payload.get('can_edit_products', False))
+    user.can_export_products = bool(payload.get('can_export_products', False))
+    user.can_disable_products = bool(payload.get('can_disable_products', False))
+    user.can_archive_products = bool(payload.get('can_archive_products', False))
+    user.can_transfer_stock = bool(payload.get('can_transfer_stock', False))
+    user.can_assign_stock = bool(payload.get('can_assign_stock', False))
     user.can_view_analytics = bool(payload.get('can_view_analytics', False))
     user.save()
     _sync_user_sucursales(user, payload.get('sucursales_autorizadas') or [])

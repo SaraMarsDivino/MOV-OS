@@ -15,6 +15,7 @@ import {
   SucursalCreatePage,
   SucursalEditPage,
   TransferStockPage,
+  CategoriesPage,
 } from './pages';
 
 declare global {
@@ -37,6 +38,7 @@ function AppRouter() {
   if (page === 'sucursal-create') return <SucursalCreatePage />;
   if (page === 'sucursal-edit') return <SucursalEditPage />;
   if (page === 'transfer-stock') return <TransferStockPage />;
+  if (page === 'categories-management') return <CategoriesPage />;
 
   return (
     <div className="min-h-[calc(100dvh-56px)] bg-slate-200 p-4">

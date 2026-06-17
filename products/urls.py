@@ -10,6 +10,7 @@ urlpatterns = [
     path('edit/<int:product_id>/', views.create_or_edit_product, name='edit_product'),
     path('delete/<int:product_id>/', views.delete_product, name='delete_product'),
     path('set-active/<int:product_id>/', views.set_product_active, name='set_product_active'),
+    path('archive/<int:product_id>/', views.archivar_producto, name='archivar_producto'),
     path('upload/', views.upload_products, name='upload_products'),
     path('template/', views.download_template, name='download_template'),
     path('delete-all/', views.delete_all_products, name='delete_all_products'),
@@ -25,4 +26,9 @@ urlpatterns = [
     path('stock/adjust/', views.ajustar_stock, name='ajustar_stock'),
     path('stock/adjust/history/', views.adjust_history, name='adjust_history'),
     path('api/low-stock/', views.api_low_stock, name='api_low_stock'),
+    path('categories/', views.categories_management, name='categories_management'),
+    path('api/categories/', views.api_categorias_list, name='api_categorias_list'),
+    path('api/categories/create/', views.api_categoria_create, name='api_categoria_create'),
+    path('api/categories/<int:cat_id>/update/', views.api_categoria_update, name='api_categoria_update'),
+    path('api/categories/<int:cat_id>/delete/', views.api_categoria_delete, name='api_categoria_delete'),
 ]

@@ -2,7 +2,7 @@
 
 Repositorio: `D:\PROYECTOS PROGRAMADOR\MOV-OS-main`  
 Stack: Django 5 · Python 3.12 · React 18 · TypeScript · Tailwind CSS · Bootstrap 5 · PostgreSQL (prod) / SQLite (dev)  
-Versión actual: **0.8.3**
+Versión actual: **0.8.4** ⚠️ *pendiente de deploy*
 
 ---
 
@@ -215,6 +215,10 @@ BI completo con los siguientes paneles:
 | `frontend/pos-cashier/src/components/PaymentPanel.tsx` | Panel de pago (simple y mixto) |
 | `frontend/pos-cashier/src/pages/TransferStockPage.tsx` | Transferencia de stock entre sucursales |
 | `frontend/pos-cashier/src/pages/MarketAnalysisPage.tsx` | Dashboard BI |
+| `frontend/pos-cashier/src/lib/offlineDb.ts` | IndexedDB — catálogo cacheado y cola de ventas offline |
+| `frontend/pos-cashier/src/hooks/useConnectionStatus.ts` | Heartbeat + lógica de reconexión y sync automático |
+| `frontend/pos-cashier/src/components/OfflineBanner.tsx` | Banner de estado offline / ventas pendientes |
+| `frontend/pos-cashier/src/components/SyncModal.tsx` | Modal resultado de sincronización |
 
 ### CSS
 | Archivo | Uso |
@@ -347,6 +351,38 @@ Hacer hard refresh en el navegador: **Ctrl + Shift + R**
 ---
 
 ## Historial de versiones
+
+### v0.8.4 (Junio 2026) — Modo offline con sincronización automática ⚠️ pendiente de deploy
+
+**Alcance**: el servidor (OrangePi en casa con UPS) siempre está disponible. El problema era caída de internet en los locales comerciales (2–15 min). Un terminal por sucursal, stock por sucursal → sin conflictos de stock. Pagos con tarjeta funcionan independiente (datáfono con chip/SIM).
+
+#### Nuevo en backend
+- `Venta.offline_idempotency_key` — UUID único por venta offline; migración `cashier/0010`
+- `GET /cashier/api/heartbeat/` — latido simple para detectar conectividad desde el frontend
+- `GET /cashier/api/offline/catalog-snapshot/` — devuelve todos los productos activos de la sucursal con stock, precio y categoría; el frontend lo cachea en IndexedDB
+- `POST /cashier/api/offline/sync-sale/` — endpoint idempotente; recibe el mismo payload que el cajero online + `offline_idempotency_key`; si ya existe esa clave, retorna éxito sin duplicar
+
+#### Nuevo en frontend
+- `src/lib/offlineDb.ts` — IndexedDB con 2 almacenes: `catalog` (snapshot) y `sales_queue` (ventas en cola)
+- `src/hooks/useConnectionStatus.ts` — heartbeat cada 10s; al detectar reconexión refresca catálogo + dispara sync automático
+- `src/components/OfflineBanner.tsx` — banner rojo cuando sin conexión; banner ámbar con botón "Sincronizar ahora" cuando hay ventas pendientes post-reconexión
+- `src/components/SyncModal.tsx` — modal con resultado de sincronización (éxitos + errores con detalle)
+- `src/App.tsx` — integración completa: búsqueda local en catálogo cacheado, carrito en estado React puro (sin session Django), confirmación de venta = encolar en IndexedDB con UUID
+
+#### Limitaciones conocidas / decididas
+- Notas de crédito (NC) **no disponibles offline** — no se puede validar saldo sin conexión; el UI bloquea la confirmación
+- Session Django no se extiende en modo offline — si la sesión expira durante el corte, el usuario debe re-loguearse al volver la conexión antes de sincronizar
+- Los precios registrados en `VentaDetalle.precio_unitario` al sincronizar son los precios actuales en DB (no los del snapshot), lo que es aceptable para cortes de 2–15 min
+
+#### Para deploy
+```bash
+# En el servidor OrangePi:
+git pull
+docker compose up --build -d
+docker compose exec web python manage.py migrate
+```
+
+---
 
 ### v0.8.3 (Junio 2026) — Transferencia multi-producto y mejoras de gestión
 - **Transferencia de stock multi-producto**: `TransferStockPage` rediseñada para agregar N productos a una lista antes de transferir. Cada item muestra stock disponible en origen y campo de cantidad. Soporte de escaneo de código de barras (auto-add si coincide `codigo_barras` exacto). Confirmación muestra resumen completo. `api_do_transfer` acepta formato `items: [{producto_id, cantidad}]` y valida todos los items antes de tocar stock.

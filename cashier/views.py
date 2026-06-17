@@ -17,6 +17,7 @@ from django.middleware.csrf import get_token
 import json
 import datetime
 import socket
+import uuid as _uuid_module
 from urllib.parse import urlparse
 from decimal import Decimal, ROUND_HALF_UP
 
@@ -1525,7 +1526,7 @@ def buscar_producto(request):
     # Resolver caja de forma consistente
     caja_abierta = get_current_caja(request)
     # Base query por texto
-    base_qs = Product.objects.filter(
+    base_qs = Product.objects.select_related('categoria').filter(
         Q(nombre__icontains=query) |
         Q(producto_id__icontains=query) |
         Q(codigo_barras__icontains=query) |
@@ -1553,9 +1554,269 @@ def buscar_producto(request):
             'precio_venta': str(p.precio_venta),
             'stock': stock_val,
             'permitir_venta_sin_stock': allow_without_stock,
-            'en_sucursal': en_sucursal
+            'en_sucursal': en_sucursal,
+            'categoria_id': p.categoria_id,
+            'categoria_nombre': p.categoria.nombre if p.categoria_id else None,
         })
     return JsonResponse({'productos': resultados})
+
+
+# ---------------------------------------------------------------------------
+# Offline-mode endpoints
+# ---------------------------------------------------------------------------
+
+@login_required
+def offline_heartbeat(request):
+    """Simple liveness check — frontend polls this to detect connectivity."""
+    return JsonResponse({'ok': True})
+
+
+@login_required
+def offline_catalog_snapshot(request):
+    """Returns all active products with stock for the user's current branch."""
+    from products.models import Product as _Product
+
+    caja_abierta = get_current_caja(request)
+    if not caja_abierta or not caja_abierta.sucursal_id:
+        return JsonResponse({'error': 'No hay caja abierta'}, status=400)
+
+    sucursal = caja_abierta.sucursal
+    products_qs = (
+        _Product.objects
+        .filter(activo=True, archivado=False)
+        .select_related('categoria')
+        .prefetch_related('stocks_por_sucursal')
+    )
+
+    items = []
+    for p in products_qs:
+        allow = p.permitir_venta_sin_stock_en(sucursal)
+        en_sucursal = p.asignado_a_sucursal(sucursal) or allow
+        items.append({
+            'id': p.id,
+            'nombre': p.nombre,
+            'precio_venta': int(_to_clp_pesos(p.precio_venta or Decimal('0'))),
+            'stock': p.stock_en(sucursal),
+            'permitir_venta_sin_stock': allow,
+            'en_sucursal': en_sucursal,
+            'categoria_id': p.categoria_id,
+            'categoria_nombre': p.categoria.nombre if p.categoria_id else None,
+        })
+
+    return JsonResponse({
+        'sucursal_id': sucursal.id,
+        'sucursal_nombre': sucursal.nombre,
+        'products': items,
+        'timestamp': timezone.now().isoformat(),
+    })
+
+
+@login_required
+@transaction.atomic
+def offline_sync_sale(request):
+    """
+    Idempotent endpoint to persist a sale queued while offline.
+    Accepts the same payload as POST /cashier/ plus offline_idempotency_key.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    data = _parse_body_json(request)
+    if not data:
+        return JsonResponse({'error': 'Payload inválido'}, status=400)
+
+    # --- Idempotency check ---
+    raw_key = data.get('offline_idempotency_key', '')
+    if not raw_key:
+        return JsonResponse({'error': 'offline_idempotency_key es requerido'}, status=400)
+    try:
+        idempotency_key = _uuid_module.UUID(str(raw_key))
+    except (ValueError, AttributeError):
+        return JsonResponse({'error': 'offline_idempotency_key inválido'}, status=400)
+
+    existing = Venta.objects.filter(offline_idempotency_key=idempotency_key).first()
+    if existing:
+        return JsonResponse({'success': True, 'venta_id': existing.id, 'already_synced': True})
+
+    # --- Resolve open caja ---
+    caja_abierta = get_current_caja(request)
+    if not caja_abierta:
+        return JsonResponse({'error': 'No hay caja abierta. Abre una caja antes de sincronizar.'}, status=400)
+
+    carrito = data.get('carrito', [])
+    if not carrito:
+        return JsonResponse({'error': 'Carrito vacío'}, status=400)
+
+    tipo_venta = data.get('tipo_venta', 'boleta')
+    if tipo_venta not in ('boleta', 'factura'):
+        tipo_venta = 'boleta'
+
+    # --- Validate and lock products ---
+    product_ids = []
+    for item in carrito:
+        try:
+            product_ids.append(int(item.get('producto_id')))
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'producto_id inválido en carrito'}, status=400)
+
+    products_qs = Product.objects.select_for_update().filter(id__in=product_ids, activo=True)
+    products_map = {p.id: p for p in products_qs}
+    if len(products_map) != len(set(product_ids)):
+        return JsonResponse({'error': 'Uno o más productos no encontrados o inactivos'}, status=400)
+
+    # Stock check
+    total = Decimal('0.00')
+    for item in carrito:
+        pid = int(item.get('producto_id'))
+        cantidad = int(item.get('cantidad', 1))
+        producto = products_map[pid]
+        stock_actual = producto.stock_en(caja_abierta.sucursal)
+        if not producto.permitir_venta_sin_stock_en(caja_abierta.sucursal) and stock_actual < cantidad:
+            return JsonResponse({
+                'error': f'Stock insuficiente para "{producto.nombre}". Disponible: {stock_actual}.'
+            }, status=400)
+        total += _to_clp_pesos(producto.precio_venta or Decimal('0')) * cantidad
+    total = _to_clp_pesos(total)
+
+    # --- Parse payment info (same as cashier_dashboard) ---
+    nota_credito_usada = None
+    monto_nota_credito = Decimal('0.00')
+    venta = None
+
+    pagos_raw = data.get('pagos')
+    if pagos_raw and isinstance(pagos_raw, list):
+        # Mixed payment path
+        parsed_pagos = []
+        for p in pagos_raw:
+            metodo = str(p.get('metodo', ''))
+            if metodo not in ('efectivo', 'debito', 'credito', 'transferencia'):
+                return JsonResponse({'error': f'Método de pago offline no soportado: {metodo}'}, status=400)
+            try:
+                monto = _to_clp_pesos(_parse_clp_decimal(str(p.get('monto', 0))))
+            except Exception:
+                return JsonResponse({'error': 'Monto de pago inválido'}, status=400)
+            tx = str(p.get('numero_transaccion') or '').strip()
+            bank = str(p.get('banco') or '').strip()
+            if metodo in ('debito', 'credito', 'transferencia') and not tx:
+                return JsonResponse({'error': 'Número de transacción requerido para pagos con tarjeta/transferencia.'}, status=400)
+            if metodo == 'transferencia' and not bank:
+                return JsonResponse({'error': 'Banco requerido para transferencia.'}, status=400)
+            parsed_pagos.append({'metodo': metodo, 'monto': monto, 'numero_transaccion': tx, 'banco': bank})
+
+        efectivo_row = next((p for p in parsed_pagos if p['metodo'] == 'efectivo'), None)
+        metodos_distintos = sorted({p['metodo'] for p in parsed_pagos})
+        forma_pago_final = metodos_distintos[0] if len(metodos_distintos) == 1 else 'mixto'
+        efectivo_monto = efectivo_row['monto'] if efectivo_row else Decimal('0')
+        cliente_paga_raw = data.get('cliente_paga', 0)
+        try:
+            cliente_paga_final = _to_clp_pesos(_parse_clp_decimal(str(cliente_paga_raw)))
+        except Exception:
+            cliente_paga_final = Decimal('0')
+        vuelto = _to_clp_pesos(max(Decimal('0'), cliente_paga_final - efectivo_monto)) if efectivo_monto > 0 else Decimal('0')
+
+        venta = Venta.objects.create(
+            empleado=request.user,
+            tipo_venta=tipo_venta,
+            forma_pago=forma_pago_final,
+            total=Decimal('0.00'),
+            cliente_paga=cliente_paga_final if efectivo_monto > 0 else Decimal('0'),
+            vuelto_entregado=vuelto,
+            numero_transaccion='',
+            banco='',
+            sucursal=caja_abierta.sucursal,
+            caja=caja_abierta,
+            offline_idempotency_key=idempotency_key,
+        )
+        for p in parsed_pagos:
+            VentaPago.objects.create(
+                venta=venta, metodo=p['metodo'], monto=p['monto'],
+                numero_transaccion=p.get('numero_transaccion') or '',
+                banco=p.get('banco') or '', nota_credito=None,
+            )
+    else:
+        # Simple payment path
+        forma_pago = str(data.get('forma_pago', 'efectivo'))
+        if forma_pago not in ('efectivo', 'debito', 'credito', 'transferencia'):
+            return JsonResponse({'error': f'Método de pago offline no soportado: {forma_pago}'}, status=400)
+
+        numero_transaccion = str(data.get('numero_transaccion') or '').strip()
+        banco = str(data.get('banco') or '').strip()
+        if forma_pago in ('debito', 'credito', 'transferencia') and not numero_transaccion:
+            return JsonResponse({'error': 'Número de transacción requerido.'}, status=400)
+        if forma_pago == 'transferencia' and not banco:
+            return JsonResponse({'error': 'Banco requerido para transferencia.'}, status=400)
+
+        cliente_paga_raw = data.get('cliente_paga', 0)
+        try:
+            cliente_paga_val = _to_clp_pesos(_parse_clp_decimal(str(cliente_paga_raw)))
+        except Exception:
+            cliente_paga_val = Decimal('0')
+
+        if forma_pago == 'efectivo' and cliente_paga_val < total:
+            return JsonResponse({'error': 'Pago en efectivo insuficiente.'}, status=400)
+
+        vuelto = _to_clp_pesos(max(Decimal('0'), cliente_paga_val - total)) if forma_pago == 'efectivo' else Decimal('0')
+
+        venta = Venta.objects.create(
+            empleado=request.user,
+            tipo_venta=tipo_venta,
+            forma_pago=forma_pago,
+            total=Decimal('0.00'),
+            cliente_paga=cliente_paga_val if forma_pago == 'efectivo' else Decimal('0'),
+            vuelto_entregado=vuelto,
+            numero_transaccion=numero_transaccion if forma_pago in ('debito', 'credito', 'transferencia') else '',
+            banco=banco if forma_pago == 'transferencia' else '',
+            sucursal=caja_abierta.sucursal,
+            caja=caja_abierta,
+            offline_idempotency_key=idempotency_key,
+        )
+        if total > Decimal('0'):
+            VentaPago.objects.create(
+                venta=venta, metodo=forma_pago, monto=total,
+                numero_transaccion=numero_transaccion if forma_pago in ('debito', 'credito', 'transferencia') else '',
+                banco=banco if forma_pago == 'transferencia' else '',
+                nota_credito=None,
+            )
+
+    # --- Create sale lines and decrement stock ---
+    for item in carrito:
+        pid = int(item.get('producto_id'))
+        producto = products_map[pid]
+        cantidad = int(item.get('cantidad', 1))
+        producto.decrementar_stock_en(caja_abierta.sucursal, cantidad)
+        VentaDetalle.objects.create(
+            venta=venta, producto=producto, cantidad=cantidad,
+            precio_unitario=producto.precio_venta,
+        )
+
+    venta.total = total
+    venta.save(update_fields=['total'])
+
+    # Best-effort caja aggregate update
+    try:
+        caja_locked = AperturaCierreCaja.objects.select_for_update().get(id=caja_abierta.id)
+        efectivo_monto_agg = Decimal('0')
+        debito_monto_agg = Decimal('0')
+        credito_monto_agg = Decimal('0')
+        for vp in venta.ventapago_set.all():
+            if vp.metodo == 'efectivo':
+                efectivo_monto_agg += vp.monto or Decimal('0')
+            elif vp.metodo == 'debito':
+                debito_monto_agg += vp.monto or Decimal('0')
+            elif vp.metodo == 'credito':
+                credito_monto_agg += vp.monto or Decimal('0')
+        caja_locked.ventas_totales = (caja_locked.ventas_totales or Decimal('0')) + total
+        caja_locked.total_ventas_efectivo = (caja_locked.total_ventas_efectivo or Decimal('0')) + efectivo_monto_agg
+        caja_locked.total_ventas_debito = (caja_locked.total_ventas_debito or Decimal('0')) + debito_monto_agg
+        caja_locked.total_ventas_credito = (caja_locked.total_ventas_credito or Decimal('0')) + credito_monto_agg
+        caja_locked.vuelto_entregado = (caja_locked.vuelto_entregado or Decimal('0')) + (venta.vuelto_entregado or Decimal('0'))
+        caja_locked.efectivo_final = (caja_locked.efectivo_inicial or Decimal('0')) + (caja_locked.total_ventas_efectivo or Decimal('0'))
+        caja_locked.save(update_fields=['ventas_totales', 'total_ventas_efectivo', 'total_ventas_debito', 'total_ventas_credito', 'vuelto_entregado', 'efectivo_final'])
+    except Exception:
+        pass
+
+    return JsonResponse({'success': True, 'venta_id': venta.id})
+
 
 @login_required
 def reporte_venta(request, venta_id):

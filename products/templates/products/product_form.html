@@ -128,6 +128,11 @@
                             {% if form.sucursal.errors %}<div class="text-danger small">{{ form.sucursal.errors.0 }}</div>{% endif %}
                         </div>
                         <div class="mb-3">
+                            {{ form.categoria.label_tag }}
+                            {{ form.categoria }}
+                            {% if form.categoria.errors %}<div class="text-danger small">{{ form.categoria.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="mb-3">
                             {{ form.stock_minimo.label_tag }}
                             {{ form.stock_minimo }}
                             <div class="form-text text-muted">Recibirás alerta cuando alguna sucursal baje de este número.</div>
