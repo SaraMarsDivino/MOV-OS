@@ -135,6 +135,7 @@ export default function ProductsManagementPage() {
   const [filterMonth, setFilterMonth] = useState('');
   const [exportSucursalId, setExportSucursalId] = useState<string>('');
   const [filterCategoria, setFilterCategoria] = useState<string>('');
+  const [filterSucursal, setFilterSucursal] = useState<string>('');
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const selectAllRef = useRef<HTMLInputElement | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -154,6 +155,7 @@ export default function ProductsManagementPage() {
     nextYear = filterYear,
     nextMonth = filterMonth,
     nextCategoria = filterCategoria,
+    nextSucursal = filterSucursal,
   ) => {
     try {
       setLoading(true);
@@ -169,6 +171,7 @@ export default function ProductsManagementPage() {
         ...(nextYear ? { year: nextYear } : {}),
         ...(nextMonth ? { month: nextMonth } : {}),
         ...(nextCategoria ? { categoria: nextCategoria } : {}),
+        ...(nextSucursal ? { sucursal: nextSucursal } : {}),
       });
       const data = await apiGet<ProductsResponse>(`/products/api/products/?${qs.toString()}`);
       setItems(data.items || []);
@@ -184,7 +187,7 @@ export default function ProductsManagementPage() {
   };
 
   useEffect(() => {
-    load(1, '', perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria);
+    load(1, '', perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal);
   }, []);
 
   useEffect(() => {
@@ -202,14 +205,14 @@ export default function ProductsManagementPage() {
   const triggerSearch = (raw: string) => {
     const next = (raw || '').trim();
     setSearch(next);
-    load(1, next, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria);
+    load(1, next, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal);
   };
 
   const changeSort = (field: string) => {
     const nextOrder = sortBy === field && orderBy === 'asc' ? 'desc' : 'asc';
     setSortBy(field);
     setOrderBy(nextOrder);
-    load(1, search, perPage, field, nextOrder, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria);
+    load(1, search, perPage, field, nextOrder, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal);
   };
 
   const sortIcon = (field: string) => {
@@ -221,37 +224,43 @@ export default function ProductsManagementPage() {
     const next = !hideInactive;
     setHideInactive(next);
     localStorage.setItem('products_hide_inactive', next ? '1' : '0');
-    load(1, search, perPage, sortBy, orderBy, next, showArchivados, filterYear, filterMonth, filterCategoria);
+    load(1, search, perPage, sortBy, orderBy, next, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal);
   };
 
   const toggleArchivados = () => {
     const next = !showArchivados;
     setShowArchivados(next);
-    load(1, search, perPage, sortBy, orderBy, hideInactive, next, filterYear, filterMonth, filterCategoria);
+    load(1, search, perPage, sortBy, orderBy, hideInactive, next, filterYear, filterMonth, filterCategoria, filterSucursal);
   };
 
   const applyDateFilter = (year: string, month: string) => {
     setFilterYear(year);
     setFilterMonth(month);
-    load(1, search, perPage, sortBy, orderBy, hideInactive, showArchivados, year, month, filterCategoria);
+    load(1, search, perPage, sortBy, orderBy, hideInactive, showArchivados, year, month, filterCategoria, filterSucursal);
   };
 
   const clearDateFilter = () => {
     setFilterYear('');
     setFilterMonth('');
-    load(1, search, perPage, sortBy, orderBy, hideInactive, showArchivados, '', '', filterCategoria);
+    load(1, search, perPage, sortBy, orderBy, hideInactive, showArchivados, '', '', filterCategoria, filterSucursal);
   };
 
   const clearAllFilters = () => {
     setFilterYear('');
     setFilterMonth('');
     setFilterCategoria('');
-    load(1, search, perPage, sortBy, orderBy, hideInactive, showArchivados, '', '', '');
+    setFilterSucursal('');
+    load(1, search, perPage, sortBy, orderBy, hideInactive, showArchivados, '', '', '', '');
   };
 
   const applyCategoria = (cat: string) => {
     setFilterCategoria(cat);
-    load(1, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, cat);
+    load(1, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, cat, filterSucursal);
+  };
+
+  const applySucursal = (suc: string) => {
+    setFilterSucursal(suc);
+    load(1, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, suc);
   };
 
   const allSelected = useMemo(() => !!items.length && items.every((p) => selectedIds.has(p.id)), [items, selectedIds]);
@@ -278,7 +287,7 @@ export default function ProductsManagementPage() {
     try {
       setLoading(true);
       await apiPost<{ success: boolean }>(`/products/archive/${p.id}/`, { archivar });
-      await load(page, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria);
+      await load(page, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal);
       showToast('success', archivar ? 'Producto archivado.' : 'Producto restaurado.');
     } catch (e: any) {
       setError(e?.message || 'Error');
@@ -434,7 +443,7 @@ export default function ProductsManagementPage() {
                             product_ids: Array.from(selectedIds),
                           });
                           const nextPage = selectedCount >= items.length && page > 1 ? Math.max(1, page - 1) : page;
-                          await load(nextPage, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria);
+                          await load(nextPage, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal);
                         } catch (e: any) {
                           setError(e?.message || 'Error');
                         } finally {
@@ -508,7 +517,7 @@ export default function ProductsManagementPage() {
                 const next = Number(e.target.value || 10);
                 const normalized = next === 25 || next === 50 ? next : 10;
                 setPerPage(normalized);
-                load(1, search, normalized, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria);
+                load(1, search, normalized, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal);
               }}
               aria-label="Elementos por página"
               className="rounded-xl border-2 border-black bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none"
@@ -522,6 +531,22 @@ export default function ProductsManagementPage() {
           {/* ── Filtros ───────────────────────────────────────────── */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Filtros</span>
+            {sucursales.length > 0 && (
+              <select
+                value={filterSucursal}
+                onChange={(e) => applySucursal(e.target.value)}
+                className={
+                  'rounded-xl border-2 border-black bg-white px-2 py-1.5 text-xs text-slate-900 shadow outline-none ' +
+                  (filterSucursal ? 'ring-2 ring-slate-900' : '')
+                }
+                aria-label="Filtrar por sucursal"
+              >
+                <option value="">Sucursal: todas</option>
+                {sucursales.map((s) => (
+                  <option key={s.id} value={String(s.id)}>{s.nombre}</option>
+                ))}
+              </select>
+            )}
             {categorias.length > 0 && (
               <select
                 value={filterCategoria}
@@ -567,7 +592,7 @@ export default function ProductsManagementPage() {
               <option value="">Mes: todos</option>
               {MESES.map((m, i) => <option key={i + 1} value={String(i + 1)}>{m}</option>)}
             </select>
-            {(hasDateFilter || filterCategoria) && (
+            {(hasDateFilter || filterCategoria || filterSucursal) && (
               <button
                 type="button"
                 onClick={clearAllFilters}
@@ -700,7 +725,7 @@ export default function ProductsManagementPage() {
                                     `/products/set-active/${p.id}/`,
                                     { active: desired },
                                   );
-                                  await load(page, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria);
+                                  await load(page, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal);
                                 } catch (e: any) {
                                   setError(e?.message || 'Error');
                                 } finally {
@@ -750,7 +775,7 @@ export default function ProductsManagementPage() {
               <button
                 type="button"
                 disabled={page <= 1 || loading}
-                onClick={() => load(Math.max(1, page - 1), search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria)}
+                onClick={() => load(Math.max(1, page - 1), search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal)}
                 className="inline-flex items-center justify-center rounded-xl border-2 border-black bg-white px-3 py-2 text-xs font-black shadow disabled:opacity-50"
               >
                 Anterior
@@ -758,7 +783,7 @@ export default function ProductsManagementPage() {
               <button
                 type="button"
                 disabled={page >= numPages || loading}
-                onClick={() => load(Math.min(numPages, page + 1), search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria)}
+                onClick={() => load(Math.min(numPages, page + 1), search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal)}
                 className="inline-flex items-center justify-center rounded-xl border-2 border-black bg-white px-3 py-2 text-xs font-black shadow disabled:opacity-50"
               >
                 Siguiente
@@ -774,7 +799,7 @@ export default function ProductsManagementPage() {
         onClose={() => setAssignOpen(false)}
         items={items.filter((p) => selectedIds.has(p.id))}
         onAssigned={async ({ assigned_count, failures }) => {
-          await load(page, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria);
+          await load(page, search, perPage, sortBy, orderBy, hideInactive, showArchivados, filterYear, filterMonth, filterCategoria, filterSucursal);
           setSelectedIds(new Set());
           showToast('success', `Asignados: ${assigned_count}. Fallos: ${failures?.length || 0}`);
         }}

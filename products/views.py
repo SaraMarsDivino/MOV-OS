@@ -1,4 +1,4 @@
-from MOVOS.money import parse_clp_pesos
+from MOVOS.money import parse_clp_pesos, parse_quantity_int
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger 
 from django.db import transaction
@@ -357,12 +357,14 @@ def download_template(request):
     sheet = workbook.active
     sheet.title = 'Productos'
 
-    # Nuevos encabezados que incluyen los cálculos
+    sucursales_tmpl = list(Sucursal.objects.filter(activo=True).order_by('nombre'))
+    # Encabezados fijos + columnas de stock dinámicas por sucursal
     headers = [
         'NOMBRE', 'DESCRIPCION (opcional)', 'CODIGO 1', 'CODIGO 2 (opcional)', 'CODIGO DE BARRAS (opcional)',
-        'FECHA DE INGRESO (opcional)', 'PRECIO DE COMPRA', 'PRECIO DE VENTA',
+        'FECHA DE INGRESO (DD/MM/AAAA)', 'PRECIO DE COMPRA', 'PRECIO DE VENTA',
         'PRECIO COMPRA SIN IVA', 'PRECIO VENTA SIN IVA',
-        'GANANCIA NETA', 'PORCENTAJE DE GANANCIA'
+        'GANANCIA NETA', 'PORCENTAJE DE GANANCIA',
+        *[f'STOCK {s.nombre.upper()}' for s in sucursales_tmpl],
     ]
     sheet.append(headers)
 
@@ -379,7 +381,9 @@ def download_template(request):
         cell.fill = header_fill
         cell.font = header_font
 
-    for idx, width in enumerate([30, 40, 20, 20, 25, 22, 18, 18, 24, 24, 18, 20], start=1):
+    base_widths = [30, 40, 20, 20, 25, 22, 18, 18, 24, 24, 18, 20]
+    sucursal_widths = [max(15, len(f'STOCK {s.nombre.upper()}') + 2) for s in sucursales_tmpl]
+    for idx, width in enumerate(base_widths + sucursal_widths, start=1):
         sheet.column_dimensions[get_column_letter(idx)].width = width
 
     workbook.save(response)
@@ -424,6 +428,17 @@ def upload_products(request):
             if missing:
                 messages.error(request, f'Faltan encabezados obligatorios: {", ".join(missing)}')
                 return redirect('upload_products')
+
+            # Detectar columnas STOCK [sucursal] en el archivo subido
+            sucursales_by_name = {s.nombre.upper().strip(): s for s in Sucursal.objects.filter(activo=True)}
+            stock_col_map = {}  # col_index → Sucursal
+            for _hk, _hi in header_map.items():
+                if _hk.startswith('STOCK '):
+                    _suc_key = _hk[6:].strip()
+                    _suc = sucursales_by_name.get(_suc_key)
+                    if _suc:
+                        stock_col_map[_hi] = _suc
+            stock_por_codigo = {}  # producto_id → {sucursal_id: (Sucursal, cantidad)}
 
             # Pre-cargar productos existentes para minimizar queries repetidas
             existing_map = {p.producto_id: p for p in Product.objects.filter(producto_id__isnull=False)}
@@ -496,10 +511,24 @@ def upload_products(request):
                         if isinstance(fecha_raw, (datetime, date)):
                             fecha_ingreso_producto = fecha_raw.date() if isinstance(fecha_raw, datetime) else fecha_raw
                         else:
+                            fecha_str = str(fecha_raw).split(' ')[0].strip()
                             try:
-                                fecha_ingreso_producto = parse_date(str(fecha_raw).split(' ')[0].strip())
+                                # Intento 1: YYYY-MM-DD (ISO, parse_date)
+                                result = parse_date(fecha_str)
+                                if result is None:
+                                    # Intento 2: DD/MM/YYYY o DD-MM-YYYY (formato chileno)
+                                    for sep in ('/', '-'):
+                                        parts = fecha_str.split(sep)
+                                        if len(parts) == 3 and len(parts[2]) == 4:
+                                            result = parse_date(f'{parts[2]}-{parts[1].zfill(2)}-{parts[0].zfill(2)}')
+                                            if result:
+                                                break
+                                if result:
+                                    fecha_ingreso_producto = result
+                                else:
+                                    warnings.append(f'Fila {row_idx}: Fecha "{fecha_raw}" no reconocida (use DD/MM/AAAA o AAAA-MM-DD) → se omite.')
                             except Exception:
-                                warnings.append(f'Fila {row_idx}: Fecha inválida "{fecha_raw}" -> se asigna nulo.')
+                                warnings.append(f'Fila {row_idx}: Fecha inválida "{fecha_raw}" → se omite.')
 
                     precio_compra = safe_decimal(get_val('PRECIO DE COMPRA'))
                     precio_venta = safe_decimal(get_val('PRECIO DE VENTA'))
@@ -514,6 +543,21 @@ def upload_products(request):
                         'precio_venta': precio_venta,
                         'permitir_venta_sin_stock': True,
                     }
+                    # Parsear cantidades de stock por sucursal
+                    for col_idx, suc_obj in stock_col_map.items():
+                        if col_idx < len(row_values):
+                            raw_stock = row_values[col_idx]
+                            if raw_stock is not None and str(raw_stock).strip():
+                                try:
+                                    cant = parse_quantity_int(raw_stock)
+                                    if cant > 0:
+                                        entry = stock_por_codigo.setdefault(producto_id_excel, {})
+                                        if suc_obj.id in entry:
+                                            entry[suc_obj.id] = (suc_obj, entry[suc_obj.id][1] + cant)
+                                        else:
+                                            entry[suc_obj.id] = (suc_obj, cant)
+                                except (ValueError, TypeError):
+                                    warnings.append(f'Fila {row_idx}: valor inválido en columna STOCK {suc_obj.nombre}')
                 except Exception as e:
                     errors.append(f'Fila {row_idx}: Error inesperado -> {e}')
 
@@ -550,6 +594,7 @@ def upload_products(request):
             created_codes = []
             updated_codes = []
             unchanged_count = len(unchanged_codes)
+            stock_assignments = 0
             if not dry_run:
                 from django.db import transaction
                 try:
@@ -564,6 +609,39 @@ def upload_products(request):
                             ], batch_size=500)
                             updated_count = len(to_update_products)
                             updated_codes = [p.producto_id for p in to_update_products]
+                        # Aplicar stock por sucursal
+                        if stock_por_codigo:
+                            # lookup: existing_map tiene todos los pre-existentes;
+                            # to_create tiene los nuevos (con pk tras bulk_create en postgres)
+                            prod_lookup = dict(existing_map)
+                            for p in to_create:
+                                if p.pk:
+                                    prod_lookup[p.producto_id] = p
+                            # fallback re-fetch por si bulk_create no devuelve pk
+                            sin_pk = [p.producto_id for p in to_create if not p.pk]
+                            if sin_pk:
+                                for p in Product.objects.filter(producto_id__in=sin_pk):
+                                    prod_lookup[p.producto_id] = p
+                            for codigo_s, suc_stocks in stock_por_codigo.items():
+                                prod = prod_lookup.get(codigo_s)
+                                if not prod or not prod.pk:
+                                    continue
+                                for suc_id, (sucursal, cantidad) in suc_stocks.items():
+                                    ss, _ = StockSucursal.objects.get_or_create(
+                                        producto=prod,
+                                        sucursal=sucursal,
+                                        defaults={'cantidad': 0}
+                                    )
+                                    ss.cantidad = (ss.cantidad or 0) + cantidad
+                                    ss.save(update_fields=['cantidad'])
+                                    AjusteStock.objects.create(
+                                        producto=prod,
+                                        sucursal=sucursal,
+                                        cantidad_delta=cantidad,
+                                        motivo='Importación masiva desde Excel',
+                                        usuario=request.user if request.user.is_authenticated else None
+                                    )
+                                    stock_assignments += 1
                 except Exception as e:
                     messages.error(request, f'Error de transacción: {e}')
                     return redirect('upload_products')
@@ -572,6 +650,7 @@ def upload_products(request):
                 updated_count = len(to_update_products)
                 created_codes = [p.producto_id for p in to_create]
                 updated_codes = [p.producto_id for p in to_update_products]
+                stock_assignments = sum(len(v) for v in stock_por_codigo.values())
 
             # Close workbook explicitly to free resources early
             try:
@@ -582,9 +661,11 @@ def upload_products(request):
             distinct_processed = len(parsed_map)
             total_processed = created_count + updated_count
             if dry_run:
-                messages.info(request, f'Dry-run: {total_processed} filas procesables (Nuevos: {created_count}, Modificados: {updated_count}).')
+                stock_dry_info = f', {stock_assignments} asignación(es) de stock' if stock_assignments else ''
+                messages.info(request, f'Dry-run: {total_processed} filas procesables (Nuevos: {created_count}, Modificados: {updated_count}{stock_dry_info}).')
             else:
-                messages.success(request, f'Productos creados: {created_count}, actualizados: {updated_count}. Total: {total_processed}.')
+                stock_info = f' Stock asignado en {stock_assignments} sucursal(es).' if stock_assignments else ''
+                messages.success(request, f'Productos creados: {created_count}, actualizados: {updated_count}. Total: {total_processed}.{stock_info}')
 
             # Compactar warnings y errores para no saturar UI
             if warnings:
@@ -608,6 +689,7 @@ def upload_products(request):
                 'errors': errors[:500],
                 'dry_run': dry_run,
                 'file_codes_sample': file_codes[:200],
+                'stock_assignments': stock_assignments,
             }
 
             # Redirigir a gestión si se ejecutó realmente
@@ -618,7 +700,9 @@ def upload_products(request):
             messages.error(request, f'Error general procesando el archivo: {e}')
             return redirect('upload_products')
 
-    return render(request, 'products/upload_products.html')
+    return render(request, 'products/upload_products.html', {
+        'sucursales': Sucursal.objects.filter(activo=True).order_by('nombre'),
+    })
 
 @user_passes_test(_is_staff, login_url='cashier_dashboard')
 @login_required
@@ -1388,6 +1472,7 @@ def api_products_list(request):
     filter_year = request.GET.get('year', '')
     filter_month = request.GET.get('month', '')
     filter_categoria = request.GET.get('categoria', '')
+    filter_sucursal = request.GET.get('sucursal', '')
 
     allowed_sort_fields = {
         'nombre': 'nombre',
@@ -1423,6 +1508,13 @@ def api_products_list(request):
     elif filter_categoria:
         try:
             products = products.filter(categoria_id=int(filter_categoria))
+        except (ValueError, TypeError):
+            pass
+    if filter_sucursal:
+        try:
+            suc_id = int(filter_sucursal)
+            stock_ids = StockSucursal.objects.filter(sucursal_id=suc_id).values_list('producto_id', flat=True)
+            products = products.filter(Q(id__in=stock_ids) | Q(sucursal_id=suc_id))
         except (ValueError, TypeError):
             pass
     if sort_by in allowed_sort_fields:

@@ -24,7 +24,9 @@ def parse_clp_decimal(value: Any) -> Decimal:
     if raw == '':
         raise ValueError('empty')
 
-    raw = raw.replace(' ', '')
+    raw = raw.replace(' ', '').replace('$', '').replace('CLP', '').replace('clp', '')
+    if raw == '':
+        raise ValueError('empty')
 
     has_dot = '.' in raw
     has_comma = ',' in raw
@@ -64,3 +66,20 @@ def to_clp_pesos(value: Any) -> Decimal:
 def parse_clp_pesos(value: Any) -> Decimal:
     """Parse a CLP-formatted amount and normalize to integer pesos."""
     return to_clp_pesos(parse_clp_decimal(value))
+
+
+def parse_quantity_int(value: Any) -> int:
+    """Parse a stock quantity (may be int, float, or text in Chilean number format) to a non-negative int.
+
+    Handles openpyxl text cells like "1.845" (Chilean thousands separator) correctly.
+    """
+    if value is None:
+        return 0
+    if isinstance(value, int):
+        return max(0, value)
+    if isinstance(value, float):
+        return max(0, int(round(value)))
+    try:
+        return max(0, int(parse_clp_pesos(value)))
+    except Exception:
+        return 0
