@@ -1776,6 +1776,7 @@ def sales_history(request):
     empleado_id = request.GET.get('empleado')
     sucursal_id = request.GET.get('sucursal')
     numero_transaccion = request.GET.get('numero_transaccion')
+    forma_pago = request.GET.get('forma_pago', '')
     page = request.GET.get('page', 1)
 
     per_page_options = [5, 10, 15, 20]
@@ -1808,29 +1809,53 @@ def sales_history(request):
             ventas = ventas.filter(empleado_id=empleado_id)
         except ValueError:
             ventas = Venta.objects.none()
-
     if sucursal_id:
         try:
             sucursal_id_int = int(sucursal_id)
             ventas = ventas.filter(sucursal_id=sucursal_id_int)
         except ValueError:
             ventas = Venta.objects.none()
-
     if numero_transaccion:
         numero_transaccion = (numero_transaccion or '').strip()
         if numero_transaccion:
             ventas = ventas.filter(numero_transaccion__icontains=numero_transaccion)
+    if forma_pago:
+        ventas = ventas.filter(forma_pago=forma_pago)
+
+    # Totales acumulados sobre el queryset completo (antes de paginar)
+    _zero = Decimal('0')
+    totals_agg = ventas.aggregate(
+        total_sum=Sum('total'),
+        count=Count('id'),
+        ef=Sum(Case(When(forma_pago='efectivo', then=F('total')), default=Value(0), output_field=DecimalField())),
+        db=Sum(Case(When(forma_pago='debito', then=F('total')), default=Value(0), output_field=DecimalField())),
+        cr=Sum(Case(When(forma_pago='credito', then=F('total')), default=Value(0), output_field=DecimalField())),
+        tr=Sum(Case(When(forma_pago='transferencia', then=F('total')), default=Value(0), output_field=DecimalField())),
+        mx=Sum(Case(When(forma_pago='mixto', then=F('total')), default=Value(0), output_field=DecimalField())),
+    )
+    totals = {
+        'count': totals_agg['count'] or 0,
+        'total_sum': "$" + format_clp(totals_agg['total_sum'] or _zero),
+        'efectivo': "$" + format_clp(totals_agg['ef'] or _zero),
+        'debito': "$" + format_clp(totals_agg['db'] or _zero),
+        'credito': "$" + format_clp(totals_agg['cr'] or _zero),
+        'transferencia': "$" + format_clp(totals_agg['tr'] or _zero),
+        'mixto': "$" + format_clp(totals_agg['mx'] or _zero),
+        'hay_mixto': bool(totals_agg['mx'] and totals_agg['mx'] > 0),
+    }
+
+    # Anotar devoluciones para badge
+    ventas = ventas.annotate(num_devoluciones=Count('devoluciones'))
 
     paginator = Paginator(ventas, per_page)
     sales_page = paginator.get_page(page)
     for sale in sales_page:
         sale.display_total = "$" + format_clp(sale.total)
+        sale.has_devolucion = sale.num_devoluciones > 0
+
     empleados = User.objects.all()
     sucursales = Sucursal.objects.all()
 
-    # Default visible dates only when user isn't searching by transaction number.
-    # If we auto-fill dates while searching, clicking "Filtrar" can unintentionally
-    # constrain results to today.
     if not numero_transaccion and not fecha_inicio and not fecha_fin:
         today = timezone.localdate()
         tomorrow = today + datetime.timedelta(days=1)
@@ -1848,7 +1873,98 @@ def sales_history(request):
         'sucursales': sucursales,
         'sucursal_id': sucursal_id if sucursal_id else None,
         'numero_transaccion': numero_transaccion,
+        'forma_pago': forma_pago,
+        'totals': totals,
     })
+
+
+@login_required
+@user_passes_test(_is_admin, login_url='cashier_dashboard')
+def export_sales_history_excel(request):
+    """Exporta el historial de ventas filtrado a Excel."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    empleado_id = request.GET.get('empleado')
+    sucursal_id = request.GET.get('sucursal')
+    numero_transaccion = (request.GET.get('numero_transaccion') or '').strip()
+    forma_pago = request.GET.get('forma_pago', '')
+
+    ventas = Venta.objects.select_related('empleado', 'sucursal').order_by('-fecha')
+
+    if fecha_inicio:
+        try:
+            ventas = ventas.filter(fecha__gte=timezone.make_aware(datetime.datetime.strptime(fecha_inicio, '%Y-%m-%d')))
+        except ValueError:
+            ventas = Venta.objects.none()
+    if fecha_fin:
+        try:
+            dt = timezone.make_aware(datetime.datetime.strptime(fecha_fin, '%Y-%m-%d'))
+            ventas = ventas.filter(fecha__lte=dt + datetime.timedelta(days=1, seconds=-1))
+        except ValueError:
+            ventas = Venta.objects.none()
+    if empleado_id:
+        try:
+            ventas = ventas.filter(empleado_id=int(empleado_id))
+        except ValueError:
+            ventas = Venta.objects.none()
+    if sucursal_id:
+        try:
+            ventas = ventas.filter(sucursal_id=int(sucursal_id))
+        except ValueError:
+            ventas = Venta.objects.none()
+    if numero_transaccion:
+        ventas = ventas.filter(numero_transaccion__icontains=numero_transaccion)
+    if forma_pago:
+        ventas = ventas.filter(forma_pago=forma_pago)
+
+    ventas = ventas.annotate(num_devoluciones=Count('devoluciones'))
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Historial de Ventas'
+
+    hdr_font = Font(bold=True, color='FFFFFF')
+    hdr_fill = PatternFill('solid', fgColor='0F172A')
+    center = Alignment(horizontal='center')
+
+    headers = ['ID', 'Fecha', 'Empleado', 'Sucursal', 'Forma de Pago', 'Nº Transacción', 'Total (CLP)', 'Con Devolución']
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = hdr_font
+        cell.fill = hdr_fill
+        cell.alignment = center
+
+    LABELS = {
+        'efectivo': 'Efectivo', 'debito': 'Tarjeta de Débito',
+        'credito': 'Tarjeta de Crédito', 'transferencia': 'Transferencia',
+        'nota_credito': 'Nota de crédito', 'mixto': 'Mixto',
+    }
+
+    for v in ventas:
+        ws.append([
+            v.id,
+            v.fecha.strftime('%d/%m/%Y %H:%M') if v.fecha else '',
+            v.empleado.username if v.empleado else '',
+            v.sucursal.nombre if v.sucursal else '',
+            LABELS.get(v.forma_pago, v.forma_pago),
+            v.numero_transaccion or '',
+            int(v.total or 0),
+            'Sí' if v.num_devoluciones > 0 else 'No',
+        ])
+
+    for i, w in enumerate([8, 18, 16, 16, 20, 22, 14, 15], 1):
+        ws.column_dimensions[ws.cell(1, i).column_letter].width = w
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    fname = f'ventas_{fecha_inicio or "todas"}_{fecha_fin or "todas"}.xlsx'
+    resp = HttpResponse(output.read(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    resp['Content-Disposition'] = f'attachment; filename="{fname}"'
+    return resp
 
 
 @login_required

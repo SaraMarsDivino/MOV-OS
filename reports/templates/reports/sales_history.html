@@ -13,6 +13,54 @@
     body { background: #e2e8f0; color:#111827; }
     footer { display: none !important; }
     .reports-light-page { color:#0f172a; }
+
+    /* Resumen de totales */
+    .totals-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 1rem;
+    }
+    .total-chip {
+        flex: 1 1 130px;
+        background: #f8fafc;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 8px 12px;
+        min-width: 120px;
+    }
+    .total-chip .tc-label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #64748b;
+    }
+    .total-chip .tc-value {
+        font-size: 0.95rem;
+        font-weight: 900;
+        color: #0f172a;
+        white-space: nowrap;
+    }
+    .total-chip.tc-main {
+        background: #0f172a;
+        border-color: #0f172a;
+    }
+    .total-chip.tc-main .tc-label { color: #94a3b8; }
+    .total-chip.tc-main .tc-value { color: #fff; font-size: 1.05rem; }
+
+    /* Badge devolución */
+    .badge-devol {
+        display: inline-block;
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fcd34d;
+        border-radius: 99px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 1px 7px;
+        white-space: nowrap;
+    }
 </style>
 {% endblock %}
 
@@ -22,13 +70,19 @@
 {% block content %}
 <div class="reports-light-page py-4">
     <div class="container react-shell-wide react-compact react-forms">
+
+        <!-- ── HEADER + FILTROS ── -->
         <div class="react-card mb-3">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <div>
                     <h2 class="m-0" style="font-weight:900;">Historial de Ventas</h2>
-                    <div class="mt-1 text-muted" style="opacity:0.92;">Resultados: {{ sales.paginator.count }}</div>
+                    <div class="mt-1 text-muted" style="opacity:0.92;">{{ totals.count }} venta{{ totals.count|pluralize:"s" }} · {{ totals.total_sum }}</div>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
+                    <a href="{% url 'reports:export_sales_history_excel' %}?{% if fecha_inicio %}fecha_inicio={{ fecha_inicio }}&{% endif %}{% if fecha_fin %}fecha_fin={{ fecha_fin }}&{% endif %}{% if empleado_id %}empleado={{ empleado_id }}&{% endif %}{% if sucursal_id %}sucursal={{ sucursal_id }}&{% endif %}{% if numero_transaccion %}numero_transaccion={{ numero_transaccion|urlencode }}&{% endif %}{% if forma_pago %}forma_pago={{ forma_pago }}{% endif %}"
+                       class="btn btn-sm" style="border:2px solid #0f172a; font-weight:700;">
+                        ↓ Exportar Excel
+                    </a>
                     {% url 'reports:report_dashboard' as back_href %}
                     {% include 'partials/back_button.html' with href=back_href text='Volver' %}
                 </div>
@@ -36,45 +90,12 @@
 
             <form method="get" class="mt-3">
                 <div class="d-flex flex-wrap gap-2 align-items-end">
-                    <div style="min-width:140px; flex:0 0 160px;">
+
+                    <div style="min-width:120px; flex:0 0 140px;">
                         <label for="per_page" class="form-label">Mostrar</label>
                         <select id="per_page" name="per_page" class="form-select">
                             {% for opt in per_page_options %}
                                 <option value="{{ opt }}" {% if per_page|stringformat:'s' == opt|stringformat:'s' %}selected{% endif %}>{{ opt }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div style="min-width:220px; flex:1 1 260px;">
-                        <label for="numero_transaccion" class="form-label">Nº de transaccion</label>
-                        <input
-                            type="text"
-                            id="numero_transaccion"
-                            name="numero_transaccion"
-                            class="form-control"
-                            value="{{ numero_transaccion|default:'' }}"
-                            placeholder="Ej: 123456"
-                        >
-                    </div>
-
-                    <div style="min-width:220px; flex:1 1 260px;">
-                        <label for="empleado" class="form-label">Empleado</label>
-                        <select id="empleado" name="empleado" class="form-select">
-                            <option value="">Todos</option>
-                            {% for empleado in empleados %}
-                                <option value="{{ empleado.id }}" {% if empleado_id|stringformat:'s' == empleado.id|stringformat:'s' %}selected{% endif %}>
-                                    {{ empleado.get_full_name|default:empleado.username }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
-                    <div style="min-width:220px; flex:1 1 260px;">
-                        <label for="sucursal" class="form-label">Sucursal</label>
-                        <select id="sucursal" name="sucursal" class="form-select">
-                            <option value="">Todas</option>
-                            {% for s in sucursales %}
-                                <option value="{{ s.id }}" {% if s.id|stringformat:'s' == sucursal_id|stringformat:'s' %}selected{% endif %}>{{ s.nombre }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -89,25 +110,100 @@
                         <input type="date" id="fecha_fin" name="fecha_fin" class="form-control" value="{{ fecha_fin }}">
                     </div>
 
+                    <div style="min-width:170px; flex:1 1 180px;">
+                        <label for="forma_pago" class="form-label">Forma de pago</label>
+                        <select id="forma_pago" name="forma_pago" class="form-select">
+                            <option value="" {% if not forma_pago %}selected{% endif %}>Todas</option>
+                            <option value="efectivo"      {% if forma_pago == 'efectivo' %}selected{% endif %}>Efectivo</option>
+                            <option value="debito"        {% if forma_pago == 'debito' %}selected{% endif %}>Débito</option>
+                            <option value="credito"       {% if forma_pago == 'credito' %}selected{% endif %}>Crédito</option>
+                            <option value="transferencia" {% if forma_pago == 'transferencia' %}selected{% endif %}>Transferencia</option>
+                            <option value="nota_credito"  {% if forma_pago == 'nota_credito' %}selected{% endif %}>Nota de crédito</option>
+                            <option value="mixto"         {% if forma_pago == 'mixto' %}selected{% endif %}>Mixto</option>
+                        </select>
+                    </div>
+
+                    <div style="min-width:180px; flex:1 1 200px;">
+                        <label for="numero_transaccion" class="form-label">Nº de transacción</label>
+                        <input type="text" id="numero_transaccion" name="numero_transaccion" class="form-control"
+                               value="{{ numero_transaccion|default:'' }}" placeholder="Ej: 123456">
+                    </div>
+
+                    <div style="min-width:180px; flex:1 1 200px;">
+                        <label for="empleado" class="form-label">Empleado</label>
+                        <select id="empleado" name="empleado" class="form-select">
+                            <option value="">Todos</option>
+                            {% for empleado in empleados %}
+                                <option value="{{ empleado.id }}" {% if empleado_id|stringformat:'s' == empleado.id|stringformat:'s' %}selected{% endif %}>
+                                    {{ empleado.get_full_name|default:empleado.username }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div style="min-width:180px; flex:1 1 200px;">
+                        <label for="sucursal" class="form-label">Sucursal</label>
+                        <select id="sucursal" name="sucursal" class="form-select">
+                            <option value="">Todas</option>
+                            {% for s in sucursales %}
+                                <option value="{{ s.id }}" {% if s.id|stringformat:'s' == sucursal_id|stringformat:'s' %}selected{% endif %}>{{ s.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
                     <div class="d-flex gap-2" style="flex:0 0 auto;">
                         <button type="submit" class="btn">Filtrar</button>
                         <a href="{% url 'reports:sales_history' %}" class="btn">Limpiar</a>
                     </div>
                 </div>
             </form>
+
+            <!-- Resumen de totales -->
+            {% if totals.count %}
+            <div class="totals-bar">
+                <div class="total-chip tc-main">
+                    <div class="tc-label">{{ totals.count }} venta{{ totals.count|pluralize:"s" }}</div>
+                    <div class="tc-value">{{ totals.total_sum }}</div>
+                </div>
+                <div class="total-chip">
+                    <div class="tc-label">Efectivo</div>
+                    <div class="tc-value">{{ totals.efectivo }}</div>
+                </div>
+                <div class="total-chip">
+                    <div class="tc-label">Débito</div>
+                    <div class="tc-value">{{ totals.debito }}</div>
+                </div>
+                <div class="total-chip">
+                    <div class="tc-label">Crédito</div>
+                    <div class="tc-value">{{ totals.credito }}</div>
+                </div>
+                <div class="total-chip">
+                    <div class="tc-label">Transferencia</div>
+                    <div class="tc-value">{{ totals.transferencia }}</div>
+                </div>
+                {% if totals.hay_mixto %}
+                <div class="total-chip">
+                    <div class="tc-label">Mixto</div>
+                    <div class="tc-value">{{ totals.mixto }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
 
+        <!-- ── TABLA ── -->
         <div class="react-table-shell">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0 admin-table" id="historial-ventas">
                     <colgroup>
                         <col style="width:7%">
-                        <col style="width:14%">
-                        <col style="width:18%">
-                        <col style="width:12%">
-                        <col style="width:22%">
                         <col style="width:13%">
                         <col style="width:14%">
+                        <col style="width:13%">
+                        <col style="width:18%">
+                        <col style="width:11%">
+                        <col style="width:12%">
+                        <col style="width:12%">
                     </colgroup>
                     <thead>
                         <tr>
@@ -117,6 +213,7 @@
                             <th class="text-start">Pago</th>
                             <th class="text-start">Nº de transacción</th>
                             <th class="text-end">Total</th>
+                            <th class="text-start">Estado</th>
                             <th class="text-start">Acción</th>
                         </tr>
                     </thead>
@@ -136,13 +233,22 @@
                                 </td>
                                 <td class="text-end">{{ sale.display_total }}</td>
                                 <td class="text-start">
-                                    <a href="{% url 'reports:sales_report' sale.id %}" class="btn btn-sm">Ver Reporte</a>
-                                    <a href="{% url 'devolver_venta' sale.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm">Devolver</a>
+                                    {% if sale.has_devolucion %}
+                                        <span class="badge-devol">Con devolución</span>
+                                    {% else %}
+                                        <span class="text-muted" style="font-size:.8rem;">—</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-start">
+                                    <div class="d-flex flex-wrap gap-1">
+                                        <a href="{% url 'reports:sales_report' sale.id %}" class="btn btn-sm">Ver</a>
+                                        <a href="{% url 'devolver_venta' sale.id %}?next={{ request.get_full_path|urlencode }}" class="btn btn-sm">Devolver</a>
+                                    </div>
                                 </td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="7" class="text-center">No hay ventas registradas con los filtros seleccionados.</td>
+                                <td colspan="8" class="text-center">No hay ventas registradas con los filtros seleccionados.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -150,42 +256,42 @@
             </div>
         </div>
 
+        <!-- ── PAGINACIÓN ── -->
         <nav aria-label="Paginación" class="mt-3">
             <ul class="pagination react-pagination justify-content-end mb-0">
                 {% if sales.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page=1{% if per_page %}&per_page={{ per_page }}{% endif %}{% if numero_transaccion %}&numero_transaccion={{ numero_transaccion|urlencode }}{% endif %}{% if empleado_id %}&empleado={{ empleado_id }}{% endif %}{% if sucursal_id %}&sucursal={{ sucursal_id }}{% endif %}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}#historial-ventas" aria-label="Primera">&laquo;</a>
+                        <a class="page-link" href="?page=1{% if per_page %}&per_page={{ per_page }}{% endif %}{% if numero_transaccion %}&numero_transaccion={{ numero_transaccion|urlencode }}{% endif %}{% if empleado_id %}&empleado={{ empleado_id }}{% endif %}{% if sucursal_id %}&sucursal={{ sucursal_id }}{% endif %}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}{% if forma_pago %}&forma_pago={{ forma_pago }}{% endif %}#historial-ventas" aria-label="Primera">&laquo;</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ sales.previous_page_number }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if numero_transaccion %}&numero_transaccion={{ numero_transaccion|urlencode }}{% endif %}{% if empleado_id %}&empleado={{ empleado_id }}{% endif %}{% if sucursal_id %}&sucursal={{ sucursal_id }}{% endif %}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}#historial-ventas" aria-label="Anterior">&lsaquo;</a>
+                        <a class="page-link" href="?page={{ sales.previous_page_number }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if numero_transaccion %}&numero_transaccion={{ numero_transaccion|urlencode }}{% endif %}{% if empleado_id %}&empleado={{ empleado_id }}{% endif %}{% if sucursal_id %}&sucursal={{ sucursal_id }}{% endif %}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}{% if forma_pago %}&forma_pago={{ forma_pago }}{% endif %}#historial-ventas" aria-label="Anterior">&lsaquo;</a>
                     </li>
                 {% endif %}
-
                 <li class="page-item disabled">
                     <span class="page-link">Página {{ sales.number }} de {{ sales.paginator.num_pages }}</span>
                 </li>
-
                 {% if sales.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ sales.next_page_number }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if numero_transaccion %}&numero_transaccion={{ numero_transaccion|urlencode }}{% endif %}{% if empleado_id %}&empleado={{ empleado_id }}{% endif %}{% if sucursal_id %}&sucursal={{ sucursal_id }}{% endif %}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}#historial-ventas" aria-label="Siguiente">&rsaquo;</a>
+                        <a class="page-link" href="?page={{ sales.next_page_number }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if numero_transaccion %}&numero_transaccion={{ numero_transaccion|urlencode }}{% endif %}{% if empleado_id %}&empleado={{ empleado_id }}{% endif %}{% if sucursal_id %}&sucursal={{ sucursal_id }}{% endif %}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}{% if forma_pago %}&forma_pago={{ forma_pago }}{% endif %}#historial-ventas" aria-label="Siguiente">&rsaquo;</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ sales.paginator.num_pages }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if numero_transaccion %}&numero_transaccion={{ numero_transaccion|urlencode }}{% endif %}{% if empleado_id %}&empleado={{ empleado_id }}{% endif %}{% if sucursal_id %}&sucursal={{ sucursal_id }}{% endif %}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}#historial-ventas" aria-label="Última">&raquo;</a>
+                        <a class="page-link" href="?page={{ sales.paginator.num_pages }}{% if per_page %}&per_page={{ per_page }}{% endif %}{% if numero_transaccion %}&numero_transaccion={{ numero_transaccion|urlencode }}{% endif %}{% if empleado_id %}&empleado={{ empleado_id }}{% endif %}{% if sucursal_id %}&sucursal={{ sucursal_id }}{% endif %}{% if fecha_inicio %}&fecha_inicio={{ fecha_inicio }}{% endif %}{% if fecha_fin %}&fecha_fin={{ fecha_fin }}{% endif %}{% if forma_pago %}&forma_pago={{ forma_pago }}{% endif %}#historial-ventas" aria-label="Última">&raquo;</a>
                     </li>
                 {% endif %}
             </ul>
         </nav>
+
     </div>
 </div>
 
-    <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        if (window.location.href.includes("page=")) {
-            const tableElement = document.getElementById("historial-ventas");
-            if (tableElement) {
-                tableElement.scrollIntoView({ behavior: "smooth", block: "start" });
-            }
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    if (window.location.href.includes("page=")) {
+        const tableElement = document.getElementById("historial-ventas");
+        if (tableElement) {
+            tableElement.scrollIntoView({ behavior: "smooth", block: "start" });
         }
-    });
-    </script>
+    }
+});
+</script>
 {% endblock %}
