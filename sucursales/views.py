@@ -78,8 +78,57 @@ def api_sucursales_list(request):
             'nombre': s.nombre or '',
             'direccion': s.direccion or '',
             'telefono': s.telefono or '',
+            'activo': s.activo,
         })
     return JsonResponse({'items': items, 'total': len(items)})
+
+
+@login_required
+@user_passes_test(is_admin)
+@require_http_methods(["POST"])
+def api_sucursal_toggle_activo(request, pk):
+    s = get_object_or_404(Sucursal, pk=pk)
+    s.activo = not s.activo
+    s.save(update_fields=['activo'])
+    return JsonResponse({'ok': True, 'activo': s.activo})
+
+
+@login_required
+@user_passes_test(is_admin)
+@require_http_methods(["POST"])
+def api_sucursal_delete(request, pk):
+    s = get_object_or_404(Sucursal, pk=pk)
+    from django.db.models import Q
+    from products.models import StockSucursal, TransferenciaStock, AjusteStock
+    from cashier.models import Venta, AperturaCierreCaja
+
+    from products.models import Product
+    from cashier.models import NotaCredito
+    blockers = []
+    if StockSucursal.objects.filter(sucursal=s).exists():
+        blockers.append('registros de stock')
+    if TransferenciaStock.objects.filter(Q(origen=s) | Q(destino=s)).exists():
+        blockers.append('transferencias de stock')
+    if AjusteStock.objects.filter(sucursal=s).exists():
+        blockers.append('ajustes de stock')
+    if Product.objects.filter(sucursal=s).exists():
+        blockers.append('productos asignados')
+    if Venta.objects.filter(sucursal=s).exists():
+        blockers.append('ventas')
+    if NotaCredito.objects.filter(sucursal=s).exists():
+        blockers.append('notas de crédito')
+    if AperturaCierreCaja.objects.filter(sucursal=s).exists():
+        blockers.append('aperturas/cierres de caja')
+
+    if blockers:
+        return JsonResponse({
+            'ok': False,
+            'error': f'No se puede eliminar "{s.nombre}" porque tiene: {", ".join(blockers)}. Use "Deshabilitar" en su lugar.',
+        }, status=400)
+
+    nombre = s.nombre
+    s.delete()
+    return JsonResponse({'ok': True, 'mensaje': f'Sucursal "{nombre}" eliminada.'})
 
 @login_required
 @user_passes_test(is_admin)
