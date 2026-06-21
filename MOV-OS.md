@@ -2,7 +2,7 @@
 
 Repositorio: `D:\PROYECTOS PROGRAMADOR\MOV-OS-main`  
 Stack: Django 5 · Python 3.12 · React 18 · TypeScript · Tailwind CSS · Bootstrap 5 · PostgreSQL (prod) / SQLite (dev)  
-Versión actual: **0.8.4** ⚠️ *pendiente de deploy*
+Versión actual: **0.8.5** ⚠️ *pendiente de deploy*
 
 ---
 
@@ -155,6 +155,8 @@ Una `Venta` puede tener múltiples métodos de pago. `VentaPago` guarda cada tra
 - CRUD de sucursales (nombre, dirección, teléfono, umbral bajo stock)
 - Asignación de productos a sucursales
 - Umbral de alerta de bajo stock configurable por sucursal
+- **Habilitar/deshabilitar sucursal**: campo `activo` (soft-delete). Botón toggle en la UI de gestión. Las sucursales deshabilitadas no aparecen en el template Excel de carga masiva ni en el selector de destino de transferencias
+- **Eliminar sucursal**: con chequeo de seguridad — bloqueado si tiene stock, ventas, transferencias, ajustes, notas de crédito o cajas asociadas; sugiere deshabilitar en su lugar
 
 ### Usuarios (`/users/`)
 - CRUD de usuarios con roles: superadmin, staff, empleado
@@ -165,8 +167,9 @@ Una `Venta` puede tener múltiples métodos de pago. `VentaPago` guarda cada tra
 
 ### Reportes (`/reports/`)
 - Dashboard principal de reportes
-- Historial de ventas con detalle por transacción
+- **Historial de ventas**: filtros por fecha, empleado, sucursal, forma de pago y nº transacción; barra de totales acumulados del período (total + desglose por método de pago); badge "Con devolución" por venta; exportar a Excel con los mismos filtros activos
 - Historial de cajas (apertura/cierre)
+- **Detalle de caja**: ticket promedio en tarjeta Información; distribución de ventas por hora con barras CSS (hora, conteo, monto)
 - Historial de devoluciones
 - Reportes avanzados con filtros por fecha, sucursal, producto
 - Exportación: CSV, PDF, DOCX
@@ -352,7 +355,41 @@ Hacer hard refresh en el navegador: **Ctrl + Shift + R**
 
 ## Historial de versiones
 
-### v0.8.4 (Junio 2026) — Modo offline con sincronización automática ⚠️ pendiente de deploy
+### v0.8.5 (Junio 2026) — Sucursales, historial de ventas y caja mejorados ⚠️ pendiente de deploy
+
+#### Sucursales
+- Campo `activo` (BooleanField) en modelo `Sucursal` — migración `sucursales/0004`
+- UI de gestión muestra badge "Activa" / "Deshabilitada" y botón toggle Deshabilitar/Reactivar
+- Eliminación con chequeo de seguridad (bloqueada si hay datos relacionados)
+- Excel de carga masiva (template + subida) solo muestra sucursales activas
+
+#### Carga masiva de productos (Excel)
+- Fix: cantidades de stock tipo `"1.845"` (separador de miles chileno) se parseaban como `1`. Resuelto con nueva función `parse_quantity_int()` en `MOVOS/money.py` que ruta por `parse_clp_pesos`
+- Soporte de fechas en formato `DD/MM/AAAA` además de `AAAA-MM-DD` (fallback con parser propio y advertencia en pantalla)
+- Header de columna fecha actualizado a `FECHA DE INGRESO (DD/MM/AAAA)` como hint de formato
+
+#### Historial de ventas
+- Filtro **Forma de pago** en formulario de búsqueda
+- Barra de **totales acumulados** del período: total general + desglose por método (efectivo, débito, crédito, transferencia, mixto)
+- Badge **"Con devolución"** en cada fila con devoluciones registradas
+- Botón **Exportar Excel** que respeta todos los filtros activos; genera `.xlsx` con openpyxl
+
+#### Detalle de caja
+- **Ticket promedio** en tarjeta Información (total ventas / nº ventas)
+- **Distribución de ventas por hora**: barras CSS horizontales proporcionales al máximo de la sesión, con etiqueta hora, conteo y monto
+
+#### Para deploy
+```bash
+# En el servidor OrangePi:
+git pull
+docker compose up --build -d
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py collectstatic --noinput
+```
+
+---
+
+### v0.8.4 (Junio 2026) — Modo offline con sincronización automática ✓ en producción
 
 **Alcance**: el servidor (OrangePi en casa con UPS) siempre está disponible. El problema era caída de internet en los locales comerciales (2–15 min). Un terminal por sucursal, stock por sucursal → sin conflictos de stock. Pagos con tarjeta funcionan independiente (datáfono con chip/SIM).
 
