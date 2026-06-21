@@ -8,7 +8,7 @@ from urllib.parse import quote
 from django.utils import timezone
 from django.db.models import Q, Sum, Count, F
 from django.core.paginator import Paginator
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, ExtractHour
 from django.urls import reverse
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.clickjacking import xframe_options_sameorigin
@@ -1390,6 +1390,36 @@ def detalle_caja(request, caja_id):
             'formatted_total': "$" + format_currency(v.total or 0),
         })
     contexto['ventas_list'] = ventas_list
+
+    # Ticket promedio
+    count_ventas = ventas_qs.count()
+    if count_ventas > 0 and ventas_total:
+        ticket_promedio = _to_clp_pesos(ventas_total / count_ventas)
+        contexto['formatted_ticket_promedio'] = "$" + format_clp(ticket_promedio)
+    else:
+        contexto['formatted_ticket_promedio'] = None
+
+    # Distribución de ventas por hora
+    horas_raw = (
+        ventas_qs
+        .annotate(hora=ExtractHour('fecha'))
+        .values('hora')
+        .annotate(count=Count('id'), monto=Sum('total'))
+        .order_by('hora')
+    )
+    max_count = max((h['count'] for h in horas_raw), default=1)
+    horas_distribucion = [
+        {
+            'hora': h['hora'],
+            'label': f"{h['hora']:02d}:00",
+            'count': h['count'],
+            'monto': "$" + format_clp(h['monto'] or 0),
+            'pct': round(h['count'] / max_count * 100),
+        }
+        for h in horas_raw
+    ]
+    contexto['horas_distribucion'] = horas_distribucion
+
     # Calcular descuadre signed y etiqueta si existe efectivo contado
     if getattr(caja, 'efectivo_contado', None) is not None:
         try:
