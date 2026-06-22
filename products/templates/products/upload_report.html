@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+
+{% block site_theme_styles %}
+<link rel="stylesheet" href="/static/css/theme_react_shell.css">
+{% endblock %}
+
+{% block page_wrapper_start %}{% endblock %}
+{% block page_wrapper_end %}{% endblock %}
+{% block app_styles %}{% endblock %}
+
+{% block extra_styles %}
+<style>
+    body { background: #e2e8f0; color: #0f172a; }
+    footer { display: none !important; }
+
+    .report-page { width: 100%; }
+
+    .report-page h2, .report-page h3, .report-page h4 {
+        color: #0f172a !important;
+        text-transform: none !important;
+    }
+
+    .pf-section-label {
+        font-size: 0.68rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #475569;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid #cbd5e1;
+    }
+
+    /* Tarjetas resumen */
+    .summary-card {
+        border-radius: 14px;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border: 2px solid #000;
+    }
+    .summary-card .sc-icon {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+    .summary-card .sc-num {
+        font-size: 2rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+    .summary-card .sc-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-top: 2px;
+    }
+    .sc-green  { background: #f0fdf4; } .sc-green  .sc-icon { background: #bbf7d0; } .sc-green  .sc-num { color: #15803d; }
+    .sc-blue   { background: #eff6ff; } .sc-blue   .sc-icon { background: #bfdbfe; } .sc-blue   .sc-num { color: #1d4ed8; }
+    .sc-amber  { background: #fffbeb; } .sc-amber  .sc-icon { background: #fde68a; } .sc-amber  .sc-num { color: #b45309; }
+    .sc-red    { background: #fef2f2; } .sc-red    .sc-icon { background: #fecaca; } .sc-red    .sc-num { color: #b91c1c; }
+    .sc-gray   { background: #f8fafc; } .sc-gray   .sc-icon { background: #e2e8f0; } .sc-gray   .sc-num { color: #475569; }
+
+    /* Tabs */
+    .report-tabs { border-bottom: 2px solid #cbd5e1; margin-bottom: 1.25rem; }
+    .report-tab-btn {
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        padding: 0.6rem 1.1rem;
+        font-size: 0.82rem;
+        font-weight: 800;
+        color: #64748b;
+        cursor: pointer;
+        margin-bottom: -2px;
+        transition: color .12s, border-color .12s;
+    }
+    .report-tab-btn:hover { color: #0f172a; }
+    .report-tab-btn.active { color: #0f172a; border-bottom-color: #0f172a; }
+    .report-tab-panel { display: none; }
+    .report-tab-panel.active { display: block; }
+
+    /* Tabla */
+    .rep-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .rep-table thead th {
+        background: #1e293b;
+        color: #f8fafc;
+        font-weight: 800;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 8px 12px;
+        text-align: left;
+    }
+    .rep-table tbody tr { border-bottom: 1px solid #e2e8f0; }
+    .rep-table tbody tr:nth-child(even) { background: #f8fafc; }
+    .rep-table tbody td { padding: 8px 12px; vertical-align: top; color: #0f172a; }
+
+    .badge-new    { background: #dcfce7; color: #166534; border-radius: 6px; padding: 2px 8px; font-size: 0.72rem; font-weight: 800; }
+    .badge-upd    { background: #dbeafe; color: #1e40af; border-radius: 6px; padding: 2px 8px; font-size: 0.72rem; font-weight: 800; }
+    .badge-err    { background: #fee2e2; color: #991b1b; border-radius: 6px; padding: 2px 8px; font-size: 0.72rem; font-weight: 800; }
+    .badge-warn   { background: #fef9c3; color: #854d0e; border-radius: 6px; padding: 2px 8px; font-size: 0.72rem; font-weight: 800; }
+
+    .campo-cambio {
+        display: inline-flex; flex-direction: column; gap: 2px;
+        background: #f1f5f9; border-radius: 6px; padding: 4px 8px;
+        font-size: 0.75rem; margin: 2px 0;
+    }
+    .campo-cambio .campo-label { font-weight: 800; color: #475569; font-size: 0.68rem; text-transform: uppercase; }
+    .campo-cambio .campo-vals { display: flex; align-items: center; gap: 6px; }
+    .campo-cambio .val-old { color: #94a3b8; text-decoration: line-through; }
+    .campo-cambio .val-new { color: #15803d; font-weight: 700; }
+    .campo-arrow { color: #94a3b8; font-size: 0.7rem; }
+
+    .btn-primary-dark {
+        background: #0f172a;
+        color: #fff !important;
+        border: 2px solid #0f172a;
+        border-radius: 10px;
+        padding: 8px 20px;
+        font-weight: 800;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: background .12s;
+        display: inline-block;
+    }
+    .btn-primary-dark:hover { background: #1e293b; }
+
+    .btn-outline-dark-sm {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 14px;
+        border: 2px solid #0f172a;
+        border-radius: 10px;
+        background: #fff;
+        color: #0f172a !important;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: background .12s;
+    }
+    .btn-outline-dark-sm:hover { background: #f1f5f9; }
+
+    .empty-state {
+        text-align: center; padding: 2.5rem 1rem; color: #94a3b8;
+        font-size: 0.9rem; font-weight: 600;
+    }
+
+    .stock-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        background: #e0f2fe; color: #0369a1; border-radius: 6px;
+        padding: 2px 7px; font-size: 0.72rem; font-weight: 800;
+        margin: 1px;
+    }
+
+    .warnings-list { max-height: 260px; overflow-y: auto; }
+    .warn-item { padding: 5px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; color: #78350f; }
+    .err-item  { padding: 5px 0; border-bottom: 1px solid #fef2f2; font-size: 0.8rem; color: #991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-page">
+<div class="container react-shell-wide mt-4 pb-5">
+
+    <!-- Encabezado -->
+    <div class="react-card mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <h2 class="mb-0" style="font-size:1.15rem;font-weight:900;">
+                Resultado de importación Excel
+                {% if report.dry_run %}<span class="badge-warn ms-2">DRY RUN</span>{% endif %}
+            </h2>
+            <div class="small text-muted mt-1">{{ report.rows_total }} fila{{ report.rows_total|pluralize:"s" }} leída{{ report.rows_total|pluralize:"s" }} &mdash; {{ report.distinct_product_codes }} código{{ report.distinct_product_codes|pluralize:"s" }} único{{ report.distinct_product_codes|pluralize:"s" }}</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'upload_products' %}" class="btn-outline-dark-sm">↑ Nueva importación</a>
+            <a href="{% url 'product_management' %}" class="btn-primary-dark">→ Ir a productos</a>
+        </div>
+    </div>
+
+    <!-- Tarjetas resumen -->
+    <div class="row gx-3 mb-3">
+        <div class="col-6 col-md-3 mb-2">
+            <div class="summary-card sc-green">
+                <div class="sc-icon">✓</div>
+                <div>
+                    <div class="sc-num">{{ report.created }}</div>
+                    <div class="sc-label" style="color:#15803d;">Creados</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-2">
+            <div class="summary-card sc-blue">
+                <div class="sc-icon">↻</div>
+                <div>
+                    <div class="sc-num">{{ report.updated }}</div>
+                    <div class="sc-label" style="color:#1d4ed8;">Actualizados</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-2">
+            <div class="summary-card sc-gray">
+                <div class="sc-icon">=</div>
+                <div>
+                    <div class="sc-num">{{ report.unchanged }}</div>
+                    <div class="sc-label" style="color:#475569;">Sin cambios</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-2">
+            <div class="summary-card sc-red">
+                <div class="sc-icon">✕</div>
+                <div>
+                    <div class="sc-num">{{ report.errors|length|add:report.skipped_rows|length }}</div>
+                    <div class="sc-label" style="color:#b91c1c;">No subidos</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if report.stock_assignments %}
+    <div class="react-card mb-3 d-flex align-items-center gap-2" style="background:#f0f9ff;border-color:#0ea5e9;">
+        <span style="font-size:1.1rem;">📦</span>
+        <span style="font-size:.85rem;font-weight:700;color:#0369a1;">
+            Stock asignado en <strong>{{ report.stock_assignments }}</strong> sucursal{{ report.stock_assignments|pluralize:"es" }}.
+        </span>
+    </div>
+    {% endif %}
+
+    <!-- Panel con tabs -->
+    <div class="react-card">
+
+        <div class="report-tabs d-flex flex-wrap gap-1" role="tablist">
+            <button class="report-tab-btn active" data-tab="tab-creados">
+                Creados <span class="badge-new ms-1">{{ report.created }}</span>
+            </button>
+            <button class="report-tab-btn" data-tab="tab-actualizados">
+                Actualizados <span class="badge-upd ms-1">{{ report.updated }}</span>
+            </button>
+            <button class="report-tab-btn" data-tab="tab-sin-cambios">
+                Sin cambios <span style="background:#e2e8f0;color:#475569;border-radius:6px;padding:2px 8px;font-size:.72rem;font-weight:800;" class="ms-1">{{ report.unchanged }}</span>
+            </button>
+            {% with total_err=report.errors|length|add:report.skipped_rows|length %}
+            <button class="report-tab-btn" data-tab="tab-errores">
+                No subidos <span class="badge-err ms-1">{{ total_err }}</span>
+            </button>
+            {% endwith %}
+            {% if report.warnings %}
+            <button class="report-tab-btn" data-tab="tab-advertencias">
+                Advertencias <span class="badge-warn ms-1">{{ report.warnings|length }}</span>
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- Tab: Creados -->
+        <div id="tab-creados" class="report-tab-panel active">
+            {% if report.created_details %}
+            <div style="max-height:480px;overflow-y:auto;">
+                <table class="rep-table">
+                    <thead>
+                        <tr>
+                            <th style="width:160px;">Código 1</th>
+                            <th>Nombre</th>
+                            <th style="width:140px;">Precio venta</th>
+                            <th>Stock asignado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in report.created_details %}
+                        <tr>
+                            <td><code style="font-size:.78rem;">{{ p.codigo }}</code></td>
+                            <td>{{ p.nombre }}</td>
+                            <td style="text-align:right;">
+                                {% if p.precio_venta and p.precio_venta != '0' %}
+                                    ${{ p.precio_venta|floatformat:"0" }}
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                {% with suc_data=report.stock_por_codigo|default_if_none:"" %}
+                                {% endwith %}
+                                {% if report.stock_por_codigo %}
+                                    {% for cod, suc_dict in report.stock_por_codigo.items %}
+                                        {% if cod == p.codigo %}
+                                            {% for suc_id, suc_info in suc_dict.items %}
+                                                <span class="stock-badge">{{ suc_info.sucursal }}: +{{ suc_info.cantidad }}</span>
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No se crearon productos nuevos.</div>
+            {% endif %}
+        </div>
+
+        <!-- Tab: Actualizados -->
+        <div id="tab-actualizados" class="report-tab-panel">
+            {% if report.updated_details %}
+            <div style="max-height:480px;overflow-y:auto;">
+                <table class="rep-table">
+                    <thead>
+                        <tr>
+                            <th style="width:160px;">Código 1</th>
+                            <th style="width:200px;">Nombre</th>
+                            <th>Campos modificados</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in report.updated_details %}
+                        <tr>
+                            <td><code style="font-size:.78rem;">{{ p.codigo }}</code></td>
+                            <td>{{ p.nombre }}</td>
+                            <td>
+                                {% for campo in p.campos %}
+                                <div class="campo-cambio">
+                                    <span class="campo-label">{{ campo.label }}</span>
+                                    <div class="campo-vals">
+                                        <span class="val-old">{{ campo.old }}</span>
+                                        <span class="campo-arrow">→</span>
+                                        <span class="val-new">{{ campo.new }}</span>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">No se actualizaron productos.</div>
+            {% endif %}
+        </div>
+
+        <!-- Tab: Sin cambios -->
+        <div id="tab-sin-cambios" class="report-tab-panel">
+            {% if report.unchanged_codes %}
+            <p class="small text-muted mb-2" style="font-size:.8rem;">
+                Estos productos ya existían y sus datos en el Excel son idénticos a los registrados — no se modificó nada.
+            </p>
+            <div style="max-height:360px;overflow-y:auto;">
+                <table class="rep-table">
+                    <thead>
+                        <tr><th>Código 1</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for cod in report.unchanged_codes %}
+                        <tr><td><code style="font-size:.78rem;">{{ cod }}</code></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">Ningún producto quedó sin cambios.</div>
+            {% endif %}
+        </div>
+
+        <!-- Tab: No subidos -->
+        <div id="tab-errores" class="report-tab-panel">
+            {% if report.skipped_rows or report.errors %}
+                {% if report.skipped_rows %}
+                <div class="pf-section-label">Filas omitidas ({{ report.skipped_rows|length }})</div>
+                <div style="max-height:220px;overflow-y:auto;margin-bottom:1rem;">
+                    <table class="rep-table">
+                        <thead>
+                            <tr><th style="width:100px;">Fila</th><th>Motivo</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for row in report.skipped_rows %}
+                            <tr>
+                                <td>{{ row.row }}</td>
+                                <td>{{ row.reason }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                {% if report.errors %}
+                <div class="pf-section-label">Errores de procesamiento ({{ report.errors|length }})</div>
+                <div class="warnings-list">
+                    {% for err in report.errors %}
+                    <div class="err-item">{{ err }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% else %}
+            <div class="empty-state">No hubo filas con errores. ¡Todo se procesó correctamente!</div>
+            {% endif %}
+        </div>
+
+        <!-- Tab: Advertencias -->
+        {% if report.warnings %}
+        <div id="tab-advertencias" class="report-tab-panel">
+            <div class="warnings-list">
+                {% for w in report.warnings %}
+                <div class="warn-item">{{ w }}</div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var tabs = document.querySelectorAll('.report-tab-btn');
+    tabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            tabs.forEach(function (b) { b.classList.remove('active'); });
+            document.querySelectorAll('.report-tab-panel').forEach(function (p) { p.classList.remove('active'); });
+            btn.classList.add('active');
+            var panel = document.getElementById(btn.dataset.tab);
+            if (panel) panel.classList.add('active');
+        });
+    });
+});
+</script>
+{% endblock %}

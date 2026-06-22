@@ -260,7 +260,7 @@
                         </div>
                         <div id="selectedFileName"></div>
                     </div>
-                    <button type="submit" class="btn-upload-submit" id="submitBtn" disabled>
+                    <button type="submit" class="btn-upload-submit" id="submitBtn">
                         Subir archivo
                     </button>
                 </form>
@@ -275,51 +275,44 @@
 
 {% block scripts %}
 <script>
-(function () {
-    const fileInput   = document.getElementById('file');
-    const submitBtn   = document.getElementById('submitBtn');
-    const fileLabel   = document.getElementById('selectedFileName');
-    const zone        = document.getElementById('uploadZone');
+document.addEventListener('DOMContentLoaded', function () {
+    const fileInput = document.getElementById('file');
+    const submitBtn = document.getElementById('submitBtn');
+    const fileLabel = document.getElementById('selectedFileName');
+    const zone      = document.getElementById('uploadZone');
+
+    if (!fileInput || !submitBtn || !fileLabel || !zone) return;
 
     function showFile(f) {
         fileLabel.textContent = '📄 ' + f.name;
         fileLabel.style.display = 'block';
-        submitBtn.disabled = false;
     }
 
-    fileInput.addEventListener('change', () => {
-        const f = fileInput.files[0];
-        if (f) {
-            showFile(f);
-        } else {
-            fileLabel.style.display = 'none';
-            submitBtn.disabled = true;
-        }
+    fileInput.addEventListener('change', function () {
+        if (this.files[0]) showFile(this.files[0]);
+        else fileLabel.style.display = 'none';
     });
 
-    // Drag & drop visual feedback
-    ['dragenter', 'dragover'].forEach(ev =>
-        zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.add('drag-over'); })
-    );
-    ['dragleave', 'drop'].forEach(ev =>
-        zone.addEventListener(ev, e => { e.preventDefault(); zone.classList.remove('drag-over'); })
-    );
-    zone.addEventListener('drop', e => {
-        const dt = e.dataTransfer;
-        if (dt.files.length) {
-            // input.files es read-only: transferir vía DataTransfer
-            const transfer = new DataTransfer();
+    ['dragenter', 'dragover'].forEach(function (ev) {
+        zone.addEventListener(ev, function (e) { e.preventDefault(); zone.classList.add('drag-over'); });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+        zone.addEventListener(ev, function (e) { e.preventDefault(); zone.classList.remove('drag-over'); });
+    });
+    zone.addEventListener('drop', function (e) {
+        var dt = e.dataTransfer;
+        if (dt && dt.files.length) {
+            var transfer = new DataTransfer();
             transfer.items.add(dt.files[0]);
             fileInput.files = transfer.files;
             showFile(dt.files[0]);
         }
     });
 
-    // Deshabilitar botón mientras sube para evitar doble submit
-    document.getElementById('uploadForm').addEventListener('submit', () => {
+    document.getElementById('uploadForm').addEventListener('submit', function () {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Subiendo…';
     });
-})();
+});
 </script>
 {% endblock %}

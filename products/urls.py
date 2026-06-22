@@ -12,6 +12,7 @@ urlpatterns = [
     path('set-active/<int:product_id>/', views.set_product_active, name='set_product_active'),
     path('archive/<int:product_id>/', views.archivar_producto, name='archivar_producto'),
     path('upload/', views.upload_products, name='upload_products'),
+    path('upload/report/', views.upload_report, name='upload_report'),
     path('template/', views.download_template, name='download_template'),
     path('delete-all/', views.delete_all_products, name='delete_all_products'),
     path('bulk-delete/', views.bulk_delete_products, name='bulk_delete_products'),

@@ -561,17 +561,31 @@ def upload_products(request):
                 except Exception as e:
                     errors.append(f'Fila {row_idx}: Error inesperado -> {e}')
 
+            # Etiquetas legibles para el reporte de campos actualizados
+            _FIELD_LABELS = {
+                'nombre': 'Nombre',
+                'precio_compra': 'Precio compra',
+                'precio_venta': 'Precio venta',
+                'descripcion': 'Descripción',
+                'codigo_alternativo': 'Código 2',
+                'codigo_barras': 'Código de barras',
+                'fecha_ingreso_producto': 'Fecha ingreso',
+                'permitir_venta_sin_stock': 'Venta sin stock',
+            }
+
             # Construir listas finales de creación/actualización a partir de parsed_map
             to_create = []
             to_update = []
             unchanged_codes = []
             to_update_products = []
+            updated_details = []  # [{codigo, nombre, campos: [{label, old, new}]}]
             # Apply parsed_map: treat CODIGO 1 (producto_id) as the identifier.
             # If producto exists, update its fields with non-empty values from the file.
             for codigo, defaults in parsed_map.items():
                 if codigo in existing_map:
                     prod = existing_map[codigo]
                     changed = False
+                    changed_fields = []
                     for k, v in defaults.items():
                         # Normalize empty strings to None so we don't overwrite with blanks
                         if isinstance(v, str) and v.strip() == '':
@@ -580,14 +594,25 @@ def upload_products(request):
                             nv = v
                         # Only update when the file provides a non-null value different from current
                         if nv is not None and getattr(prod, k) != nv:
+                            changed_fields.append({
+                                'label': _FIELD_LABELS.get(k, k),
+                                'old': str(getattr(prod, k)) if getattr(prod, k) is not None else '—',
+                                'new': str(nv),
+                            })
                             setattr(prod, k, nv)
                             changed = True
                     if changed:
                         to_update_products.append(prod)
+                        updated_details.append({'codigo': codigo, 'nombre': prod.nombre, 'campos': changed_fields})
                     else:
                         unchanged_codes.append(codigo)
                 else:
                     to_create.append(Product(producto_id=codigo, **defaults))
+
+            created_details = [
+                {'codigo': p.producto_id, 'nombre': p.nombre, 'precio_venta': str(p.precio_venta or 0)}
+                for p in to_create
+            ]
 
             created_count = 0
             updated_count = 0
@@ -683,18 +708,24 @@ def upload_products(request):
                 'created_codes': created_codes,
                 'updated_codes': updated_codes,
                 'unchanged_codes': unchanged_codes,
+                'created_details': created_details[:300],
+                'updated_details': updated_details[:300],
                 'duplicates': duplicates,
                 'skipped_rows': skipped_rows,
-                'warnings': warnings[:500],  # Limitar
+                'warnings': warnings[:500],
                 'errors': errors[:500],
                 'dry_run': dry_run,
                 'file_codes_sample': file_codes[:200],
                 'stock_assignments': stock_assignments,
+                'stock_por_codigo': {
+                    k: {str(suc_id): {'sucursal': suc.nombre, 'cantidad': cant}
+                        for suc_id, (suc, cant) in v.items()}
+                    for k, v in stock_por_codigo.items()
+                },
             }
 
-            # Redirigir a gestión si se ejecutó realmente
             if not dry_run:
-                return redirect('product_management')
+                return redirect('upload_report')
             return redirect('upload_products')
         except Exception as e:
             messages.error(request, f'Error general procesando el archivo: {e}')
@@ -703,6 +734,16 @@ def upload_products(request):
     return render(request, 'products/upload_products.html', {
         'sucursales': Sucursal.objects.filter(activo=True).order_by('nombre'),
     })
+
+
+@user_passes_test(_is_staff, login_url='cashier_dashboard')
+@login_required
+def upload_report(request):
+    report = request.session.get('upload_products_report')
+    if not report:
+        return redirect('upload_products')
+    return render(request, 'products/upload_report.html', {'report': report})
+
 
 @user_passes_test(_is_staff, login_url='cashier_dashboard')
 @login_required
