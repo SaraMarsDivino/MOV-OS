@@ -2,7 +2,7 @@
 
 Repositorio: `D:\PROYECTOS PROGRAMADOR\MOV-OS-main`  
 Stack: Django 5 · Python 3.12 · React 18 · TypeScript · Tailwind CSS · Bootstrap 5 · PostgreSQL (prod) / SQLite (dev)  
-Versión actual: **0.8.5** ⚠️ *pendiente de deploy*
+Versión actual: **0.8.5** ✓ *en producción*
 
 ---
 
@@ -355,7 +355,7 @@ Hacer hard refresh en el navegador: **Ctrl + Shift + R**
 
 ## Historial de versiones
 
-### v0.8.5 (Junio 2026) — Sucursales, historial de ventas y caja mejorados ⚠️ pendiente de deploy
+### v0.8.5 (Junio 2026) — Sucursales, historial de ventas y caja mejorados ✓ en producción
 
 #### Sucursales
 - Campo `activo` (BooleanField) en modelo `Sucursal` — migración `sucursales/0004`
