@@ -2,7 +2,7 @@
 
 Repositorio: `D:\PROYECTOS PROGRAMADOR\MOV-OS-main`  
 Stack: Django 5 · Python 3.12 · React 18 · TypeScript · Tailwind CSS · Bootstrap 5 · PostgreSQL (prod) / SQLite (dev)  
-Versión actual: **0.8.5** ✓ *en producción*
+Versión actual: **0.8.6** ✓ *en producción*
 
 ---
 
@@ -147,6 +147,7 @@ Una `Venta` puede tener múltiples métodos de pago. `VentaPago` guarda cada tra
 - `stock_minimo` por producto: define el umbral de alerta de stock bajo
 - **Lista de productos** (`ProductsManagementPage`): columna Stock con estado (Normal/Bajo/Sin stock) + tooltip por sucursal al hover; filtro "Solo activos" persistente en `localStorage`; ordenamiento con indicadores ↑↓. Toolbar con acceso directo a: Crear producto, Subir Excel, **Transferir stock**, **Historial de ajustes**.
 - Importación masiva desde Excel (template descargable)
+- **Reporte post-importación** (`/products/upload/report/`): tras subir el Excel muestra tarjetas resumen (creados / actualizados / sin cambios / no subidos) y tabs con detalle — campos cambiados con valor anterior → nuevo, stock asignado por sucursal, filas omitidas con motivo, errores y advertencias
 - Exportación a Excel
 - Activar/desactivar productos
 - Configurar venta sin stock por producto
@@ -354,6 +355,19 @@ Hacer hard refresh en el navegador: **Ctrl + Shift + R**
 ---
 
 ## Historial de versiones
+
+### v0.8.6 (Junio 2026) — Reporte detallado de importación Excel ✓ en producción
+
+- **Reporte post-importación**: después de subir el Excel redirige a `/products/upload/report/` en vez de a gestión de productos. Muestra 4 tarjetas resumen (creados / actualizados / sin cambios / no subidos) y tabs con detalle completo:
+  - **Creados**: código, nombre, precio venta, stock asignado por sucursal
+  - **Actualizados**: cada producto con los campos que cambiaron (valor anterior tachado → valor nuevo)
+  - **Sin cambios**: códigos que ya existían y estaban idénticos
+  - **No subidos**: filas omitidas (N° de fila + motivo) y errores de parsing
+  - **Advertencias**: fechas/stock inválidos (tab aparece solo si los hay)
+- **Fix carga masiva**: el botón "Subir archivo" permanecía siempre deshabilitado porque el bloque JS se llamaba `{% block extra_scripts %}` (no existe en `base.html`) en vez de `{% block scripts %}`. Corregido. El `disabled` del HTML también se eliminó — la validación recae en el atributo `required` del input.
+- **Fix drag & drop**: `fileInput.files = dt.files` fallaba silenciosamente (read-only). Corregido usando `new DataTransfer()`.
+
+---
 
 ### v0.8.5 (Junio 2026) — Sucursales, historial de ventas y caja mejorados ✓ en producción
 
